@@ -90,6 +90,27 @@ export interface Database {
           }
         ];
       };
+      trade_closes: {
+        Row: TradeCloseRow;
+        Insert: TradeCloseInsert;
+        Update: TradeCloseUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'trade_closes_trade_id_fkey';
+            columns: ['trade_id'];
+            isOneToOne: false;
+            referencedRelation: 'trades';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trade_closes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       custom_assets: {
         Row: CustomAssetRow;
         Insert: CustomAssetInsert;
@@ -297,6 +318,38 @@ export interface CustomAssetInsert {
 
 export interface CustomAssetUpdate {
   symbol?: string;
+}
+
+// ────────────────────────────────────────────
+// trade_closes 테이블 (분할 청산)
+// ────────────────────────────────────────────
+
+export interface TradeCloseRow {
+  id: string;
+  trade_id: string;
+  user_id: string;
+  exit_price: number;
+  exit_datetime: string;
+  quantity_pct: number;
+  pnl: number;
+  created_at: string;
+}
+
+export interface TradeCloseInsert {
+  id?: string;
+  trade_id: string;
+  user_id: string;
+  exit_price: number;
+  exit_datetime: string;
+  quantity_pct: number;
+  pnl: number;
+}
+
+export interface TradeCloseUpdate {
+  exit_price?: number;
+  exit_datetime?: string;
+  quantity_pct?: number;
+  pnl?: number;
 }
 
 // ────────────────────────────────────────────

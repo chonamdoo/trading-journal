@@ -66,7 +66,9 @@ export function TradeForm({
   const [assetMode, setAssetMode] = useState<'select' | 'custom'>('select')
   const [customAsset, setCustomAsset] = useState('')
   const [leverage, setLeverage] = useState(initialData?.leverage ?? 10)
+  const [inputMode, setInputMode] = useState<'margin' | 'quantity'>('margin')
   const [margin, setMargin] = useState(initialData?.margin?.toString() ?? '')
+  const [quantity, setQuantity] = useState('')
   const [entryPrice, setEntryPrice] = useState(
     initialData?.entry_price?.toString() ?? ''
   )
@@ -118,6 +120,75 @@ export function TradeForm({
       ? ((marNum / currentCapital) * 100).toFixed(1)
       : null
 
+  // ── 입력 모드 전환 핸들러 ──
+  const handleInputModeChange = (mode: 'margin' | 'quantity') => {
+    if (mode === inputMode) return
+    const ep = parseFloat(entryPrice)
+    const hasEp = !isNaN(ep) && ep > 0
+
+    if (mode === 'quantity') {
+      if (hasMargin && hasEp) {
+        // margin -> quantity 변환
+        const q = (marNum * leverage) / ep
+        setQuantity(q.toPrecision(6).replace(/\.?0+$/, ''))
+      } else {
+        // 진입가 없으면 수량 초기화
+        setQuantity('')
+        setMargin('')
+      }
+    } else if (mode === 'margin') {
+      const qNum = parseFloat(quantity)
+      if (!isNaN(qNum) && qNum > 0 && hasEp) {
+        // quantity -> margin 변환
+        const m = (qNum * ep) / leverage
+        setMargin(m.toPrecision(6).replace(/\.?0+$/, ''))
+      }
+      // margin 모드에서는 quantity 초기화
+      setQuantity('')
+    }
+    setInputMode(mode)
+  }
+
+  // ── 수량 변경 시 margin 자동 계산 ──
+  const handleQuantityChange = (val: string) => {
+    setQuantity(val)
+    const qNum = parseFloat(val)
+    const ep = parseFloat(entryPrice)
+    if (!isNaN(qNum) && qNum > 0 && !isNaN(ep) && ep > 0) {
+      const m = (qNum * ep) / leverage
+      setMargin(m.toPrecision(6).replace(/\.?0+$/, ''))
+    } else {
+      // 유효하지 않은 입력이면 margin 클리어
+      setMargin('')
+    }
+  }
+
+  // ── 수량 모드에서 진입가/레버리지 변경 시 margin 재계산 ──
+  useEffect(() => {
+    if (inputMode !== 'quantity') return
+    const qNum = parseFloat(quantity)
+    const ep = parseFloat(entryPrice)
+    if (!isNaN(qNum) && qNum > 0 && !isNaN(ep) && ep > 0) {
+      const m = (qNum * ep) / leverage
+      setMargin(m.toPrecision(6).replace(/\.?0+$/, ''))
+    } else if (quantity !== '') {
+      setMargin('')
+    }
+  }, [inputMode, entryPrice, leverage, quantity])
+
+  // 수량 모드: 계산된 margin 힌트
+  const quantityMarginHint = (() => {
+    if (inputMode !== 'quantity') return undefined
+    const qNum = parseFloat(quantity)
+    const ep = parseFloat(entryPrice)
+    if (!isNaN(qNum) && qNum > 0 && !isNaN(ep) && ep > 0) {
+      const m = (qNum * ep) / leverage
+      return `≈ ${formatNumber(m)} USDT`
+    }
+    if (quantity && (!ep || ep <= 0)) return '진입 가격을 먼저 입력하세요'
+    return undefined
+  })()
+
   // ── 자산 선택 핸들러 ──
   const handleAssetChange = (value: string) => {
     if (value === '__custom__') {
@@ -137,7 +208,9 @@ export function TradeForm({
     setAssetMode('select')
     setCustomAsset('')
     setLeverage(10)
+    setInputMode('margin')
     setMargin('')
+    setQuantity('')
     setEntryPrice('')
     setExitPrice('')
     setEntryDatetime(nowDatetimeLocal())
@@ -305,14 +378,58 @@ export function TradeForm({
             <span>x125</span>
           </div>
         </div>
-        <Input
-          label="투입 증거금 (USDT)"
-          hint={marginPct ? `자산의 ${marginPct}%` : undefined}
-          type="number"
-          placeholder="500"
-          value={margin}
-          onChange={(e) => setMargin(e.target.value)}
-        />
+        <div className="flex flex-col gap-sp-2">
+          <label className="text-[12px] font-medium text-content-secondary tracking-[0.1px]">
+            투입 증거금 / 수량
+          </label>
+          <div className="flex gap-1 mb-1">
+            <button
+              type="button"
+              onClick={() => handleInputModeChange('margin')}
+              className={`
+                px-3 py-[3px] rounded-full text-[11px] font-semibold transition-all duration-100 border
+                ${
+                  inputMode === 'margin'
+                    ? 'border-info bg-info/10 text-info'
+                    : 'border-border-input bg-surface text-content-secondary'
+                }
+              `}
+            >
+              증거금
+            </button>
+            <button
+              type="button"
+              onClick={() => handleInputModeChange('quantity')}
+              className={`
+                px-3 py-[3px] rounded-full text-[11px] font-semibold transition-all duration-100 border
+                ${
+                  inputMode === 'quantity'
+                    ? 'border-info bg-info/10 text-info'
+                    : 'border-border-input bg-surface text-content-secondary'
+                }
+              `}
+            >
+              수량
+            </button>
+          </div>
+          {inputMode === 'margin' ? (
+            <Input
+              hint={marginPct ? `자산의 ${marginPct}%` : undefined}
+              type="number"
+              placeholder="500"
+              value={margin}
+              onChange={(e) => setMargin(e.target.value)}
+            />
+          ) : (
+            <Input
+              hint={quantityMarginHint}
+              type="number"
+              placeholder="0.5"
+              value={quantity}
+              onChange={(e) => handleQuantityChange(e.target.value)}
+            />
+          )}
+        </div>
       </div>
 
       {/* 진입 섹션 */}

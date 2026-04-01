@@ -1,18 +1,17 @@
 'use client'
 
-import { useState, Fragment } from 'react'
-import type { Trade, TradeFilter } from '@/types'
+import { useState } from 'react'
+import type { Trade, TradeFilter, TradeClose, TradeScreenshot } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
+import { TradeDetailModal } from './TradeDetailModal'
 import {
   formatNumber,
   formatPrice,
   formatPnl,
   formatPercent,
-  formatDatetime,
-  formatDuration,
   pnlColorClass,
 } from '@/lib/format'
 
@@ -20,6 +19,12 @@ interface TradeTableProps {
   trades: Trade[]
   onDelete?: (id: string) => void
   onEdit?: (id: string) => void
+  /** 분할 청산 기록 */
+  tradeCloses?: Record<string, TradeClose[]>
+  /** 스크린샷 */
+  screenshots?: Record<string, TradeScreenshot[]>
+  onLoadScreenshots?: (tradeId: string) => Promise<TradeScreenshot[]>
+  onLoadTradeCloses?: (tradeId: string) => Promise<TradeClose[]>
 }
 
 /**
@@ -27,8 +32,16 @@ interface TradeTableProps {
  * - 데스크탑: 테이블 뷰
  * - 행 클릭 시 확장형 상세 표시
  */
-export function TradeTable({ trades, onDelete, onEdit }: TradeTableProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+export function TradeTable({
+  trades,
+  onDelete,
+  onEdit,
+  tradeCloses = {},
+  screenshots = {},
+  onLoadScreenshots,
+  onLoadTradeCloses,
+}: TradeTableProps) {
+  const [detailTrade, setDetailTrade] = useState<Trade | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [filter, setFilter] = useState<TradeFilter>({})
 
@@ -147,20 +160,16 @@ export function TradeTable({ trades, onDelete, onEdit }: TradeTableProps) {
               </thead>
               <tbody>
                 {filteredTrades.map((t) => {
-                  const isExpanded = expandedId === t.id
                   const returnPct =
                     t.pnl != null && t.margin > 0
                       ? (t.pnl / t.margin) * 100
                       : null
 
                   return (
-                    <Fragment key={t.id}>
-                      {/* 메인 행 */}
                       <tr
+                        key={t.id}
                         className="cursor-pointer hover:bg-surface-hover"
-                        onClick={() =>
-                          setExpandedId(isExpanded ? null : t.id)
-                        }
+                        onClick={() => setDetailTrade(t)}
                       >
                         <td className="px-sp-4 py-[11px] border-b border-border text-content-secondary text-[12px] font-mono">
                           {t.date}
@@ -220,76 +229,6 @@ export function TradeTable({ trades, onDelete, onEdit }: TradeTableProps) {
                           </div>
                         </td>
                       </tr>
-
-                      {/* 확장 행 */}
-                      {isExpanded && (
-                        <tr>
-                          <td
-                            colSpan={10}
-                            className="bg-surface-hover px-sp-6 py-4"
-                          >
-                            <div className="flex flex-wrap gap-5 mb-3">
-                              <div>
-                                <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-[3px]">
-                                  진입 일시
-                                </div>
-                                <div className="font-mono text-[13px]">
-                                  {formatDatetime(t.entry_datetime) || t.date}
-                                </div>
-                              </div>
-                              {t.exit_datetime && (
-                                <div>
-                                  <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-[3px]">
-                                    청산 일시
-                                  </div>
-                                  <div className="font-mono text-[13px]">
-                                    {formatDatetime(t.exit_datetime)}
-                                  </div>
-                                </div>
-                              )}
-                              {t.entry_datetime && t.exit_datetime && (
-                                <div>
-                                  <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-[3px]">
-                                    보유 시간
-                                  </div>
-                                  <div className="font-mono text-[13px]">
-                                    {formatDuration(
-                                      t.entry_datetime,
-                                      t.exit_datetime
-                                    ) || '\u2014'}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            {t.reason && (
-                              <div className="mb-sp-4">
-                                <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-1">
-                                  진입 이유
-                                </div>
-                                <p className="text-[13px] leading-[1.7] text-content">
-                                  {t.reason}
-                                </p>
-                              </div>
-                            )}
-                            {t.notes && (
-                              <div>
-                                <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-1">
-                                  메모 / 반성
-                                </div>
-                                <p className="text-[13px] leading-[1.7] text-content">
-                                  {t.notes}
-                                </p>
-                              </div>
-                            )}
-                            {!t.reason && !t.notes && (
-                              <span className="text-content-muted text-[13px]">
-                                메모 없음
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
                   )
                 })}
               </tbody>
@@ -297,6 +236,22 @@ export function TradeTable({ trades, onDelete, onEdit }: TradeTableProps) {
           </div>
         )}
       </Card>
+
+      {/* 거래 상세 모달 */}
+      <TradeDetailModal
+        trade={detailTrade}
+        open={!!detailTrade}
+        onClose={() => setDetailTrade(null)}
+        onEdit={onEdit}
+        onDelete={(id) => {
+          setDetailTrade(null)
+          setDeleteId(id)
+        }}
+        tradeCloses={detailTrade ? tradeCloses[detailTrade.id] || [] : []}
+        screenshots={detailTrade ? screenshots[detailTrade.id] || [] : []}
+        onLoadScreenshots={onLoadScreenshots ? (id) => onLoadScreenshots(id) : undefined}
+        onLoadTradeCloses={onLoadTradeCloses ? (id) => onLoadTradeCloses(id) : undefined}
+      />
 
       {/* 삭제 확인 모달 */}
       <Modal

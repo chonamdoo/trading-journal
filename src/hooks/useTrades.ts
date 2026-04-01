@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot } from '@/types'
+import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, TradeClose } from '@/types'
 import { calcPnL } from '@/lib/calc'
 import { invalidateCacheByPrefix } from '@/lib/cache'
 import { dtLocalToDate } from '@/lib/format'
@@ -32,6 +32,12 @@ import {
   getProfile as apiGetProfile,
   setInitialCapital as apiSetInitialCapital,
 } from '@/lib/api/profile'
+import {
+  getTradeCloses as apiGetTradeCloses,
+  getTradeClosesByTradeIds as apiGetTradeClosesByTradeIds,
+  addTradeClose as apiAddTradeClose,
+  deleteTradeClose as apiDeleteTradeClose,
+} from '@/lib/api/tradeCloses'
 import {
   uploadScreenshot as apiUploadScreenshot,
   getScreenshots as apiGetScreenshots,
@@ -152,6 +158,17 @@ interface TradeStore {
   deleteTarget: (id: string) => Promise<void>
   // 프로필
   setInitialCapital: (amount: number) => Promise<void>
+  // 분할 청산
+  tradeCloses: Record<string, TradeClose[]>
+  addTradeClose: (params: {
+    tradeId: string
+    exitPrice: number
+    exitDatetime: string
+    quantityPct: number
+  }) => Promise<{ success: boolean; error?: string }>
+  loadTradeCloses: (tradeId: string) => Promise<TradeClose[]>
+  loadAllTradeCloses: () => Promise<void>
+  deleteTradeClose: (tradeId: string, closeId: string) => Promise<{ success: boolean; error?: string }>
   // 스크린샷
   screenshots: Record<string, TradeScreenshot[]>
   uploadScreenshots: (tradeId: string, files: File[]) => Promise<{ success: boolean; error?: string }>
@@ -181,6 +198,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   loading: false,
   error: null,
   isLoaded: false,
+  tradeCloses: {},
   screenshots: {},
 
   // ── Supabase에서 전체 데이터 로드 ──
@@ -384,8 +402,13 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         return
       }
       set((state) => {
-        const { [id]: _, ...rest } = state.screenshots
-        return { trades: state.trades.filter((t) => t.id !== id), screenshots: rest }
+        const { [id]: _ss, ...restScreenshots } = state.screenshots
+        const { [id]: _tc, ...restCloses } = state.tradeCloses
+        return {
+          trades: state.trades.filter((t) => t.id !== id),
+          screenshots: restScreenshots,
+          tradeCloses: restCloses,
+        }
       })
       invalidateAnalysisCache()
     } catch (err) {
@@ -534,6 +557,170 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     } catch (err) {
       const msg = err instanceof Error ? err.message : '초기 자산 설정 중 오류 발생'
       showToast('error', msg)
+    }
+  },
+
+  // ── 분할 청산 추가 ──
+  addTradeClose: async (params) => {
+    try {
+      const supabase = getSupabase()
+      const userId = await getCurrentUserId()
+      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
+
+      if (params.exitPrice <= 0) return { success: false, error: '청산 가격은 0보다 커야 합니다.' }
+      if (params.quantityPct <= 0 || params.quantityPct > 100) return { success: false, error: '청산 비율은 1~100% 범위여야 합니다.' }
+
+      // 부모 거래 정보로 PnL 계산
+      const trade = get().trades.find((t) => t.id === params.tradeId)
+      if (!trade) return { success: false, error: '거래를 찾을 수 없습니다.' }
+      if (trade.status !== 'open') return { success: false, error: '이미 청산된 거래입니다.' }
+
+      const dirMultiplier = trade.direction === 'LONG' ? 1 : -1
+      const ratio = (params.exitPrice - trade.entry_price) / trade.entry_price * dirMultiplier
+      const pnl = Math.round(trade.margin * trade.leverage * ratio * (params.quantityPct / 100) * 100) / 100
+
+      const res = await apiAddTradeClose(supabase, {
+        tradeId: params.tradeId,
+        userId,
+        exitPrice: params.exitPrice,
+        exitDatetime: params.exitDatetime,
+        quantityPct: params.quantityPct,
+        pnl,
+      })
+
+      if (!res.success) {
+        showToast('error', res.error)
+        return { success: false, error: res.error }
+      }
+
+      // 로컬 상태 갱신 - 분할 청산 레코드 추가
+      const newClose: TradeClose = {
+        id: res.data.close.id,
+        trade_id: res.data.close.trade_id,
+        user_id: res.data.close.user_id,
+        exit_price: res.data.close.exit_price,
+        exit_datetime: res.data.close.exit_datetime,
+        quantity_pct: res.data.close.quantity_pct,
+        pnl: res.data.close.pnl,
+        created_at: res.data.close.created_at,
+      }
+
+      set((state) => ({
+        tradeCloses: {
+          ...state.tradeCloses,
+          [params.tradeId]: [...(state.tradeCloses[params.tradeId] || []), newClose],
+        },
+      }))
+
+      // 100% 청산 완료 시 부모 거래도 로컬에서 closed 처리
+      if (res.data.isFullyClosed) {
+        // 서버에서 최신 데이터를 다시 로드하여 정확한 상태 반영
+        const { data: updatedTrade, error: fetchErr } = await supabase
+          .from('trades')
+          .select('*')
+          .eq('id', params.tradeId)
+          .single()
+
+        if (!fetchErr && updatedTrade) {
+          const updated = rowToTrade(updatedTrade as unknown as Record<string, unknown>)
+          set((state) => ({
+            trades: state.trades.map((t) => t.id === params.tradeId ? updated : t),
+          }))
+        }
+        invalidateAnalysisCache()
+        showToast('success', '포지션이 완전히 청산되었습니다.')
+      } else {
+        showToast('success', `${params.quantityPct}% 분할 청산 완료`)
+      }
+
+      return { success: true }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '분할 청산 중 오류 발생'
+      showToast('error', msg)
+      return { success: false, error: msg }
+    }
+  },
+
+  // ── 특정 거래의 분할 청산 기록 로드 ──
+  loadTradeCloses: async (tradeId: string) => {
+    try {
+      const supabase = getSupabase()
+      const res = await apiGetTradeCloses(supabase, tradeId)
+      if (!res.success) return []
+
+      const closes: TradeClose[] = res.data.map((r) => ({
+        id: r.id,
+        trade_id: r.trade_id,
+        user_id: r.user_id,
+        exit_price: r.exit_price,
+        exit_datetime: r.exit_datetime,
+        quantity_pct: r.quantity_pct,
+        pnl: r.pnl,
+        created_at: r.created_at,
+      }))
+
+      set((state) => ({
+        tradeCloses: { ...state.tradeCloses, [tradeId]: closes },
+      }))
+      return closes
+    } catch {
+      return []
+    }
+  },
+
+  // ── 모든 오픈 거래의 분할 청산 기록 로드 ──
+  loadAllTradeCloses: async () => {
+    try {
+      const supabase = getSupabase()
+      const openTradeIds = get().trades
+        .filter((t) => t.status === 'open')
+        .map((t) => t.id)
+      if (openTradeIds.length === 0) return
+
+      const res = await apiGetTradeClosesByTradeIds(supabase, openTradeIds)
+      if (!res.success) return
+
+      const grouped: Record<string, TradeClose[]> = {}
+      for (const r of res.data) {
+        const close: TradeClose = {
+          id: r.id,
+          trade_id: r.trade_id,
+          user_id: r.user_id,
+          exit_price: r.exit_price,
+          exit_datetime: r.exit_datetime,
+          quantity_pct: r.quantity_pct,
+          pnl: r.pnl,
+          created_at: r.created_at,
+        }
+        if (!grouped[r.trade_id]) grouped[r.trade_id] = []
+        grouped[r.trade_id].push(close)
+      }
+      set((state) => ({ tradeCloses: { ...state.tradeCloses, ...grouped } }))
+    } catch {
+      // 무시
+    }
+  },
+
+  // ── 분할 청산 삭제 ──
+  deleteTradeClose: async (tradeId: string, closeId: string) => {
+    try {
+      const supabase = getSupabase()
+      const res = await apiDeleteTradeClose(supabase, closeId)
+      if (!res.success) {
+        showToast('error', res.error)
+        return { success: false, error: res.error }
+      }
+      set((state) => ({
+        tradeCloses: {
+          ...state.tradeCloses,
+          [tradeId]: (state.tradeCloses[tradeId] || []).filter((c) => c.id !== closeId),
+        },
+      }))
+      return { success: true }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '분할 청산 삭제 중 오류 발생'
+      showToast('error', msg)
+      return { success: false, error: msg }
     }
   },
 

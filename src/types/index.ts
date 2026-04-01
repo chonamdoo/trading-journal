@@ -284,6 +284,19 @@ export interface AssetPnlStats {
   winRate: number
 }
 
+// ── 분할 청산 ──
+
+export interface TradeClose {
+  id: string
+  trade_id: string
+  user_id?: string
+  exit_price: number
+  exit_datetime: string
+  quantity_pct: number  // 청산 비율 (1~100)
+  pnl: number
+  created_at?: string
+}
+
 // ── 스크린샷 ──
 
 export interface TradeScreenshot {

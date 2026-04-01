@@ -17,6 +17,9 @@ import { useDashboardAnalytics } from '@/hooks/useAnalytics'
 export default function DashboardPage() {
   const targets = useTradeStore((s) => s.targets)
   const closeTrade = useTradeStore((s) => s.closeTrade)
+  const tradeCloses = useTradeStore((s) => s.tradeCloses)
+  const addTradeClose = useTradeStore((s) => s.addTradeClose)
+  const loadAllTradeCloses = useTradeStore((s) => s.loadAllTradeCloses)
   const {
     trades, deposits, initialCapital,
     capital, pnl, returnPct, equityData,
@@ -40,7 +43,13 @@ export default function DashboardPage() {
       </div>
 
       {/* 오픈 포지션 */}
-      <OpenPositions trades={trades} onClose={closeTrade} />
+      <OpenPositions
+        trades={trades}
+        tradeCloses={tradeCloses}
+        onClose={closeTrade}
+        onPartialClose={addTradeClose}
+        onLoadTradeCloses={loadAllTradeCloses}
+      />
 
       {/* 최근 거래 */}
       <RecentTrades trades={trades} />
