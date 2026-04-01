@@ -55,10 +55,10 @@ export function AppShell({ children }: AppShellProps) {
             <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5">
               현재 자산
             </div>
-            <div className="font-mono text-[28px] font-bold tracking-[-1px] leading-none">
+            <div className="font-mono text-[28px] font-bold tracking-[-1px] leading-none text-profit">
               ${formatNumber(currentCapital)}
             </div>
-            <div className={`font-mono text-[13px] mt-1 ${pnlColorClass(totalPnl)}`}>
+            <div className={`font-mono text-[13px] mt-1 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
               {formatPnl(totalPnl)}{' '}
               <span className="opacity-55">{formatPercent(returnPct)}</span>
             </div>

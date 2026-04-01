@@ -47,14 +47,14 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
           label="총 자산"
           value={`${formatNumber(cap)} USDT`}
           sub={`${formatPercent(retPct)} 수익률`}
-          colorClass={pnlColorClass(tp)}
+          colorClass="text-profit"
         />
         <KpiCard
           tier="primary"
           label="거래 손익"
           value={formatPnl(tp)}
           sub="순수 트레이딩"
-          colorClass={pnlColorClass(tp)}
+          colorClass={tp >= 0 ? 'text-profit' : 'text-loss'}
         />
       </div>
 

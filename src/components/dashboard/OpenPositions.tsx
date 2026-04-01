@@ -49,33 +49,35 @@ export function OpenPositions({ trades, onClose }: OpenPositionsProps) {
           {openTrades.map((trade) => (
             <div
               key={trade.id}
-              className="flex justify-between items-center px-sp-6 py-3 bg-surface-hover rounded-input border border-border"
+              className="flex flex-wrap justify-between items-center gap-2 px-sp-6 py-3 bg-surface-hover rounded-input border border-border"
             >
-              <div className="flex items-center gap-sp-4">
+              <div className="flex items-center gap-sp-4 min-w-0">
                 <DirectionBadge direction={trade.direction} />
-                <div>
-                  <div className="font-semibold text-sm">{trade.asset}</div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm truncate">{trade.asset}</div>
                   <div className="text-[11px] text-content-muted font-mono">
                     x{trade.leverage} &middot; ${formatNumber(trade.margin)} 증거금
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="font-mono text-[13px] font-semibold">
-                  ${formatNumber(trade.entry_price)}
+              <div className="flex items-center gap-3 ml-auto">
+                <div className="text-right">
+                  <div className="font-mono text-[13px] font-semibold">
+                    ${formatNumber(trade.entry_price)}
+                  </div>
+                  <div className="text-[11px] text-content-muted">진입가</div>
                 </div>
-                <div className="text-[11px] text-content-muted">진입가</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setClosingId(trade.id)
+                    setExitDatetime(nowDatetimeLocal())
+                  }}
+                >
+                  청산
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setClosingId(trade.id)
-                  setExitDatetime(nowDatetimeLocal())
-                }}
-              >
-                청산
-              </Button>
             </div>
           ))}
         </div>
