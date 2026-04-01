@@ -537,7 +537,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
   },
 
-  // ── 스크린샷 업로드 ──
+  // ── 스크린샷 업로드 (1장만) ──
   uploadScreenshots: async (tradeId: string, files: File[]) => {
     if (files.length === 0) return { success: true }
     try {
@@ -545,46 +545,53 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const userId = await getCurrentUserId()
       if (!userId) return { success: false, error: '로그인이 필요합니다.' }
 
+      // 기존 스크린샷이 있으면 먼저 삭제 (실패 시 새 업로드를 진행하지 않음)
       const existing = get().screenshots[tradeId] || []
-      const results = await Promise.allSettled(
-        files.map((f, i) =>
-          apiUploadScreenshot(supabase, f, userId, tradeId, existing.length + i)
-        )
-      )
-
-      const uploaded: TradeScreenshot[] = []
-      for (const r of results) {
-        if (r.status === 'fulfilled' && r.value.success) {
-          const d = r.value.data
-          uploaded.push({
-            id: d.id,
-            trade_id: d.trade_id,
-            user_id: d.user_id,
-            storage_path: d.storage_path,
-            file_name: d.file_name,
-            file_size: d.file_size,
-            mime_type: d.mime_type,
-            sort_order: d.sort_order,
-            created_at: d.created_at,
-            url: d.url,
-          })
+      for (const ss of existing) {
+        try {
+          const delRes = await apiDeleteScreenshot(supabase, ss.id, ss.storage_path)
+          if (!delRes.success) {
+            showToast('error', '기존 스크린샷 삭제 실패')
+            return { success: false, error: '기존 스크린샷 삭제 실패' }
+          }
+        } catch (delErr) {
+          const delMsg = delErr instanceof Error ? delErr.message : '기존 스크린샷 삭제 중 오류 발생'
+          showToast('error', delMsg)
+          return { success: false, error: delMsg }
         }
       }
 
-      if (uploaded.length > 0) {
+      // 첫 번째 파일 1장만 업로드 (sort_order 항상 0)
+      const file = files[0]
+      const res = await apiUploadScreenshot(supabase, file, userId, tradeId, 0)
+
+      if (!res.success) {
+        showToast('error', '스크린샷 업로드 실패')
+        // 기존 것도 삭제됐으므로 빈 배열로 갱신
         set((state) => ({
-          screenshots: {
-            ...state.screenshots,
-            [tradeId]: [...(state.screenshots[tradeId] || []), ...uploaded],
-          },
+          screenshots: { ...state.screenshots, [tradeId]: [] },
         }))
+        return { success: false, error: '스크린샷 업로드 실패' }
       }
 
-      const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success))
-      if (failed.length > 0) {
-        showToast('error', `${failed.length}개 파일 업로드 실패`)
-        return { success: false, error: `${failed.length}개 파일 업로드 실패` }
+      const d = res.data
+      const uploaded: TradeScreenshot = {
+        id: d.id,
+        trade_id: d.trade_id,
+        user_id: d.user_id,
+        storage_path: d.storage_path,
+        file_name: d.file_name,
+        file_size: d.file_size,
+        mime_type: d.mime_type,
+        sort_order: d.sort_order,
+        created_at: d.created_at,
+        url: d.url,
       }
+
+      set((state) => ({
+        screenshots: { ...state.screenshots, [tradeId]: [uploaded] },
+      }))
+
       return { success: true }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '스크린샷 업로드 중 오류 발생'
