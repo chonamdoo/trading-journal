@@ -49,8 +49,8 @@ function formatRawValue(key: string, raw: number): string {
 /** 메트릭별 한글 이름 (트레이더 친화 용어) */
 const METRIC_KR: Record<string, string> = {
   winRate: '승률',
-  profitFactor: '수익/손실 비율',
-  avgWinLoss: '평균 수익 배수',
+  profitFactor: '총 수익 대비 손실',
+  avgWinLoss: '평균 이익 vs 손실',
   maxDrawdown: '최대 하락폭',
   recoveryFactor: '회복력',
   consistency: '꾸준함',
@@ -61,12 +61,25 @@ export const TradingScoreSlide = memo(function TradingScoreSlide({ scoreResult }
   const colors = useChartColors()
   const { metrics, totalScore, grade } = scoreResult
 
+  // 청산된 거래가 없으면 평가 불가 표시
+  const hasData = metrics.some(m => m.rawValue !== 0)
+
   // 레이더 차트 데이터 (Recharts 형식)
   const radarData = metrics.map(m => ({
     axis: METRIC_KR[m.key] ?? m.name,
     value: m.normalizedScore,
     fullMark: 100,
   }))
+
+  if (!hasData) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-content-muted">
+        <p className="text-[48px]">📊</p>
+        <p className="text-[16px] font-medium">아직 청산된 거래가 없습니다</p>
+        <p className="text-[13px]">거래를 완료하면 트레이딩 스코어가 계산됩니다</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">

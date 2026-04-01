@@ -396,8 +396,8 @@ const WEIGHTS: Record<MetricScore['key'], number> = {
 /** 메트릭 표시 이름 (한국어 트레이더 친화 명칭) */
 const METRIC_NAMES: Record<MetricScore['key'], string> = {
   winRate: '승률',
-  profitFactor: '수익/손실 비율',
-  avgWinLoss: '평균 수익 배수',
+  profitFactor: '총 수익 대비 손실',
+  avgWinLoss: '평균 이익 vs 손실',
   maxDrawdown: '최대 하락폭',
   recoveryFactor: '회복력',
   consistency: '꾸준함',
