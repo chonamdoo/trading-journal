@@ -25,26 +25,63 @@ export interface Database {
         Row: ProfileRow;
         Insert: ProfileInsert;
         Update: ProfileUpdate;
+        Relationships: [];
       };
       trades: {
         Row: TradeRow;
         Insert: TradeInsert;
         Update: TradeUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'trades_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       deposits: {
         Row: DepositRow;
         Insert: DepositInsert;
         Update: DepositUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'deposits_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       targets: {
         Row: TargetRow;
         Insert: TargetInsert;
         Update: TargetUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'targets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       custom_assets: {
         Row: CustomAssetRow;
         Insert: CustomAssetInsert;
         Update: CustomAssetUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'custom_assets_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
       };
     };
     Views: Record<string, never>;
@@ -62,6 +99,7 @@ export interface Database {
       };
     };
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 
