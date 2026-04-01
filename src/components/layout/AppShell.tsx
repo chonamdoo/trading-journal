@@ -5,15 +5,11 @@ import { ThemeToggle } from './ThemeToggle'
 import { ToastContainer } from '@/components/ui/Toast'
 import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
 import { useDataLoader } from '@/hooks/useDataLoader'
+import { useTradeStore } from '@/hooks/useTrades'
+import { curCapital, totalPnL, totalReturnPct } from '@/lib/calc'
 
 interface AppShellProps {
   children: React.ReactNode
-  /** 현재 자산 */
-  currentCapital?: number
-  /** 총 P&L */
-  totalPnl?: number
-  /** 수익률 (%) */
-  returnPct?: number
 }
 
 /**
@@ -22,15 +18,22 @@ interface AppShellProps {
  * - 네비게이션 탭
  * - 메인 콘텐츠
  * - 토스트 알림
+ *
+ * layout.tsx에서 한 번만 렌더링되어 페이지 전환 시에도 유지된다.
+ * 자산/PnL은 스토어에서 직접 구독하여 표시한다.
  */
-export function AppShell({
-  children,
-  currentCapital = 0,
-  totalPnl = 0,
-  returnPct = 0,
-}: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   // 마운트 시 Supabase에서 데이터 로드 (한 번만)
   const { loading } = useDataLoader()
+
+  // 스토어에서 직접 구독하여 헤더에 표시
+  const trades = useTradeStore((s) => s.trades)
+  const deposits = useTradeStore((s) => s.deposits)
+  const profile = useTradeStore((s) => s.profile)
+  const initialCapital = profile?.initial_capital ?? 0
+  const currentCapital = curCapital(initialCapital, deposits, trades)
+  const totalPnl = totalPnL(trades)
+  const returnPct = totalReturnPct(trades, initialCapital, deposits)
 
   return (
     <div className="max-w-[960px] mx-auto px-sp-9 pt-sp-10 pb-20">

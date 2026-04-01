@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AppShell } from '@/components/layout/AppShell'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -34,8 +33,6 @@ export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
-  const pnl = totalPnL(trades)
-  const returnPct = totalReturnPct(trades, initialCapital, deposits)
   const tdep = totalDeposits(deposits)
 
   // 초기 자산 수정 상태
@@ -118,7 +115,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppShell currentCapital={capital} totalPnl={pnl} returnPct={returnPct}>
+    <>
       {/* 프로필/테마 */}
       <Card className="mb-3">
         <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-4">
@@ -449,6 +446,6 @@ export default function SettingsPage() {
       >
         모든 거래, 입금, 목표 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
       </Modal>
-    </AppShell>
+    </>
   )
 }

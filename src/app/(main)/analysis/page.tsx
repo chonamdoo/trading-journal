@@ -17,7 +17,6 @@
  */
 
 import { useState } from 'react'
-import { AppShell } from '@/components/layout/AppShell'
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
@@ -147,12 +146,10 @@ export default function AnalysisPage() {
   ]
 
   return (
-    <AppShell currentCapital={capital} totalPnl={pnl} returnPct={returnPct}>
-      <SlideCarousel
-        slides={slides}
-        currentIndex={slideIndex}
-        onIndexChange={setSlideIndex}
-      />
-    </AppShell>
+    <SlideCarousel
+      slides={slides}
+      currentIndex={slideIndex}
+      onIndexChange={setSlideIndex}
+    />
   )
 }

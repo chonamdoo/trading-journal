@@ -1,6 +1,5 @@
 'use client'
 
-import { AppShell } from '@/components/layout/AppShell'
 import { KpiGrid } from '@/components/dashboard/KpiGrid'
 import { TargetTracker } from '@/components/dashboard/TargetTracker'
 import { EquityCurve } from '@/components/charts/EquityChart'
@@ -24,11 +23,7 @@ export default function DashboardPage() {
   } = useDashboardAnalytics()
 
   return (
-    <AppShell
-      currentCapital={capital}
-      totalPnl={pnl}
-      returnPct={returnPct}
-    >
+    <>
       {/* KPI 그리드 */}
       <KpiGrid
         trades={trades}
@@ -49,6 +44,6 @@ export default function DashboardPage() {
 
       {/* 최근 거래 */}
       <RecentTrades trades={trades} />
-    </AppShell>
+    </>
   )
 }
