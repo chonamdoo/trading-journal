@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { showToast } from '@/components/ui/Toast'
 import { useTrades } from '@/hooks/useTrades'
 import { useTheme } from '@/hooks/useTheme'
+import { createClient } from '@/lib/supabase/client'
 import { curCapital, totalPnL, totalReturnPct, totalDeposits } from '@/lib/calc'
 import { formatNumber, formatPnl, toKrw, today, genId } from '@/lib/format'
 import { DEFAULT_ASSETS, TARGET_COLORS } from '@/lib/constants'
@@ -49,10 +51,32 @@ export default function SettingsPage() {
   const [targetLabel, setTargetLabel] = useState('')
   const [targetAmount, setTargetAmount] = useState('')
 
+  // 로그아웃 상태
+  const [loggingOut, setLoggingOut] = useState(false)
+  const router = useRouter()
+
   // 초기화 모달
   const [resetModal, setResetModal] = useState(false)
 
   // ── 핸들러 ──
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      // 1. 클라이언트 측 세션 종료
+      const supabase = createClient()
+      await supabase.auth.signOut()
+
+      // 2. 서버 측 세션 쿠키 제거
+      await fetch('/api/auth/logout', { method: 'POST' })
+
+      // 3. 로그인 페이지로 리다이렉트
+      router.push('/login')
+    } catch {
+      showToast('error', '로그아웃에 실패했습니다. 다시 시도해주세요.')
+      setLoggingOut(false)
+    }
+  }
 
   const handleSaveCapital = () => {
     const val = parseFloat(newCapital)
@@ -402,9 +426,10 @@ export default function SettingsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => showToast('info', 'Supabase Auth 연동 후 사용 가능합니다.')}
+              onClick={handleLogout}
+              disabled={loggingOut}
             >
-              로그아웃
+              {loggingOut ? '로그아웃 중...' : '로그아웃'}
             </Button>
           </div>
         </div>
