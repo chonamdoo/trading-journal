@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
 import { showToast } from '@/components/ui/Toast'
 import { ToastContainer } from '@/components/ui/Toast'
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * 비밀번호 초기화 페이지
- * Supabase Auth 연동 시 resetPasswordForEmail 호출로 교체
+ * Supabase Auth resetPasswordForEmail 호출로 비밀번호 재설정 이메일 발송
  */
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('')
@@ -24,12 +25,20 @@ export default function ResetPasswordPage() {
     }
     setLoading(true)
     try {
-      // TODO: Supabase Auth 연동
-      // const { error } = await supabase.auth.resetPasswordForEmail(email)
+      const supabase = createClient()
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password/update`,
+      })
+
+      if (error) {
+        showToast('error', error.message || '요청에 실패했습니다.')
+        return
+      }
+
       setSent(true)
-      showToast('info', 'Supabase Auth 연동 후 사용 가능합니다.')
+      showToast('success', '비밀번호 재설정 이메일을 보냈습니다.')
     } catch {
-      showToast('error', '요청에 실패했습니다.')
+      showToast('error', '요청에 실패했습니다. 잠시 후 다시 시도해주세요.')
     } finally {
       setLoading(false)
     }

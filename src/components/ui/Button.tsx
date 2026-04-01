@@ -10,11 +10,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-content text-white font-medium hover:opacity-90 active:scale-[0.98]',
+    'bg-content text-white font-medium hover:opacity-90 active:scale-[0.98] dark:text-[#111110]',
   ghost:
-    'bg-surface border border-border-strong text-content-secondary hover:bg-surface-hover hover:text-content dark:border-border-strong dark:text-content-secondary dark:hover:text-content dark:hover:border-content-muted active:scale-[0.98]',
+    'bg-surface border border-border-strong text-content-secondary hover:bg-surface-hover hover:text-content dark:border-[rgba(255,255,255,0.35)] dark:text-[#c0c0bc] dark:hover:text-content dark:hover:border-[rgba(255,255,255,0.5)] active:scale-[0.98]',
   danger:
-    'bg-surface border border-loss/30 text-loss hover:bg-loss-bg active:scale-[0.98]',
+    'bg-surface border border-loss/30 text-loss hover:bg-loss-bg active:scale-[0.98] dark:border-loss/40',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -24,8 +24,8 @@ const sizeStyles: Record<ButtonSize, string> = {
 
 /**
  * 기본 버튼 컴포넌트
- * - primary: 검정 배경, 흰색 텍스트
- * - ghost: 테두리만 있는 보조 버튼
+ * - primary: 라이트모드 검정 배경+흰색 텍스트, 다크모드 밝은 배경+검정 텍스트
+ * - ghost: 테두리만 있는 보조 버튼 (다크모드에서 대비 강화)
  * - danger: 삭제/위험 액션용 빨간색
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
