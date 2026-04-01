@@ -1,27 +1,41 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import type { Trade } from '@/types'
+import type { Trade, TradeClose, TradeScreenshot } from '@/types'
 import { DirectionBadge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { TradeDetailModal } from '@/components/trades/TradeDetailModal'
 import { formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
 
 interface RecentTradesProps {
   trades: Trade[]
+  tradeCloses?: Record<string, TradeClose[]>
+  screenshots?: Record<string, TradeScreenshot[]>
+  onLoadScreenshots?: (tradeId: string) => Promise<TradeScreenshot[]>
+  onLoadTradeCloses?: (tradeId: string) => Promise<TradeClose[]>
 }
 
 /**
  * 최근 거래 목록 (대시보드)
  * 종료된 거래 중 최근 5건을 표시한다.
  */
-export function RecentTrades({ trades }: RecentTradesProps) {
+export function RecentTrades({
+  trades,
+  tradeCloses = {},
+  screenshots = {},
+  onLoadScreenshots,
+  onLoadTradeCloses,
+}: RecentTradesProps) {
+  const [detailTrade, setDetailTrade] = useState<Trade | null>(null)
   const closedTrades = trades
     .filter((t) => t.status === 'closed')
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5)
 
   return (
+    <>
     <Card>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] m-0">
@@ -54,7 +68,8 @@ export function RecentTrades({ trades }: RecentTradesProps) {
             return (
               <div
                 key={trade.id}
-                className="flex justify-between items-center py-[11px] border-b border-border last:border-b-0"
+                onClick={() => setDetailTrade(trade)}
+                className="flex justify-between items-center py-[11px] border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-surface-hover"
               >
                 <div className="flex items-center gap-sp-4">
                   <DirectionBadge direction={trade.direction} compact />
@@ -84,5 +99,15 @@ export function RecentTrades({ trades }: RecentTradesProps) {
         </div>
       )}
     </Card>
+    <TradeDetailModal
+      trade={detailTrade}
+      open={!!detailTrade}
+      onClose={() => setDetailTrade(null)}
+      tradeCloses={detailTrade ? tradeCloses[detailTrade.id] || [] : []}
+      screenshots={detailTrade ? screenshots[detailTrade.id] || [] : []}
+      onLoadScreenshots={onLoadScreenshots ? (id) => onLoadScreenshots(id) : undefined}
+      onLoadTradeCloses={onLoadTradeCloses ? (id) => onLoadTradeCloses(id) : undefined}
+    />
+    </>
   )
 }

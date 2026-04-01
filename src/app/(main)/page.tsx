@@ -20,6 +20,9 @@ export default function DashboardPage() {
   const tradeCloses = useTradeStore((s) => s.tradeCloses)
   const addTradeClose = useTradeStore((s) => s.addTradeClose)
   const loadAllTradeCloses = useTradeStore((s) => s.loadAllTradeCloses)
+  const screenshots = useTradeStore((s) => s.screenshots)
+  const loadScreenshots = useTradeStore((s) => s.loadScreenshots)
+  const loadTradeCloses = useTradeStore((s) => s.loadTradeCloses)
   const {
     trades, deposits, initialCapital,
     capital, pnl, returnPct, equityData,
@@ -52,7 +55,13 @@ export default function DashboardPage() {
       />
 
       {/* 최근 거래 */}
-      <RecentTrades trades={trades} />
+      <RecentTrades
+        trades={trades}
+        tradeCloses={tradeCloses}
+        screenshots={screenshots}
+        onLoadScreenshots={loadScreenshots}
+        onLoadTradeCloses={loadTradeCloses}
+      />
     </>
   )
 }
