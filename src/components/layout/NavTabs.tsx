@@ -19,6 +19,8 @@ export function NavTabs() {
   // 현재 경로에 맞는 활성 탭 판별
   const getIsActive = (href: string) => {
     if (href === '/') return pathname === '/'
+    // /trades와 /trades/new를 구분하기 위해 정확 매칭 우선
+    if (href === '/trades') return pathname === '/trades'
     return pathname.startsWith(href)
   }
 
