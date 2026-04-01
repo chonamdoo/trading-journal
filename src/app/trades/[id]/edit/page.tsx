@@ -32,8 +32,8 @@ export default function EditTradePage() {
     )
   }
 
-  const handleSave = (data: TradeFormData) => {
-    const result = updateTrade(tradeId, data)
+  const handleSave = async (data: TradeFormData) => {
+    const result = await updateTrade(tradeId, data)
     if (result.success) {
       router.push('/trades')
     }

@@ -4,6 +4,7 @@ import { NavTabs } from './NavTabs'
 import { ThemeToggle } from './ThemeToggle'
 import { ToastContainer } from '@/components/ui/Toast'
 import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
+import { useDataLoader } from '@/hooks/useDataLoader'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -28,6 +29,9 @@ export function AppShell({
   totalPnl = 0,
   returnPct = 0,
 }: AppShellProps) {
+  // 마운트 시 Supabase에서 데이터 로드 (한 번만)
+  const { loading } = useDataLoader()
+
   return (
     <div className="max-w-[960px] mx-auto px-sp-9 pt-sp-10 pb-20">
       {/* 헤더 */}
@@ -63,7 +67,15 @@ export function AppShell({
       <NavTabs />
 
       {/* 메인 콘텐츠 */}
-      <main>{children}</main>
+      <main>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-content-muted text-[14px]">데이터를 불러오는 중...</div>
+          </div>
+        ) : (
+          children
+        )}
+      </main>
 
       {/* 토스트 알림 */}
       <ToastContainer />

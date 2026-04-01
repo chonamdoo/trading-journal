@@ -78,30 +78,30 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveCapital = () => {
+  const handleSaveCapital = async () => {
     const val = parseFloat(newCapital)
     if (isNaN(val) || val <= 0) {
       showToast('error', '유효한 금액을 입력해주세요.')
       return
     }
-    setInitialCapital(val)
+    await setInitialCapital(val)
     setEditCapital(false)
     showToast('success', '초기 자산이 변경되었습니다.')
   }
 
-  const handleAddDeposit = () => {
+  const handleAddDeposit = async () => {
     const amount = parseFloat(depositAmount)
     if (isNaN(amount) || amount <= 0) {
       showToast('error', '유효한 금액을 입력해주세요.')
       return
     }
-    addDeposit(depositDate, amount, depositMemo || undefined)
+    await addDeposit(depositDate, amount, depositMemo || undefined)
     setDepositAmount('')
     setDepositMemo('')
     showToast('success', '입금이 추가되었습니다.')
   }
 
-  const handleAddTarget = () => {
+  const handleAddTarget = async () => {
     const amount = parseFloat(targetAmount)
     if (!targetLabel.trim()) {
       showToast('error', '목표 이름을 입력해주세요.')
@@ -111,7 +111,7 @@ export default function SettingsPage() {
       showToast('error', '유효한 금액을 입력해주세요.')
       return
     }
-    addTarget(targetLabel.trim(), amount)
+    await addTarget(targetLabel.trim(), amount)
     setTargetLabel('')
     setTargetAmount('')
     showToast('success', '목표가 추가되었습니다.')

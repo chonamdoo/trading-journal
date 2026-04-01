@@ -11,7 +11,7 @@ import { formatNumber, nowDatetimeLocal } from '@/lib/format'
 
 interface OpenPositionsProps {
   trades: Trade[]
-  onClose: (id: string, exitPrice: number, exitDatetime: string) => { success: boolean; error?: string }
+  onClose: (id: string, exitPrice: number, exitDatetime: string) => { success: boolean; error?: string } | Promise<{ success: boolean; error?: string }>
 }
 
 /**
@@ -27,9 +27,9 @@ export function OpenPositions({ trades, onClose }: OpenPositionsProps) {
 
   if (openTrades.length === 0) return null
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (!closingId || !exitPrice) return
-    const result = onClose(closingId, parseFloat(exitPrice), exitDatetime)
+    const result = await onClose(closingId, parseFloat(exitPrice), exitDatetime)
     if (result.success) {
       setClosingId(null)
       setExitPrice('')

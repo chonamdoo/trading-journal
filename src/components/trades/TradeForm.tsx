@@ -22,8 +22,8 @@ interface TradeFormProps {
   customAssets?: string[]
   /** 현재 자산 (증거금 비율 표시용) */
   currentCapital?: number
-  /** 저장 핸들러 */
-  onSave: (data: TradeFormData) => { success: boolean; error?: string }
+  /** 저장 핸들러 (동기/비동기 모두 지원) */
+  onSave: (data: TradeFormData) => { success: boolean; error?: string } | Promise<{ success: boolean; error?: string }>
   /** 수정 모드 시 기존 데이터 */
   initialData?: Partial<TradeFormData>
   /** 수정 모드 여부 */
@@ -132,8 +132,11 @@ export function TradeForm({
     setNotes('')
   }, [allAssets])
 
+  // 저장 중 상태
+  const [saving, setSaving] = useState(false)
+
   // ── 저장 핸들러 (Critical Bug #3 해결: 에러 핸들링 순서 수정) ──
-  const handleSave = () => {
+  const handleSave = async () => {
     const finalAsset =
       assetMode === 'custom' ? customAsset.toUpperCase().trim() : asset
 
@@ -160,12 +163,19 @@ export function TradeForm({
       notes: notes.trim() || undefined,
     }
 
-    const result = onSave(data)
-    if (result.success) {
-      showToast('success', isEdit ? '거래가 수정되었습니다.' : '거래가 저장되었습니다.')
-      if (!isEdit) resetForm()
-    } else {
-      showToast('error', result.error ?? '저장에 실패했습니다.')
+    setSaving(true)
+    try {
+      const result = await onSave(data)
+      if (result.success) {
+        showToast('success', isEdit ? '거래가 수정되었습니다.' : '거래가 저장되었습니다.')
+        if (!isEdit) resetForm()
+      } else {
+        showToast('error', result.error ?? '저장에 실패했습니다.')
+      }
+    } catch {
+      showToast('error', '저장 중 오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -441,8 +451,8 @@ export function TradeForm({
             초기화
           </Button>
         )}
-        <Button onClick={handleSave}>
-          {isEdit ? '수정 저장' : '거래 저장'}
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? '저장 중...' : isEdit ? '수정 저장' : '거래 저장'}
         </Button>
       </div>
     </Card>
