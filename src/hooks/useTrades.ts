@@ -126,8 +126,12 @@ interface TradeStore {
   profile: Profile | null
   loading: boolean
   error: string | null
+  /** 초기 데이터 로드 완료 여부 (탭 전환 시 재호출 방지) */
+  isLoaded: boolean
   // 데이터 로드
   loadData: () => Promise<void>
+  /** 강제 새로고침 (isLoaded를 무시하고 다시 로드) */
+  reloadData: () => Promise<void>
   // 거래 CRUD
   addTrade: (data: TradeFormData) => Promise<{ success: boolean; error?: string }>
   updateTrade: (id: string, data: Partial<TradeFormData>) => Promise<{ success: boolean; error?: string }>
@@ -163,9 +167,12 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   profile: null,
   loading: false,
   error: null,
+  isLoaded: false,
 
   // ── Supabase에서 전체 데이터 로드 ──
   loadData: async () => {
+    // 이미 로드 완료된 상태면 스킵 (탭 전환 시 중복 호출 방지)
+    if (get().isLoaded) return
     set({ loading: true, error: null })
     try {
       const supabase = getSupabase()
@@ -196,7 +203,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         ? rowToProfile(profileRes.data as unknown as Record<string, unknown>)
         : null
 
-      set({ trades, deposits, targets, profile, loading: false })
+      set({ trades, deposits, targets, profile, loading: false, isLoaded: true })
 
       // 에러가 있으면 토스트로 알림
       if (!tradesRes.success) showToast('error', `거래 로드 실패: ${tradesRes.error}`)
@@ -208,6 +215,12 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       set({ loading: false, error: msg })
       showToast('error', msg)
     }
+  },
+
+  // ── 강제 새로고침 (isLoaded 무시) ──
+  reloadData: async () => {
+    set({ isLoaded: false })
+    await get().loadData()
   },
 
   // ── 거래 추가 ──

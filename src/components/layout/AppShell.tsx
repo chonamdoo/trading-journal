@@ -69,8 +69,13 @@ export function AppShell({
       {/* 메인 콘텐츠 */}
       <main>
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="text-content-muted text-[14px]">데이터를 불러오는 중...</div>
+          <div className="flex flex-col justify-center items-center py-20 gap-3">
+            <div
+              className="w-6 h-6 border-2 border-content-muted border-t-transparent rounded-full animate-spin"
+              role="status"
+              aria-label="로딩 중"
+            />
+            <div className="text-content-muted text-[13px]">데이터를 불러오는 중...</div>
           </div>
         ) : (
           children

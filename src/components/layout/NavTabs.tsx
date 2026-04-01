@@ -7,6 +7,11 @@ import { NAV_TABS } from '@/lib/constants'
 /**
  * 네비게이션 탭 바
  * 현재 활성 탭을 하이라이트한다.
+ *
+ * prefetch 전략:
+ * - 모든 탭에 prefetch를 활성화하여 탭 클릭 시 즉시 전환
+ * - Next.js App Router는 Link가 뷰포트에 보이면 자동 prefetch
+ * - 이미 방문한 페이지는 클라이언트 캐시에서 즉시 로드
  */
 export function NavTabs() {
   const pathname = usePathname()
@@ -28,6 +33,7 @@ export function NavTabs() {
           <Link
             key={tab.id}
             href={tab.href}
+            prefetch={true}
             role="tab"
             aria-selected={isActive}
             className={`
