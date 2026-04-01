@@ -1,0 +1,50 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { NAV_TABS } from '@/lib/constants'
+
+/**
+ * 네비게이션 탭 바
+ * 현재 활성 탭을 하이라이트한다.
+ */
+export function NavTabs() {
+  const pathname = usePathname()
+
+  // 현재 경로에 맞는 활성 탭 판별
+  const getIsActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
+
+  return (
+    <nav
+      className="flex gap-0.5 mb-sp-9 bg-surface-muted rounded-input p-[3px] w-fit"
+      role="tablist"
+    >
+      {NAV_TABS.map((tab) => {
+        const isActive = getIsActive(tab.href)
+        return (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            role="tab"
+            aria-selected={isActive}
+            className={`
+              rounded-badge px-sp-6 py-[7px]
+              text-[13px] font-medium whitespace-nowrap
+              transition-all duration-150 no-underline
+              ${
+                isActive
+                  ? 'bg-surface text-content shadow-sm'
+                  : 'text-content-secondary hover:text-content hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+              }
+            `}
+          >
+            {tab.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}

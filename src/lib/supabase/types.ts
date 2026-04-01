@@ -1,0 +1,276 @@
+/**
+ * Supabase Database 타입 정의
+ *
+ * Supabase CLI의 `supabase gen types typescript` 명령으로 자동 생성할 수도 있지만,
+ * 초기 개발 단계에서는 수동으로 정의하여 사용한다.
+ */
+
+// ────────────────────────────────────────────
+// Database 스키마 타입 (Supabase SDK 호환)
+// ────────────────────────────────────────────
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+/** Supabase SDK가 요구하는 Database 인터페이스 */
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: ProfileRow;
+        Insert: ProfileInsert;
+        Update: ProfileUpdate;
+      };
+      trades: {
+        Row: TradeRow;
+        Insert: TradeInsert;
+        Update: TradeUpdate;
+      };
+      deposits: {
+        Row: DepositRow;
+        Insert: DepositInsert;
+        Update: DepositUpdate;
+      };
+      targets: {
+        Row: TargetRow;
+        Insert: TargetInsert;
+        Update: TargetUpdate;
+      };
+      custom_assets: {
+        Row: CustomAssetRow;
+        Insert: CustomAssetInsert;
+        Update: CustomAssetUpdate;
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      migrate_json_data: {
+        Args: {
+          p_user_id: string;
+          p_initial_capital: number;
+          p_trades: Json;
+          p_deposits: Json;
+          p_targets: Json;
+          p_custom_assets: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: Record<string, never>;
+  };
+}
+
+// ────────────────────────────────────────────
+// profiles 테이블
+// ────────────────────────────────────────────
+
+export interface ProfileRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  initial_capital: number;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProfileInsert {
+  id: string;
+  email: string;
+  display_name?: string | null;
+  initial_capital?: number;
+  currency?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProfileUpdate {
+  id?: string;
+  email?: string;
+  display_name?: string | null;
+  initial_capital?: number;
+  currency?: string;
+  updated_at?: string;
+}
+
+// ────────────────────────────────────────────
+// trades 테이블
+// ────────────────────────────────────────────
+
+/** 거래 방향 */
+export type TradeDirection = 'LONG' | 'SHORT';
+
+/** 거래 상태 */
+export type TradeStatus = 'open' | 'closed';
+
+export interface TradeRow {
+  id: string;
+  user_id: string;
+  date: string;
+  entry_datetime: string | null;
+  exit_datetime: string | null;
+  asset: string;
+  direction: TradeDirection;
+  leverage: number;
+  entry_price: number;
+  exit_price: number | null;
+  margin: number;
+  status: TradeStatus;
+  pnl: number | null;
+  reason: string | null;
+  notes: string | null;
+  tags: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradeInsert {
+  id?: string;
+  user_id: string;
+  date: string;
+  entry_datetime?: string | null;
+  exit_datetime?: string | null;
+  asset: string;
+  direction: TradeDirection;
+  leverage?: number;
+  entry_price: number;
+  exit_price?: number | null;
+  margin: number;
+  status?: TradeStatus;
+  pnl?: number | null;
+  reason?: string | null;
+  notes?: string | null;
+  tags?: string[] | null;
+}
+
+export interface TradeUpdate {
+  date?: string;
+  entry_datetime?: string | null;
+  exit_datetime?: string | null;
+  asset?: string;
+  direction?: TradeDirection;
+  leverage?: number;
+  entry_price?: number;
+  exit_price?: number | null;
+  margin?: number;
+  status?: TradeStatus;
+  pnl?: number | null;
+  reason?: string | null;
+  notes?: string | null;
+  tags?: string[] | null;
+}
+
+// ────────────────────────────────────────────
+// deposits 테이블
+// ────────────────────────────────────────────
+
+export interface DepositRow {
+  id: string;
+  user_id: string;
+  date: string;
+  amount: number;
+  memo: string | null;
+  created_at: string;
+}
+
+export interface DepositInsert {
+  id?: string;
+  user_id: string;
+  date: string;
+  amount: number;
+  memo?: string | null;
+}
+
+export interface DepositUpdate {
+  date?: string;
+  amount?: number;
+  memo?: string | null;
+}
+
+// ────────────────────────────────────────────
+// targets 테이블
+// ────────────────────────────────────────────
+
+export interface TargetRow {
+  id: string;
+  user_id: string;
+  label: string;
+  amount: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface TargetInsert {
+  id?: string;
+  user_id: string;
+  label: string;
+  amount: number;
+  sort_order?: number;
+}
+
+export interface TargetUpdate {
+  label?: string;
+  amount?: number;
+  sort_order?: number;
+}
+
+// ────────────────────────────────────────────
+// custom_assets 테이블
+// ────────────────────────────────────────────
+
+export interface CustomAssetRow {
+  id: string;
+  user_id: string;
+  symbol: string;
+  created_at: string;
+}
+
+export interface CustomAssetInsert {
+  id?: string;
+  user_id: string;
+  symbol: string;
+}
+
+export interface CustomAssetUpdate {
+  symbol?: string;
+}
+
+// ────────────────────────────────────────────
+// 공통 유틸리티 타입
+// ────────────────────────────────────────────
+
+/** API 응답 래퍼 (Result 패턴) */
+export type ApiResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+/** 페이지네이션 파라미터 */
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+}
+
+/** 거래 필터 파라미터 */
+export interface TradeFilterParams extends PaginationParams {
+  asset?: string;
+  direction?: TradeDirection;
+  status?: TradeStatus;
+  /** 결과 필터: 'profit' | 'loss' */
+  result?: 'profit' | 'loss';
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+/** 마이그레이션 결과 */
+export interface MigrationResult {
+  success: boolean;
+  trades: number;
+  deposits: number;
+  targets: number;
+  custom_assets: number;
+}
