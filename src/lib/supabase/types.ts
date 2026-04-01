@@ -69,6 +69,27 @@ export interface Database {
           }
         ];
       };
+      trade_screenshots: {
+        Row: TradeScreenshotRow;
+        Insert: TradeScreenshotInsert;
+        Update: TradeScreenshotUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'trade_screenshots_trade_id_fkey';
+            columns: ['trade_id'];
+            isOneToOne: false;
+            referencedRelation: 'trades';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trade_screenshots_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       custom_assets: {
         Row: CustomAssetRow;
         Insert: CustomAssetInsert;
@@ -276,6 +297,37 @@ export interface CustomAssetInsert {
 
 export interface CustomAssetUpdate {
   symbol?: string;
+}
+
+// ────────────────────────────────────────────
+// trade_screenshots 테이블
+// ────────────────────────────────────────────
+
+export interface TradeScreenshotRow {
+  id: string;
+  trade_id: string;
+  user_id: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface TradeScreenshotInsert {
+  id?: string;
+  trade_id: string;
+  user_id: string;
+  storage_path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  sort_order?: number;
+}
+
+export interface TradeScreenshotUpdate {
+  sort_order?: number;
 }
 
 // ────────────────────────────────────────────

@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Trade, Deposit, Target, Profile, TradeFormData } from '@/types'
+import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot } from '@/types'
 import { calcPnL } from '@/lib/calc'
 import { invalidateCacheByPrefix } from '@/lib/cache'
 import { dtLocalToDate } from '@/lib/format'
@@ -32,6 +32,13 @@ import {
   getProfile as apiGetProfile,
   setInitialCapital as apiSetInitialCapital,
 } from '@/lib/api/profile'
+import {
+  uploadScreenshot as apiUploadScreenshot,
+  getScreenshots as apiGetScreenshots,
+  getScreenshotsByTradeIds as apiGetScreenshotsByTradeIds,
+  deleteScreenshot as apiDeleteScreenshot,
+  deleteScreenshotsByTradeId as apiDeleteScreenshotsByTradeId,
+} from '@/lib/api/screenshots'
 
 /**
  * 거래/입금 데이터 변경 시 분석 캐시를 무효화한다.
@@ -133,7 +140,7 @@ interface TradeStore {
   /** 강제 새로고침 (isLoaded를 무시하고 다시 로드) */
   reloadData: () => Promise<void>
   // 거래 CRUD
-  addTrade: (data: TradeFormData) => Promise<{ success: boolean; error?: string }>
+  addTrade: (data: TradeFormData) => Promise<{ success: boolean; error?: string; tradeId?: string }>
   updateTrade: (id: string, data: Partial<TradeFormData>) => Promise<{ success: boolean; error?: string }>
   deleteTrade: (id: string) => Promise<void>
   closeTrade: (id: string, exitPrice: number, exitDatetime: string) => Promise<{ success: boolean; error?: string }>
@@ -145,6 +152,12 @@ interface TradeStore {
   deleteTarget: (id: string) => Promise<void>
   // 프로필
   setInitialCapital: (amount: number) => Promise<void>
+  // 스크린샷
+  screenshots: Record<string, TradeScreenshot[]>
+  uploadScreenshots: (tradeId: string, files: File[]) => Promise<{ success: boolean; error?: string }>
+  loadScreenshots: (tradeId: string) => Promise<TradeScreenshot[]>
+  loadAllScreenshots: () => Promise<void>
+  deleteScreenshot: (tradeId: string, screenshotId: string, storagePath: string) => Promise<void>
 }
 
 /** Supabase 클라이언트를 API 함수 호환 타입으로 가져온다 */
@@ -168,6 +181,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   loading: false,
   error: null,
   isLoaded: false,
+  screenshots: {},
 
   // ── Supabase에서 전체 데이터 로드 ──
   loadData: async () => {
@@ -294,7 +308,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const newTrade = rowToTrade(res.data as unknown as Record<string, unknown>)
       set((state) => ({ trades: [...state.trades, newTrade] }))
       invalidateAnalysisCache()
-      return { success: true }
+      return { success: true, tradeId: newTrade.id }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '거래 추가 중 오류 발생'
       showToast('error', msg)
@@ -353,16 +367,26 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
   },
 
-  // ── 거래 삭제 ──
+  // ── 거래 삭제 (스크린샷 Storage도 함께 정리) ──
   deleteTrade: async (id: string) => {
     try {
       const supabase = getSupabase()
+      const userId = await getCurrentUserId()
+
+      // Storage 파일 삭제 (DB 행은 CASCADE로 자동 삭제)
+      if (userId) {
+        await apiDeleteScreenshotsByTradeId(supabase, userId, id)
+      }
+
       const res = await apiDeleteTrade(supabase, id)
       if (!res.success) {
         showToast('error', res.error)
         return
       }
-      set((state) => ({ trades: state.trades.filter((t) => t.id !== id) }))
+      set((state) => {
+        const { [id]: _, ...rest } = state.screenshots
+        return { trades: state.trades.filter((t) => t.id !== id), screenshots: rest }
+      })
       invalidateAnalysisCache()
     } catch (err) {
       const msg = err instanceof Error ? err.message : '거래 삭제 중 오류 발생'
@@ -509,6 +533,145 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       }))
     } catch (err) {
       const msg = err instanceof Error ? err.message : '초기 자산 설정 중 오류 발생'
+      showToast('error', msg)
+    }
+  },
+
+  // ── 스크린샷 업로드 ──
+  uploadScreenshots: async (tradeId: string, files: File[]) => {
+    if (files.length === 0) return { success: true }
+    try {
+      const supabase = getSupabase()
+      const userId = await getCurrentUserId()
+      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
+
+      const existing = get().screenshots[tradeId] || []
+      const results = await Promise.allSettled(
+        files.map((f, i) =>
+          apiUploadScreenshot(supabase, f, userId, tradeId, existing.length + i)
+        )
+      )
+
+      const uploaded: TradeScreenshot[] = []
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value.success) {
+          const d = r.value.data
+          uploaded.push({
+            id: d.id,
+            trade_id: d.trade_id,
+            user_id: d.user_id,
+            storage_path: d.storage_path,
+            file_name: d.file_name,
+            file_size: d.file_size,
+            mime_type: d.mime_type,
+            sort_order: d.sort_order,
+            created_at: d.created_at,
+            url: d.url,
+          })
+        }
+      }
+
+      if (uploaded.length > 0) {
+        set((state) => ({
+          screenshots: {
+            ...state.screenshots,
+            [tradeId]: [...(state.screenshots[tradeId] || []), ...uploaded],
+          },
+        }))
+      }
+
+      const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success))
+      if (failed.length > 0) {
+        showToast('error', `${failed.length}개 파일 업로드 실패`)
+        return { success: false, error: `${failed.length}개 파일 업로드 실패` }
+      }
+      return { success: true }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '스크린샷 업로드 중 오류 발생'
+      showToast('error', msg)
+      return { success: false, error: msg }
+    }
+  },
+
+  // ── 특정 거래의 스크린샷 로드 ──
+  loadScreenshots: async (tradeId: string) => {
+    try {
+      const supabase = getSupabase()
+      const res = await apiGetScreenshots(supabase, tradeId)
+      if (!res.success) return []
+
+      const screenshots: TradeScreenshot[] = res.data.map((d) => ({
+        id: d.id,
+        trade_id: d.trade_id,
+        user_id: d.user_id,
+        storage_path: d.storage_path,
+        file_name: d.file_name,
+        file_size: d.file_size,
+        mime_type: d.mime_type,
+        sort_order: d.sort_order,
+        created_at: d.created_at,
+        url: d.url,
+      }))
+
+      set((state) => ({
+        screenshots: { ...state.screenshots, [tradeId]: screenshots },
+      }))
+      return screenshots
+    } catch {
+      return []
+    }
+  },
+
+  // ── 모든 거래의 스크린샷 로드 (대시보드 등에서 사용) ──
+  loadAllScreenshots: async () => {
+    try {
+      const supabase = getSupabase()
+      const tradeIds = get().trades.map((t) => t.id)
+      if (tradeIds.length === 0) return
+
+      const res = await apiGetScreenshotsByTradeIds(supabase, tradeIds)
+      if (!res.success) return
+
+      const grouped: Record<string, TradeScreenshot[]> = {}
+      for (const d of res.data) {
+        const ss: TradeScreenshot = {
+          id: d.id,
+          trade_id: d.trade_id,
+          user_id: d.user_id,
+          storage_path: d.storage_path,
+          file_name: d.file_name,
+          file_size: d.file_size,
+          mime_type: d.mime_type,
+          sort_order: d.sort_order,
+          created_at: d.created_at,
+          url: d.url,
+        }
+        if (!grouped[d.trade_id]) grouped[d.trade_id] = []
+        grouped[d.trade_id].push(ss)
+      }
+      set((state) => ({ screenshots: { ...state.screenshots, ...grouped } }))
+    } catch {
+      // 무시
+    }
+  },
+
+  // ── 스크린샷 삭제 ──
+  deleteScreenshot: async (tradeId: string, screenshotId: string, storagePath: string) => {
+    try {
+      const supabase = getSupabase()
+      const res = await apiDeleteScreenshot(supabase, screenshotId, storagePath)
+      if (!res.success) {
+        showToast('error', res.error)
+        return
+      }
+      set((state) => ({
+        screenshots: {
+          ...state.screenshots,
+          [tradeId]: (state.screenshots[tradeId] || []).filter((s) => s.id !== screenshotId),
+        },
+      }))
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '스크린샷 삭제 중 오류 발생'
       showToast('error', msg)
     }
   },

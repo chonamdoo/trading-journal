@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import type { Direction, TradeFormData } from '@/types'
+import type { Direction, TradeFormData, TradeScreenshot } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
@@ -16,6 +16,7 @@ import {
   nowDatetimeLocal,
   pnlColorClass,
 } from '@/lib/format'
+import { ImageUploader } from './ImageUploader'
 
 interface TradeFormProps {
   /** 커스텀 코인 목록 */
@@ -23,11 +24,19 @@ interface TradeFormProps {
   /** 현재 자산 (증거금 비율 표시용) */
   currentCapital?: number
   /** 저장 핸들러 (동기/비동기 모두 지원) */
-  onSave: (data: TradeFormData) => { success: boolean; error?: string } | Promise<{ success: boolean; error?: string }>
+  onSave: (data: TradeFormData) => { success: boolean; error?: string; tradeId?: string } | Promise<{ success: boolean; error?: string; tradeId?: string }>
   /** 수정 모드 시 기존 데이터 */
   initialData?: Partial<TradeFormData>
   /** 수정 모드 여부 */
   isEdit?: boolean
+  /** 수정 모드: 거래 ID */
+  tradeId?: string
+  /** 수정 모드: 기존 스크린샷 */
+  existingScreenshots?: TradeScreenshot[]
+  /** 스크린샷 업로드 콜백 */
+  onUploadScreenshots?: (tradeId: string, files: File[]) => Promise<void>
+  /** 기존 스크린샷 삭제 콜백 */
+  onDeleteScreenshot?: (id: string, storagePath: string) => void
 }
 
 /**
@@ -42,6 +51,10 @@ export function TradeForm({
   onSave,
   initialData,
   isEdit = false,
+  tradeId,
+  existingScreenshots = [],
+  onUploadScreenshots,
+  onDeleteScreenshot,
 }: TradeFormProps) {
   const allAssets = [...DEFAULT_ASSETS, ...customAssets]
 
@@ -68,6 +81,7 @@ export function TradeForm({
   )
   const [reason, setReason] = useState(initialData?.reason ?? '')
   const [notes, setNotes] = useState(initialData?.notes ?? '')
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
   // ── P&L 미리보기 계산 ──
   const entNum = parseFloat(entryPrice)
@@ -130,6 +144,7 @@ export function TradeForm({
     setExitDatetime(nowDatetimeLocal())
     setReason('')
     setNotes('')
+    setPendingFiles([])
   }, [allAssets])
 
   // 저장 중 상태
@@ -167,6 +182,11 @@ export function TradeForm({
     try {
       const result = await onSave(data)
       if (result.success) {
+        // 스크린샷 업로드 (거래 저장 후)
+        const id = isEdit ? tradeId : result.tradeId
+        if (id && pendingFiles.length > 0 && onUploadScreenshots) {
+          await onUploadScreenshots(id, pendingFiles)
+        }
         showToast('success', isEdit ? '거래가 수정되었습니다.' : '거래가 저장되었습니다.')
         if (!isEdit) resetForm()
       } else {
@@ -422,6 +442,16 @@ export function TradeForm({
 
       {/* 구분선 */}
       <div className="h-px bg-border my-[18px]" />
+
+      {/* 스크린샷 */}
+      <div className="mb-sp-6">
+        <ImageUploader
+          files={pendingFiles}
+          onChange={setPendingFiles}
+          existingScreenshots={existingScreenshots}
+          onDeleteExisting={onDeleteScreenshot}
+        />
+      </div>
 
       {/* 이유 + 메모 */}
       <div className="mb-sp-6">

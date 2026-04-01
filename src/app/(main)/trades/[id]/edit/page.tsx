@@ -1,8 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { TradeForm } from '@/components/trades/TradeForm'
-import { useTrades } from '@/hooks/useTrades'
+import { useTrades, useTradeStore } from '@/hooks/useTrades'
 import { curCapital } from '@/lib/calc'
 import type { TradeFormData } from '@/types'
 
@@ -13,11 +14,22 @@ export default function EditTradePage() {
   const params = useParams()
   const router = useRouter()
   const { trades, deposits, profile, updateTrade } = useTrades()
+  const uploadScreenshots = useTradeStore((s) => s.uploadScreenshots)
+  const loadScreenshots = useTradeStore((s) => s.loadScreenshots)
+  const deleteScreenshot = useTradeStore((s) => s.deleteScreenshot)
+  const screenshots = useTradeStore((s) => s.screenshots)
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
 
   const tradeId = params.id as string
   const trade = trades.find((t) => t.id === tradeId)
+
+  // 스크린샷 로드
+  useEffect(() => {
+    if (tradeId) {
+      loadScreenshots(tradeId)
+    }
+  }, [tradeId, loadScreenshots])
 
   if (!trade) {
     return (
@@ -40,6 +52,14 @@ export default function EditTradePage() {
       currentCapital={capital}
       onSave={handleSave}
       isEdit
+      tradeId={tradeId}
+      existingScreenshots={screenshots[tradeId] || []}
+      onUploadScreenshots={async (id, files) => {
+        await uploadScreenshots(id, files)
+      }}
+      onDeleteScreenshot={(ssId, path) => {
+        deleteScreenshot(tradeId, ssId, path)
+      }}
       initialData={{
         asset: trade.asset,
         direction: trade.direction,

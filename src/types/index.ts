@@ -284,6 +284,22 @@ export interface AssetPnlStats {
   winRate: number
 }
 
+// ── 스크린샷 ──
+
+export interface TradeScreenshot {
+  id: string
+  trade_id: string
+  user_id?: string
+  storage_path: string
+  file_name: string
+  file_size: number
+  mime_type: string
+  sort_order: number
+  created_at?: string
+  /** 클라이언트에서 resolved된 퍼블릭 URL */
+  url: string
+}
+
 // ── 토스트 알림 ──
 
 export type ToastType = 'success' | 'error' | 'info'
