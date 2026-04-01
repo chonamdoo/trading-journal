@@ -258,7 +258,10 @@ export function TradeForm({
         // 스크린샷 업로드 (거래 저장 후)
         const id = isEdit ? tradeId : result.tradeId
         if (id && pendingFiles.length > 0 && onUploadScreenshots) {
-          await onUploadScreenshots(id, pendingFiles)
+          const uploadResult = await onUploadScreenshots(id, pendingFiles)
+          if (uploadResult && !uploadResult.success) {
+            showToast('error', uploadResult.error ?? '스크린샷 업로드에 실패했습니다.')
+          }
         }
         showToast('success', isEdit ? '거래가 수정되었습니다.' : '거래가 저장되었습니다.')
         if (!isEdit) resetForm()

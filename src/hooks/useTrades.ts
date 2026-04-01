@@ -754,7 +754,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const res = await apiUploadScreenshot(supabase, file, userId, tradeId, 0)
 
       if (!res.success) {
-        showToast('error', '스크린샷 업로드 실패')
+        showToast('error', `스크린샷 업로드 실패: ${res.error}`)
+        console.error('스크린샷 업로드 실패:', res.error)
         // 기존 것도 삭제됐으므로 빈 배열로 갱신
         set((state) => ({
           screenshots: { ...state.screenshots, [tradeId]: [] },
