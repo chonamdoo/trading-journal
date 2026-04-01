@@ -152,11 +152,11 @@ export function getEquityCurve(
   return points
 }
 
-// ── 최대 낙폭 (MDD) ──
+// ── 최대 하락폭 (MDD) ──
 
 /**
- * 에쿼티 커브에서 최대 낙폭(%)을 계산한다.
- * 피크 대비 최대 하락률을 반환한다.
+ * 에쿼티 커브에서 최대 하락폭(%)을 계산한다.
+ * 고점 대비 최대 하락률을 반환한다.
  */
 export function maxDrawdown(equityCurve: EquityPoint[]): number {
   if (equityCurve.length < 2) return 0
@@ -242,9 +242,9 @@ export function interpolateScore(
   return 0
 }
 
-// ── Profit Factor ──
+// ── 수익/손실 비율 ──
 
-/** Profit Factor = 총 수익 / |총 손실| */
+/** 수익/손실 비율 = 총 수익 / |총 손실| */
 export function profitFactor(trades: Trade[]): number {
   const closed = trades.filter((t) => t.status === 'closed')
   const grossProfit = closed
@@ -259,9 +259,9 @@ export function profitFactor(trades: Trade[]): number {
   return grossProfit / grossLoss
 }
 
-// ── 평균 익손비 ──
+// ── 평균 수익 배수 ──
 
-/** 평균 익손비 = 평균 수익 금액 / |평균 손실 금액| */
+/** 평균 수익 배수 = 평균 수익 금액 / |평균 손실 금액| */
 export function avgWinLossRatio(trades: Trade[]): number {
   const closed = trades.filter((t) => t.status === 'closed')
   const wins = closed.filter((t) => (t.pnl ?? 0) > 0)
@@ -275,9 +275,9 @@ export function avgWinLossRatio(trades: Trade[]): number {
   return avgLoss === 0 ? Infinity : avgWin / avgLoss
 }
 
-// ── Recovery Factor ──
+// ── 회복력 ──
 
-/** 최대 낙폭 절대 금액 */
+/** 최대 하락폭 절대 금액 */
 export function maxDrawdownAmount(
   equityCurve: EquityPoint[]
 ): { maxDdAmount: number; peakValue: number; troughValue: number } {
@@ -299,7 +299,7 @@ export function maxDrawdownAmount(
   return { maxDdAmount: maxDd, peakValue: peakVal, troughValue: troughVal }
 }
 
-/** Recovery Factor = 순이익 / 최대낙폭(금액) */
+/** 회복력 = 순이익 / 최대 하락폭(금액) */
 export function recoveryFactor(equityCurve: EquityPoint[], trades: Trade[]): number {
   const netProfit = totalPnL(trades)
   const { maxDdAmount } = maxDrawdownAmount(equityCurve)
@@ -308,7 +308,7 @@ export function recoveryFactor(equityCurve: EquityPoint[], trades: Trade[]): num
   return netProfit / maxDdAmount
 }
 
-// ── Consistency Score ──
+// ── 꾸준함 점수 ──
 
 /**
  * 날짜별 P&L 합계 배열을 반환한다. (내부 유틸)
@@ -325,9 +325,9 @@ function getDailyPnlArray(trades: Trade[]): number[] {
 }
 
 /**
- * 일관성 점수 (0~1).
+ * 꾸준함 점수 (0~1).
  * 일별 수익률의 변동계수(CV)의 역수 기반.
- * 값이 1에 가까울수록 일관적이다.
+ * 값이 1에 가까울수록 꾸준하다.
  */
 export function consistencyScore(trades: Trade[]): number {
   const dailyPnl = getDailyPnlArray(trades)
@@ -335,7 +335,7 @@ export function consistencyScore(trades: Trade[]): number {
 
   const mean = dailyPnl.reduce((a, b) => a + b, 0) / dailyPnl.length
 
-  // mean이 0이면 CV = Infinity -> 일관성 0 (리뷰 권장-05 반영)
+  // mean이 0이면 CV = Infinity -> 꾸준함 0 (리뷰 권장-05 반영)
   if (mean === 0) return 0
 
   const variance =
@@ -343,7 +343,7 @@ export function consistencyScore(trades: Trade[]): number {
   const stdDev = Math.sqrt(variance)
   const cv = stdDev / Math.abs(mean)
 
-  // 일관성 원시값 = 1 / (1 + CV), 범위 0~1
+  // 꾸준함 원시값 = 1 / (1 + CV), 범위 0~1
   return 1 / (1 + cv)
 }
 
@@ -393,14 +393,14 @@ const WEIGHTS: Record<MetricScore['key'], number> = {
   consistency: 0.15,
 }
 
-/** 메트릭 표시 이름 (PRD 기준 명칭 통일) */
+/** 메트릭 표시 이름 (한국어 트레이더 친화 명칭) */
 const METRIC_NAMES: Record<MetricScore['key'], string> = {
-  winRate: 'Win Rate',
-  profitFactor: 'Profit Factor',
-  avgWinLoss: 'Avg Win/Loss Ratio',
-  maxDrawdown: 'Max Drawdown',
-  recoveryFactor: 'Recovery Factor',
-  consistency: 'Consistency',
+  winRate: '승률',
+  profitFactor: '수익/손실 비율',
+  avgWinLoss: '평균 수익 배수',
+  maxDrawdown: '최대 하락폭',
+  recoveryFactor: '회복력',
+  consistency: '꾸준함',
 }
 
 /**

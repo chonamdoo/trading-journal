@@ -127,7 +127,7 @@ export function useFullAnalytics() {
   // 평균 보유 시간
   const holdTime = useMemo(() => avgHoldTime(trades), [trades])
 
-  // Profit Factor & 익손비
+  // 수익/손실 비율 & 평균 수익 배수
   const pf = useMemo(() => profitFactor(trades), [trades])
   const awlRatio = useMemo(() => avgWinLossRatio(trades), [trades])
 

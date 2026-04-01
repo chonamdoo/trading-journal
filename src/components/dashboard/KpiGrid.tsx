@@ -45,7 +45,7 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
         <KpiCard
           tier="primary"
           label="총 자산"
-          value={`$${formatNumber(cap)}`}
+          value={`${formatNumber(cap)} USDT`}
           sub={`${formatPercent(retPct)} 수익률`}
           colorClass={pnlColorClass(tp)}
         />
@@ -79,14 +79,14 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
         <KpiCard
           tier="tertiary"
           label="추가 입금"
-          value={`+$${formatNumber(tdep)}`}
+          value={`+${formatNumber(tdep)} USDT`}
           sub={`${deposits.length}회`}
           colorClass="text-info"
         />
         <KpiCard
           tier="tertiary"
           label="초기 자산"
-          value={`$${formatNumber(initialCapital)}`}
+          value={`${formatNumber(initialCapital)} USDT`}
           sub="시작 시드"
         />
         <KpiCard

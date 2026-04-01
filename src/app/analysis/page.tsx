@@ -134,15 +134,15 @@ export default function AnalysisPage() {
               <KpiCard tier="tertiary" label="승률" value={`${wr.toFixed(1)}%`} />
               <KpiCard tier="tertiary" label="평균 익절" value={formatPnl(avgWinLoss.avgWin)} colorClass="text-profit" />
               <KpiCard tier="tertiary" label="평균 손절" value={formatPnl(avgWinLoss.avgLoss)} colorClass="text-loss" />
-              <KpiCard tier="tertiary" label="손익비" value={avgWinLoss.ratio.toFixed(2)} />
-              <KpiCard tier="tertiary" label="MDD" value={`${mdd.toFixed(1)}%`} colorClass="text-loss" />
-              <KpiCard tier="tertiary" label="펀딩 자본" value={`$${formatNumber(base, 0)}`} />
+              <KpiCard tier="tertiary" label="평균 수익 배수" value={avgWinLoss.ratio.toFixed(2)} />
+              <KpiCard tier="tertiary" label="최대 하락폭" value={`${mdd.toFixed(1)}%`} colorClass="text-loss" />
+              <KpiCard tier="tertiary" label="펀딩 자본" value={`${formatNumber(base, 0)} USDT`} />
               <KpiCard tier="tertiary" label="거래 수익률" value={formatPercent(returnPct)} colorClass={pnlColorClass(pnl)} />
             </div>
           </Card>
         </div>
       ),
-      takeaway: `승률 ${wr.toFixed(1)}%, 손익비 ${avgWinLoss.ratio.toFixed(2)}. ${wr >= 50 ? '승률은 양호합니다.' : '승률 개선이 필요합니다.'}`,
+      takeaway: `승률 ${wr.toFixed(1)}%, 평균 수익 배수 ${avgWinLoss.ratio.toFixed(2)}. ${wr >= 50 ? '승률은 양호합니다.' : '승률 개선이 필요합니다.'}`,
     },
   ]
 

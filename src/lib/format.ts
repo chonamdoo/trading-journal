@@ -11,23 +11,46 @@ export function formatNumber(n: number | null | undefined, decimals = 2): string
   })
 }
 
+/**
+ * 가격 포맷 - 가격 크기에 따라 소수점 자릿수를 자동 결정한다.
+ * 초저가 코인(0.0000012 등)도 정확하게 표시한다.
+ *
+ * - 1000 이상: 소수점 2자리 (예: 98,234.12)
+ * - 1~1000: 소수점 4자리 (예: 0.5432)
+ * - 0.01~1: 소수점 6자리 (예: 0.001234)
+ * - 0.01 미만: 소수점 8자리 (예: 0.00000120)
+ */
+export function formatPrice(price: number | null | undefined): string {
+  if (price == null) return '\u2014'
+  const abs = Math.abs(price)
+  let decimals: number
+  if (abs >= 1000) decimals = 2
+  else if (abs >= 1) decimals = 4
+  else if (abs >= 0.01) decimals = 6
+  else decimals = 8
+  return price.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
+}
+
 /** 퍼센트 포맷 (+/-) */
 export function formatPercent(n: number | null | undefined, decimals = 1): string {
   if (n == null) return '\u2014'
   return (n >= 0 ? '+' : '') + n.toFixed(decimals) + '%'
 }
 
-/** P&L 포맷 (+$1,234.56 / -$1,234.56) */
+/** P&L 포맷 (+1,234.56 USDT / -1,234.56 USDT) */
 export function formatPnl(n: number | null | undefined): string {
   if (n == null) return '\u2014'
   const abs = Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  return n >= 0 ? `+$${abs}` : `-$${abs}`
+  return n >= 0 ? `+${abs} USDT` : `-${abs} USDT`
 }
 
-/** 달러 포맷 ($1,234.56) */
+/** USDT 포맷 (1,234.56 USDT) */
 export function formatUsd(n: number | null | undefined, decimals = 2): string {
   if (n == null) return '\u2014'
-  return '$' + formatNumber(n, decimals)
+  return formatNumber(n, decimals) + ' USDT'
 }
 
 /** USDT -> KRW 환산 */

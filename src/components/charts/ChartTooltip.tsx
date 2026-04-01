@@ -15,10 +15,10 @@ export function ChartTooltip({ active, payload, label }: any) {
           key={i}
           className="font-mono text-[13px] font-semibold text-content"
         >
-          {entry.name}: ${Number(entry.value).toLocaleString('en-US', {
+          {entry.name}: {Number(entry.value).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })}
+          })} USDT
         </p>
       ))}
     </div>

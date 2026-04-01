@@ -46,14 +46,14 @@ function formatRawValue(key: string, raw: number): string {
   }
 }
 
-/** 메트릭별 한글 이름 */
+/** 메트릭별 한글 이름 (트레이더 친화 용어) */
 const METRIC_KR: Record<string, string> = {
   winRate: '승률',
-  profitFactor: '수익 팩터',
-  avgWinLoss: '익손비',
-  maxDrawdown: '최대 낙폭',
-  recoveryFactor: '회복 계수',
-  consistency: '일관성',
+  profitFactor: '수익/손실 비율',
+  avgWinLoss: '평균 수익 배수',
+  maxDrawdown: '최대 하락폭',
+  recoveryFactor: '회복력',
+  consistency: '꾸준함',
 }
 
 /** React.memo로 감싸 scoreResult가 변경되지 않으면 리렌더 방지 */

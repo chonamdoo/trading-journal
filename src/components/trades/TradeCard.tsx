@@ -3,7 +3,7 @@
 import type { Trade } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
+import { formatPrice, formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
 
 interface TradeCardProps {
   trade: Trade
@@ -39,18 +39,18 @@ export function TradeCard({ trade, onEdit, onDelete }: TradeCardProps) {
 
       {/* 가격 정보 */}
       <div className="flex items-center gap-2 mb-1 font-mono text-[13px]">
-        <span>진입 ${formatNumber(trade.entry_price)}</span>
+        <span>진입 {formatPrice(trade.entry_price)}</span>
         <span className="text-content-muted">&rarr;</span>
         <span>
           {trade.exit_price ? (
-            `청산 $${formatNumber(trade.exit_price)}`
+            `청산 ${formatPrice(trade.exit_price)}`
           ) : (
             <Badge variant="open" />
           )}
         </span>
       </div>
       <div className="text-[12px] text-content-muted font-mono mb-3">
-        증거금 ${formatNumber(trade.margin)}
+        증거금 {formatNumber(trade.margin)} USDT
       </div>
 
       {/* P&L + 액션 */}

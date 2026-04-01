@@ -49,7 +49,7 @@ export function PnlBar({ title, data }: PnlBarProps) {
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) =>
-                `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+                `${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
               }
             />
             <Tooltip content={<ChartTooltip />} />

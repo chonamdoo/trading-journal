@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import {
   formatNumber,
+  formatPrice,
   formatPnl,
   formatPercent,
   formatDatetime,
@@ -174,11 +175,11 @@ export function TradeTable({ trades, onDelete, onEdit }: TradeTableProps) {
                           x{t.leverage}
                         </td>
                         <td className="px-sp-4 py-[11px] border-b border-border text-right font-mono">
-                          {formatNumber(t.entry_price)}
+                          {formatPrice(t.entry_price)}
                         </td>
                         <td className="px-sp-4 py-[11px] border-b border-border text-right font-mono">
                           {t.exit_price ? (
-                            formatNumber(t.exit_price)
+                            formatPrice(t.exit_price)
                           ) : (
                             <Badge variant="open" />
                           )}

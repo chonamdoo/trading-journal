@@ -64,7 +64,7 @@ export function EquityCurve({ data }: EquityCurveProps) {
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) =>
-                `$${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+                `${v.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
               }
             />
             <Tooltip content={<ChartTooltip />} />

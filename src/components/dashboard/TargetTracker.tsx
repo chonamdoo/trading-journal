@@ -76,7 +76,7 @@ export function TargetTracker({ targets, currentCapital }: TargetTrackerProps) {
               <div className="text-[11px] text-content-muted font-mono mt-1">
                 {done
                   ? '달성 완료'
-                  : `$${formatNumber(currentCapital, 0)} / $${formatNumber(target.amount, 0)} \u00B7 남은 금액 $${formatNumber(remain, 0)}`}
+                  : `${formatNumber(currentCapital, 0)} / ${formatNumber(target.amount, 0)} USDT \u00B7 남은 금액 ${formatNumber(remain, 0)} USDT`}
               </div>
             </div>
           )
