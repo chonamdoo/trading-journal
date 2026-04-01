@@ -6,30 +6,22 @@ import { TargetTracker } from '@/components/dashboard/TargetTracker'
 import { EquityCurve } from '@/components/charts/EquityChart'
 import { OpenPositions } from '@/components/dashboard/OpenPositions'
 import { RecentTrades } from '@/components/dashboard/RecentTrades'
-import { useTrades } from '@/hooks/useTrades'
-import {
-  curCapital,
-  totalPnL,
-  totalReturnPct,
-  getEquityCurve,
-} from '@/lib/calc'
+import { useTradeStore } from '@/hooks/useTrades'
+import { useDashboardAnalytics } from '@/hooks/useAnalytics'
 
 /**
  * 대시보드 (메인 페이지)
- * - KPI 그리드 (8개, 3단계 위계)
- * - 목표 달성 트래커
- * - 에쿼티 커브 차트
- * - 오픈 포지션
- * - 최근 거래
+ *
+ * useDashboardAnalytics 훅으로 KPI 계산 결과를 useMemo 캐싱한다.
+ * trades 배열이 변경될 때만 재계산된다.
  */
 export default function DashboardPage() {
-  const { trades, deposits, targets, profile, closeTrade } = useTrades()
-  const initialCapital = profile?.initial_capital ?? 0
-
-  const capital = curCapital(initialCapital, deposits, trades)
-  const pnl = totalPnL(trades)
-  const returnPct = totalReturnPct(trades, initialCapital, deposits)
-  const equityData = getEquityCurve(trades, deposits, initialCapital)
+  const targets = useTradeStore((s) => s.targets)
+  const closeTrade = useTradeStore((s) => s.closeTrade)
+  const {
+    trades, deposits, initialCapital,
+    capital, pnl, returnPct, equityData,
+  } = useDashboardAnalytics()
 
   return (
     <AppShell

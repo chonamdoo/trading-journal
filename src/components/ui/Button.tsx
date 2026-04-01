@@ -12,7 +12,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary:
     'bg-content text-white font-medium hover:opacity-90 active:scale-[0.98]',
   ghost:
-    'bg-surface border border-border-input text-content-secondary hover:bg-surface-hover hover:text-content active:scale-[0.98]',
+    'bg-surface border border-border-strong text-content-secondary hover:bg-surface-hover hover:text-content dark:border-border-strong dark:text-content-secondary dark:hover:text-content dark:hover:border-content-muted active:scale-[0.98]',
   danger:
     'bg-surface border border-loss/30 text-loss hover:bg-loss-bg active:scale-[0.98]',
 }

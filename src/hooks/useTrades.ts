@@ -3,7 +3,17 @@
 import { create } from 'zustand'
 import type { Trade, Deposit, Target, Profile, TradeFormData } from '@/types'
 import { calcPnL } from '@/lib/calc'
+import { invalidateCacheByPrefix } from '@/lib/cache'
 import { genId, dtLocalToDate } from '@/lib/format'
+
+/**
+ * 거래/입금 데이터 변경 시 분석 캐시를 무효화한다.
+ * TTL 캐시(src/lib/cache.ts)에 저장된 분석 결과를 즉시 제거하여
+ * 다음 접근 시 최신 데이터로 재계산되도록 한다.
+ */
+function invalidateAnalysisCache() {
+  invalidateCacheByPrefix('analysis:')
+}
 
 /**
  * 거래 데이터 전역 스토어 (Zustand)
@@ -35,88 +45,39 @@ interface TradeStore {
   setInitialCapital: (amount: number) => void
 }
 
-// 목 데이터: 개발/미리보기 시 사용
+// 목 데이터: 개발/미리보기 시 사용 (분석 페이지에 충분한 데이터)
 const MOCK_TRADES: Trade[] = [
-  {
-    id: 'mock-1',
-    date: '2026-03-28',
-    entry_datetime: '2026-03-28T09:30',
-    exit_datetime: '2026-03-28T14:20',
-    asset: 'BTC',
-    direction: 'LONG',
-    leverage: 10,
-    entry_price: 68000,
-    exit_price: 70500,
-    margin: 500,
-    status: 'closed',
-    pnl: 183.82,
-    reason: 'BTC 일봉 지지선 반등 확인. RSI 과매도 구간.',
-    notes: '목표가 도달 후 분할 청산 실행.',
-  },
-  {
-    id: 'mock-2',
-    date: '2026-03-29',
-    entry_datetime: '2026-03-29T11:00',
-    exit_datetime: '2026-03-29T16:45',
-    asset: 'ETH',
-    direction: 'SHORT',
-    leverage: 15,
-    entry_price: 3500,
-    exit_price: 3380,
-    margin: 300,
-    status: 'closed',
-    pnl: 154.29,
-    reason: 'ETH/BTC 페어 약세. 4시간봉 저항선 근접.',
-    notes: '예상대로 하락. 다음엔 레버리지를 줄여볼 것.',
-  },
-  {
-    id: 'mock-3',
-    date: '2026-03-30',
-    entry_datetime: '2026-03-30T08:15',
-    exit_datetime: '2026-03-30T20:00',
-    asset: 'SOL',
-    direction: 'LONG',
-    leverage: 20,
-    entry_price: 145,
-    exit_price: 138,
-    margin: 200,
-    status: 'closed',
-    pnl: -193.10,
-    reason: '솔라나 생태계 호재 뉴스.',
-    notes: '손절 기준을 지켰으나 진입 타이밍이 나빴음.',
-  },
-  {
-    id: 'mock-4',
-    date: '2026-03-31',
-    entry_datetime: '2026-03-31T10:00',
-    exit_datetime: null,
-    asset: 'BTC',
-    direction: 'LONG',
-    leverage: 10,
-    entry_price: 71200,
-    exit_price: null,
-    margin: 400,
-    status: 'open',
-    pnl: null,
-    reason: '주봉 상승 추세 지속 중.',
-    notes: null,
-  },
-  {
-    id: 'mock-5',
-    date: '2026-04-01',
-    entry_datetime: '2026-04-01T07:30',
-    exit_datetime: null,
-    asset: 'ETH',
-    direction: 'SHORT',
-    leverage: 12,
-    entry_price: 3450,
-    exit_price: null,
-    margin: 250,
-    status: 'open',
-    pnl: null,
-    reason: '4시간봉 더블탑 패턴.',
-    notes: null,
-  },
+  // 3월 첫째 주 (월~금)
+  { id: 'mock-01', date: '2026-03-02', entry_datetime: '2026-03-02T09:30', exit_datetime: '2026-03-02T14:20', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 65000, exit_price: 66500, margin: 500, status: 'closed', pnl: 115.38, reason: 'EMA 크로스', notes: null },
+  { id: 'mock-02', date: '2026-03-03', entry_datetime: '2026-03-03T10:15', exit_datetime: '2026-03-03T15:30', asset: 'ETH', direction: 'SHORT', leverage: 12, entry_price: 3400, exit_price: 3320, margin: 300, status: 'closed', pnl: 84.71, reason: '저항선 터치', notes: null },
+  { id: 'mock-03', date: '2026-03-04', entry_datetime: '2026-03-04T11:00', exit_datetime: '2026-03-04T18:00', asset: 'SOL', direction: 'LONG', leverage: 15, entry_price: 140, exit_price: 135, margin: 200, status: 'closed', pnl: -107.14, reason: '추세 추종', notes: '손절' },
+  { id: 'mock-04', date: '2026-03-05', entry_datetime: '2026-03-05T08:00', exit_datetime: '2026-03-05T13:45', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 66200, exit_price: 67800, margin: 400, status: 'closed', pnl: 96.68, reason: '지지선 반등', notes: null },
+  { id: 'mock-05', date: '2026-03-06', entry_datetime: '2026-03-06T14:00', exit_datetime: '2026-03-06T19:30', asset: 'ETH', direction: 'LONG', leverage: 10, entry_price: 3350, exit_price: 3410, margin: 350, status: 'closed', pnl: 62.69, reason: 'RSI 과매도', notes: null },
+  // 3월 둘째 주
+  { id: 'mock-06', date: '2026-03-09', entry_datetime: '2026-03-09T09:00', exit_datetime: '2026-03-09T16:00', asset: 'BTC', direction: 'SHORT', leverage: 8, entry_price: 68000, exit_price: 68500, margin: 500, status: 'closed', pnl: -29.41, reason: '과매수 판단', notes: '손절' },
+  { id: 'mock-07', date: '2026-03-10', entry_datetime: '2026-03-10T10:30', exit_datetime: '2026-03-10T17:00', asset: 'SOL', direction: 'SHORT', leverage: 12, entry_price: 142, exit_price: 138, margin: 250, status: 'closed', pnl: 84.51, reason: '하락 채널', notes: null },
+  { id: 'mock-08', date: '2026-03-11', entry_datetime: '2026-03-11T13:00', exit_datetime: '2026-03-11T20:00', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 67500, exit_price: 69200, margin: 600, status: 'closed', pnl: 151.11, reason: 'BTC 강세', notes: null },
+  { id: 'mock-09', date: '2026-03-12', entry_datetime: '2026-03-12T11:00', exit_datetime: '2026-03-12T15:30', asset: 'ETH', direction: 'LONG', leverage: 15, entry_price: 3380, exit_price: 3450, margin: 300, status: 'closed', pnl: 93.20, reason: '돌파 매매', notes: null },
+  { id: 'mock-10', date: '2026-03-13', entry_datetime: '2026-03-13T07:30', exit_datetime: '2026-03-13T12:00', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 69000, exit_price: 68200, margin: 400, status: 'closed', pnl: -46.38, reason: '추세 추종', notes: '손절' },
+  // 3월 셋째 주
+  { id: 'mock-11', date: '2026-03-16', entry_datetime: '2026-03-16T09:00', exit_datetime: '2026-03-16T14:00', asset: 'SOL', direction: 'LONG', leverage: 20, entry_price: 136, exit_price: 141, margin: 200, status: 'closed', pnl: 147.06, reason: '생태계 호재', notes: null },
+  { id: 'mock-12', date: '2026-03-17', entry_datetime: '2026-03-17T10:00', exit_datetime: '2026-03-17T16:30', asset: 'ETH', direction: 'SHORT', leverage: 12, entry_price: 3500, exit_price: 3430, margin: 350, status: 'closed', pnl: 84.00, reason: '더블탑', notes: null },
+  { id: 'mock-13', date: '2026-03-18', entry_datetime: '2026-03-18T08:30', exit_datetime: '2026-03-18T11:00', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 68500, exit_price: 69800, margin: 500, status: 'closed', pnl: 94.89, reason: '지지선 반등', notes: null },
+  { id: 'mock-14', date: '2026-03-19', entry_datetime: '2026-03-19T13:00', exit_datetime: '2026-03-19T19:00', asset: 'BTC', direction: 'SHORT', leverage: 8, entry_price: 70000, exit_price: 70800, margin: 400, status: 'closed', pnl: -36.57, reason: '과매수', notes: '손절' },
+  { id: 'mock-15', date: '2026-03-20', entry_datetime: '2026-03-20T15:00', exit_datetime: '2026-03-20T21:00', asset: 'ETH', direction: 'LONG', leverage: 10, entry_price: 3420, exit_price: 3490, margin: 300, status: 'closed', pnl: 61.40, reason: 'RSI 반등', notes: null },
+  // 3월 넷째 주
+  { id: 'mock-16', date: '2026-03-23', entry_datetime: '2026-03-23T09:30', exit_datetime: '2026-03-23T15:00', asset: 'SOL', direction: 'LONG', leverage: 15, entry_price: 143, exit_price: 148, margin: 250, status: 'closed', pnl: 131.12, reason: '상승 돌파', notes: null },
+  { id: 'mock-17', date: '2026-03-24', entry_datetime: '2026-03-24T10:00', exit_datetime: '2026-03-24T14:30', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 69500, exit_price: 71000, margin: 500, status: 'closed', pnl: 107.91, reason: '추세 지속', notes: null },
+  { id: 'mock-18', date: '2026-03-25', entry_datetime: '2026-03-25T11:00', exit_datetime: '2026-03-25T17:00', asset: 'ETH', direction: 'SHORT', leverage: 12, entry_price: 3480, exit_price: 3520, margin: 300, status: 'closed', pnl: -41.38, reason: '저항선', notes: '손절' },
+  { id: 'mock-19', date: '2026-03-26', entry_datetime: '2026-03-26T08:00', exit_datetime: '2026-03-26T12:30', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 70500, exit_price: 71800, margin: 600, status: 'closed', pnl: 110.64, reason: 'EMA 크로스', notes: null },
+  { id: 'mock-20', date: '2026-03-27', entry_datetime: '2026-03-27T14:00', exit_datetime: '2026-03-27T19:00', asset: 'SOL', direction: 'SHORT', leverage: 15, entry_price: 150, exit_price: 146, margin: 200, status: 'closed', pnl: 80.00, reason: '과매수 조정', notes: null },
+  // 3월 마지막 주 (기존 3건 유지)
+  { id: 'mock-21', date: '2026-03-28', entry_datetime: '2026-03-28T09:30', exit_datetime: '2026-03-28T14:20', asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 68000, exit_price: 70500, margin: 500, status: 'closed', pnl: 183.82, reason: 'BTC 일봉 지지선 반등 확인.', notes: '목표가 도달 후 분할 청산 실행.' },
+  { id: 'mock-22', date: '2026-03-29', entry_datetime: '2026-03-29T11:00', exit_datetime: '2026-03-29T16:45', asset: 'ETH', direction: 'SHORT', leverage: 15, entry_price: 3500, exit_price: 3380, margin: 300, status: 'closed', pnl: 154.29, reason: 'ETH/BTC 페어 약세.', notes: null },
+  { id: 'mock-23', date: '2026-03-30', entry_datetime: '2026-03-30T08:15', exit_datetime: '2026-03-30T20:00', asset: 'SOL', direction: 'LONG', leverage: 20, entry_price: 145, exit_price: 138, margin: 200, status: 'closed', pnl: -193.10, reason: '솔라나 생태계 호재 뉴스.', notes: '손절 기준을 지켰으나 진입 타이밍이 나빴음.' },
+  // 오픈 포지션
+  { id: 'mock-24', date: '2026-03-31', entry_datetime: '2026-03-31T10:00', exit_datetime: null, asset: 'BTC', direction: 'LONG', leverage: 10, entry_price: 71200, exit_price: null, margin: 400, status: 'open', pnl: null, reason: '주봉 상승 추세 지속 중.', notes: null },
+  { id: 'mock-25', date: '2026-04-01', entry_datetime: '2026-04-01T07:30', exit_datetime: null, asset: 'ETH', direction: 'SHORT', leverage: 12, entry_price: 3450, exit_price: null, margin: 250, status: 'open', pnl: null, reason: '4시간봉 더블탑 패턴.', notes: null },
 ]
 
 const MOCK_DEPOSITS: Deposit[] = [
@@ -186,6 +147,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
 
     set((state) => ({ trades: [...state.trades, newTrade] }))
+    invalidateAnalysisCache()
     return { success: true }
   },
 
@@ -201,12 +163,14 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         return updated as Trade
       }),
     }))
+    invalidateAnalysisCache()
     return { success: true }
   },
 
   // ── 거래 삭제 ──
   deleteTrade: (id: string) => {
     set((state) => ({ trades: state.trades.filter((t) => t.id !== id) }))
+    invalidateAnalysisCache()
   },
 
   // ── 오픈 포지션 청산 ──
@@ -228,6 +192,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         return updated
       }),
     }))
+    invalidateAnalysisCache()
     return { success: true }
   },
 
@@ -240,11 +205,13 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       memo: memo || null,
     }
     set((state) => ({ deposits: [...state.deposits, newDeposit] }))
+    invalidateAnalysisCache()
   },
 
   // ── 입금 삭제 ──
   deleteDeposit: (id: string) => {
     set((state) => ({ deposits: state.deposits.filter((d) => d.id !== id) }))
+    invalidateAnalysisCache()
   },
 
   // ── 목표 추가 (stale closure 문제 해결: get()으로 현재 상태 참조) ──

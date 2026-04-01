@@ -57,6 +57,22 @@ const config: Config = {
           'red-fill': 'var(--chart-red-fill)',
           'blue-fill': 'var(--chart-blue-fill)',
         },
+        // 등급 색상
+        grade: {
+          great:       'var(--grade-great)',
+          'great-bg':  'var(--grade-great-bg)',
+          good:        'var(--grade-good)',
+          'good-bg':   'var(--grade-good-bg)',
+          average:     'var(--grade-average)',
+          'average-bg':'var(--grade-average-bg)',
+          watch:       'var(--grade-watch)',
+          'watch-bg':  'var(--grade-watch-bg)',
+        },
+        radar: {
+          fill:   'var(--radar-fill)',
+          stroke: 'var(--radar-stroke)',
+          grid:   'var(--radar-grid)',
+        },
       },
       fontFamily: {
         sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],

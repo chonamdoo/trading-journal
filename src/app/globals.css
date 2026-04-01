@@ -41,6 +41,26 @@
     --chart-green-fill: rgba(24,121,78,0.08);
     --chart-red-fill:   rgba(198,42,42,0.08);
     --chart-blue-fill:  rgba(28,110,243,0.06);
+
+    /* 등급 색상 */
+    --grade-great:     #18794e;
+    --grade-great-bg:  #e9f6ef;
+    --grade-good:      #1c6ef3;
+    --grade-good-bg:   #e8f0fe;
+    --grade-average:   #9a5b00;
+    --grade-average-bg: #fef3e2;
+    --grade-watch:     #c62a2a;
+    --grade-watch-bg:  #fbeaea;
+
+    /* 레이더 차트 */
+    --radar-fill:      rgba(28, 110, 243, 0.25);
+    --radar-stroke:    #1c6ef3;
+    --radar-grid:      rgba(0, 0, 0, 0.08);
+
+    /* 스코어 바 그라데이션 */
+    --score-low:       #c62a2a;
+    --score-mid:       #fbbf24;
+    --score-high:      #18794e;
   }
 
   .dark {
@@ -51,8 +71,8 @@
     --surface3: #2c2c29;
 
     --border:   rgba(255,255,255,0.07);
-    --border2:  rgba(255,255,255,0.12);
-    --border3:  rgba(255,255,255,0.20);
+    --border2:  rgba(255,255,255,0.15);
+    --border3:  rgba(255,255,255,0.30);
 
     --text:     #f0f0ee;
     --text2:    #a0a09c;
@@ -76,6 +96,23 @@
     --chart-green-fill: rgba(74,222,128,0.12);
     --chart-red-fill:   rgba(248,113,113,0.12);
     --chart-blue-fill:  rgba(96,165,250,0.10);
+
+    --grade-great:     #4ade80;
+    --grade-great-bg:  rgba(74, 222, 128, 0.12);
+    --grade-good:      #60a5fa;
+    --grade-good-bg:   rgba(96, 165, 250, 0.12);
+    --grade-average:   #fbbf24;
+    --grade-average-bg: rgba(251, 191, 36, 0.12);
+    --grade-watch:     #f87171;
+    --grade-watch-bg:  rgba(248, 113, 113, 0.12);
+
+    --radar-fill:      rgba(139, 92, 246, 0.3);
+    --radar-stroke:    #a78bfa;
+    --radar-grid:      rgba(255, 255, 255, 0.08);
+
+    --score-low:       #f87171;
+    --score-mid:       #fbbf24;
+    --score-high:      #4ade80;
   }
 
   /* 기본 스타일 리셋 */
@@ -130,4 +167,48 @@
 }
 .animate-pulse-dot {
   animation: pulse-dot 1s infinite;
+}
+
+/* 글래스모피즘 카드 */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.dark .glass-card {
+  background: rgba(28, 28, 26, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* 슬라이드 전환 애니메이션 */
+.slide-enter {
+  opacity: 0;
+  transform: translateX(24px);
+}
+.slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+.slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-exit-active {
+  opacity: 0;
+  transform: translateX(-24px);
+  transition: opacity 200ms ease-in, transform 200ms ease-in;
+}
+
+/* 등급 배지 팝 애니메이션 */
+@keyframes badge-pop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.badge-animate {
+  animation: badge-pop 300ms ease-out;
 }

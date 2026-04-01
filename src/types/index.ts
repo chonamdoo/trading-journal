@@ -187,6 +187,103 @@ export interface LegacyTarget {
   amount: number
 }
 
+// ── Trading Score 관련 ──
+
+/** 등급 (4단계 통일: 리뷰 필수-01 반영) */
+export type ScoreGrade = 'GREAT' | 'GOOD' | 'AVERAGE' | 'WATCH_OUT'
+
+/** 개별 메트릭 점수 */
+export interface MetricScore {
+  /** 메트릭 식별 키 */
+  key: 'winRate' | 'profitFactor' | 'avgWinLoss' | 'maxDrawdown' | 'recoveryFactor' | 'consistency'
+  /** 표시용 메트릭 이름 */
+  name: string
+  /** 원시값 (%, 배수 등) */
+  rawValue: number
+  /** 정규화 점수 0~100 */
+  normalizedScore: number
+  /** 등급 */
+  grade: ScoreGrade
+  /** 가중치 */
+  weight: number
+}
+
+/** 종합 트레이딩 스코어 결과 */
+export interface TradingScoreResult {
+  /** 6개 메트릭 점수 */
+  metrics: MetricScore[]
+  /** 종합 스코어 0~100 */
+  totalScore: number
+  /** 종합 등급 */
+  grade: ScoreGrade
+}
+
+// ── 요일별 성과 분석 ──
+
+/** 요일별 통계 */
+export interface DayOfWeekStats {
+  /** 요일 인덱스 0(일)~6(토) */
+  dayIndex: number
+  /** 요일 이름 */
+  dayName: string
+  /** P&L 합계 */
+  pnl: number
+  /** 총 거래 수 */
+  trades: number
+  /** 익절 건수 */
+  wins: number
+  /** 손절 건수 (pnl <= 0) */
+  losses: number
+  /** 승률 (%) */
+  winRate: number
+}
+
+/** 시간대별 통계 */
+export interface HourlyStats {
+  /** 시간 0~23 */
+  hour: number
+  /** P&L 합계 */
+  pnl: number
+  /** 총 거래 수 */
+  trades: number
+  /** 익절 건수 */
+  wins: number
+  /** 손절 건수 */
+  losses: number
+}
+
+/** 월간 캘린더 날짜별 데이터 */
+export interface MonthlyCalendarDay {
+  /** 날짜 YYYY-MM-DD */
+  date: string
+  /** 해당 일 P&L 합계 */
+  pnl: number
+  /** 해당 일 거래 수 */
+  trades: number
+  /** 해당 일 승률 (%) */
+  winRate: number
+}
+
+/** 연속 승/패 결과 */
+export interface StreakResult {
+  /** 최대 연속 익절 */
+  maxWins: number
+  /** 최대 연속 손절 */
+  maxLosses: number
+  /** 현재 연속 상태 */
+  current: { type: 'win' | 'loss'; count: number }
+}
+
+/** 종목별 P&L 집계 (확장) */
+export interface AssetPnlStats {
+  asset: string
+  pnl: number
+  trades: number
+  wins: number
+  losses: number
+  winRate: number
+}
+
 // ── 토스트 알림 ──
 
 export type ToastType = 'success' | 'error' | 'info'
