@@ -70,6 +70,15 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // OAuth 콜백 코드가 /login으로 잘못 도착한 경우 → /auth/callback으로 리다이렉트
+  if (pathname === '/login' && request.nextUrl.searchParams.has('code')) {
+    const url = request.nextUrl.clone();
+    const code = url.searchParams.get('code')!;
+    url.pathname = '/auth/callback';
+    url.search = `?code=${encodeURIComponent(code)}`;
+    return NextResponse.redirect(url);
+  }
+
   // 공개 경로는 인증 없이 접근 허용
   const isPublicRoute = PUBLIC_ROUTES.some((route) =>
     pathname.startsWith(route)
