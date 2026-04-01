@@ -71,6 +71,7 @@ export default function EditTradePage() {
         exit_datetime: trade.exit_datetime ?? undefined,
         reason: trade.reason ?? undefined,
         notes: trade.notes ?? undefined,
+        tags: trade.tags ?? undefined,
       }}
     />
   )

@@ -247,8 +247,8 @@ export function TradeForm({
       exit_price: hasExit ? extNum : null,
       entry_datetime: entryDatetime,
       exit_datetime: hasExit ? exitDatetime : null,
-      reason: reason.trim() || undefined,
-      notes: notes.trim() || undefined,
+      reason: reason.trim() || null,
+      notes: notes.trim() || null,
     }
 
     setSaving(true)

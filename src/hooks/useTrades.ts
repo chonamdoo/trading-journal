@@ -663,7 +663,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         tradeCloses: { ...state.tradeCloses, [tradeId]: closes },
       }))
       return closes
-    } catch {
+    } catch (err) {
+      console.error('분할 청산 기록 로드 실패:', err)
       return []
     }
   },
@@ -811,7 +812,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         screenshots: { ...state.screenshots, [tradeId]: screenshots },
       }))
       return screenshots
-    } catch {
+    } catch (err) {
+      console.error('스크린샷 로드 실패:', err)
       return []
     }
   },

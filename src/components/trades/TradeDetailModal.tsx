@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { Trade, TradeClose, TradeScreenshot } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -43,11 +43,16 @@ export function TradeDetailModal({
   onLoadScreenshots,
   onLoadTradeCloses,
 }: TradeDetailModalProps) {
+  const [loading, setLoading] = useState(false)
+
   // 모달 열릴 때 스크린샷 + 분할 청산 기록 로드
   useEffect(() => {
     if (open && trade) {
-      onLoadScreenshots?.(trade.id)
-      onLoadTradeCloses?.(trade.id)
+      setLoading(true)
+      Promise.all([
+        onLoadScreenshots?.(trade.id),
+        onLoadTradeCloses?.(trade.id),
+      ]).finally(() => setLoading(false))
     }
   }, [open, trade?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -203,6 +208,12 @@ export function TradeDetailModal({
           </div>
         </div>
 
+        {loading && (
+          <div className="text-center py-4 text-content-muted text-[13px]">
+            데이터 로딩 중...
+          </div>
+        )}
+
         {/* 분할 청산 기록 */}
         {tradeCloses.length > 0 && (
           <div className="mb-sp-6">
@@ -258,6 +269,7 @@ export function TradeDetailModal({
                     src={ss.url}
                     alt={ss.file_name}
                     className="w-full max-w-[240px] rounded-input border border-border object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                   />
                 </a>
               ))}
