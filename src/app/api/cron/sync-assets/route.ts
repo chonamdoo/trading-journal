@@ -20,6 +20,9 @@ interface BinanceExchangeInfo {
   symbols: BinanceSymbol[];
 }
 
+// Binance Futures API는 미국 IP 차단 → 싱가포르 리전에서 실행
+export const preferredRegion = 'sin1';
+
 export async function GET(request: Request) {
   // Vercel Cron 인증 확인
   const authHeader = request.headers.get('authorization');
@@ -30,31 +33,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Binance Futures exchangeInfo 조회
-    // fapi.binance.com은 미국 IP 차단 → api.binance.com 우선 시도
-    const urls = [
-      'https://api.binance.com/fapi/v1/exchangeInfo',
-      'https://fapi.binance.com/fapi/v1/exchangeInfo',
-    ];
+    // Binance Futures exchangeInfo 조회 (sin1 리전에서 실행)
+    const res = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo', {
+      cache: 'no-store',
+    });
 
-    let res: Response | null = null;
-    let lastError = '';
-
-    for (const url of urls) {
-      try {
-        res = await fetch(url, { cache: 'no-store' });
-        if (res.ok) break;
-        lastError = `${url} → ${res.status}`;
-        res = null;
-      } catch (e) {
-        lastError = `${url} → ${e instanceof Error ? e.message : 'fetch failed'}`;
-        res = null;
-      }
-    }
-
-    if (!res || !res.ok) {
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
       return NextResponse.json(
-        { error: `Binance API unavailable: ${lastError}` },
+        { error: `Binance API error: ${res.status}`, detail: body.slice(0, 200) },
         { status: 502 },
       );
     }
