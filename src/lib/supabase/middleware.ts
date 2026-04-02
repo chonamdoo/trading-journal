@@ -25,7 +25,10 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /** 인증 없이 접근 가능한 경로 */
-const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/auth/callback'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/auth/callback', '/promo'];
+
+/** 로그인 상태에서 대시보드로 리다이렉트할 인증 전용 경로 */
+const AUTH_ONLY_ROUTES = ['/login', '/signup', '/reset-password'];
 
 /**
  * Supabase 세션을 갱신하고 인증 상태에 따라 리다이렉트를 처리한다.
@@ -93,7 +96,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicRoute) {
+  const isAuthOnlyRoute = AUTH_ONLY_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (user && isAuthOnlyRoute) {
     // 이미 인증된 사용자가 로그인/가입 페이지에 접근 → 대시보드로 리다이렉트
     const url = request.nextUrl.clone();
     url.pathname = '/';
