@@ -111,6 +111,27 @@ export interface Database {
           }
         ];
       };
+      trade_scale_ins: {
+        Row: TradeScaleInRow;
+        Insert: TradeScaleInInsert;
+        Update: TradeScaleInUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'trade_scale_ins_trade_id_fkey';
+            columns: ['trade_id'];
+            isOneToOne: false;
+            referencedRelation: 'trades';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trade_scale_ins_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       custom_assets: {
         Row: CustomAssetRow;
         Insert: CustomAssetInsert;
@@ -331,6 +352,7 @@ export interface TradeCloseRow {
   exit_price: number;
   exit_datetime: string;
   quantity_pct: number;
+  close_margin: number | null;
   pnl: number;
   created_at: string;
 }
@@ -342,6 +364,7 @@ export interface TradeCloseInsert {
   exit_price: number;
   exit_datetime: string;
   quantity_pct: number;
+  close_margin?: number | null;
   pnl: number;
 }
 
@@ -349,7 +372,46 @@ export interface TradeCloseUpdate {
   exit_price?: number;
   exit_datetime?: string;
   quantity_pct?: number;
+  close_margin?: number | null;
   pnl?: number;
+}
+
+// ────────────────────────────────────────────
+// trade_scale_ins 테이블 (물타기/불타기)
+// ────────────────────────────────────────────
+
+/** 추가진입 타입 */
+export type ScaleInTypeDb = 'scale_in_down' | 'scale_in_up';
+
+export interface TradeScaleInRow {
+  id: string;
+  trade_id: string;
+  user_id: string;
+  entry_price: number;
+  margin: number;
+  entry_datetime: string;
+  type: ScaleInTypeDb;
+  note: string | null;
+  created_at: string;
+}
+
+export interface TradeScaleInInsert {
+  id?: string;
+  trade_id: string;
+  user_id: string;
+  entry_price: number;
+  margin: number;
+  entry_datetime: string;
+  type: ScaleInTypeDb;
+  note?: string | null;
+}
+
+export interface TradeScaleInUpdate {
+  entry_price?: number;
+  margin?: number;
+  entry_datetime?: string;
+  type?: ScaleInTypeDb;
+  note?: string | null;
 }
 
 // ────────────────────────────────────────────

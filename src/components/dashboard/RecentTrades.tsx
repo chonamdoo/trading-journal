@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { Trade, TradeClose, TradeScreenshot } from '@/types'
+import type { Trade, TradeClose, TradeScaleIn, TradeScreenshot } from '@/types'
 import { DirectionBadge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,9 +12,11 @@ import { formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
 interface RecentTradesProps {
   trades: Trade[]
   tradeCloses?: Record<string, TradeClose[]>
+  tradeScaleIns?: Record<string, TradeScaleIn[]>
   screenshots?: Record<string, TradeScreenshot[]>
   onLoadScreenshots?: (tradeId: string) => Promise<TradeScreenshot[]>
   onLoadTradeCloses?: (tradeId: string) => Promise<TradeClose[]>
+  onLoadTradeScaleIns?: (tradeId: string) => Promise<TradeScaleIn[]>
 }
 
 /**
@@ -24,9 +26,11 @@ interface RecentTradesProps {
 export function RecentTrades({
   trades,
   tradeCloses = {},
+  tradeScaleIns = {},
   screenshots = {},
   onLoadScreenshots,
   onLoadTradeCloses,
+  onLoadTradeScaleIns,
 }: RecentTradesProps) {
   const [detailTrade, setDetailTrade] = useState<Trade | null>(null)
   const closedTrades = trades
@@ -104,9 +108,11 @@ export function RecentTrades({
       open={!!detailTrade}
       onClose={() => setDetailTrade(null)}
       tradeCloses={detailTrade ? tradeCloses[detailTrade.id] || [] : []}
+      tradeScaleIns={detailTrade ? tradeScaleIns[detailTrade.id] || [] : []}
       screenshots={detailTrade ? screenshots[detailTrade.id] || [] : []}
       onLoadScreenshots={onLoadScreenshots ? (id) => onLoadScreenshots(id) : undefined}
       onLoadTradeCloses={onLoadTradeCloses ? (id) => onLoadTradeCloses(id) : undefined}
+      onLoadTradeScaleIns={onLoadTradeScaleIns ? (id) => onLoadTradeScaleIns(id) : undefined}
     />
     </>
   )

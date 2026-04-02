@@ -3,8 +3,125 @@ import type {
   ScoreGrade, MetricScore, TradingScoreResult,
   DayOfWeekStats, HourlyStats, MonthlyCalendarDay,
   StreakResult, AssetPnlStats,
+  TradeScaleIn, TradeClose,
 } from '@/types'
 import { today } from './format'
+
+// ══════════════════════════════════════════════
+// 포지션 관리 계산 (물타기/불타기 + 분할 청산)
+// ══════════════════════════════════════════════
+
+/** 부동소수점 오차 허용치 (USDT) */
+const MARGIN_TOLERANCE = 0.01
+
+/**
+ * 가중평균 진입가(WAP)를 계산한다.
+ * WAP = (최초증거금 × 최초진입가 + Σ(추가증거금 × 추가진입가)) / 총증거금
+ *
+ * 분할 청산이 중간에 발생해도 WAP는 변하지 않는다 (거래소 실제 동작과 일치).
+ * 새 추가진입(scale-in) 시에만 WAP가 업데이트된다.
+ */
+export function calcWeightedAvgPrice(
+  initialMargin: number,
+  initialPrice: number,
+  scaleIns: Pick<TradeScaleIn, 'margin' | 'entry_price'>[],
+): number {
+  const totalMargin = initialMargin + scaleIns.reduce((s, si) => s + si.margin, 0)
+  if (totalMargin <= 0) return initialPrice
+  const weightedSum =
+    initialMargin * initialPrice +
+    scaleIns.reduce((s, si) => s + si.margin * si.entry_price, 0)
+  return weightedSum / totalMargin
+}
+
+/**
+ * 총 증거금 = 최초 증거금 + 추가진입 증거금 합계
+ */
+export function calcTotalMargin(
+  initialMargin: number,
+  scaleIns: Pick<TradeScaleIn, 'margin'>[],
+): number {
+  return initialMargin + scaleIns.reduce((s, si) => s + si.margin, 0)
+}
+
+/**
+ * 청산된 총 증거금 = Σ(close_margin)
+ * close_margin이 없는 레거시 데이터는 quantity_pct 기반 역산 (추가진입 없는 경우만 정확)
+ */
+export function calcClosedMargin(
+  closes: Pick<TradeClose, 'close_margin' | 'quantity_pct'>[],
+  totalMargin: number,
+): number {
+  return closes.reduce((s, c) => {
+    if (c.close_margin != null) return s + c.close_margin
+    return s + (totalMargin * c.quantity_pct / 100)
+  }, 0)
+}
+
+/**
+ * 잔여 증거금 = 총 증거금 - 청산된 증거금
+ */
+export function calcRemainingMargin(
+  initialMargin: number,
+  scaleIns: Pick<TradeScaleIn, 'margin'>[],
+  closes: Pick<TradeClose, 'close_margin' | 'quantity_pct'>[],
+): number {
+  const total = calcTotalMargin(initialMargin, scaleIns)
+  const closed = calcClosedMargin(closes, total)
+  return Math.max(0, total - closed)
+}
+
+/**
+ * 잔여 비율 (0~1)
+ */
+export function calcRemainingPct(
+  initialMargin: number,
+  scaleIns: Pick<TradeScaleIn, 'margin'>[],
+  closes: Pick<TradeClose, 'close_margin' | 'quantity_pct'>[],
+): number {
+  const total = calcTotalMargin(initialMargin, scaleIns)
+  if (total <= 0) return 0
+  return Math.max(0, calcRemainingMargin(initialMargin, scaleIns, closes) / total)
+}
+
+/**
+ * 분할 청산 시 PnL을 계산한다 (WAP 기반).
+ * PnL = closeMargin × leverage × ((exitPrice - WAP) / WAP) × directionMultiplier
+ */
+export function calcClosePnl(
+  closeMargin: number,
+  leverage: number,
+  direction: 'LONG' | 'SHORT',
+  exitPrice: number,
+  wap: number,
+): number {
+  if (wap <= 0) return 0
+  const positionValue = closeMargin * leverage
+  const ratio =
+    direction === 'LONG'
+      ? (exitPrice - wap) / wap
+      : (wap - exitPrice) / wap
+  return +(positionValue * ratio).toFixed(2)
+}
+
+/**
+ * 포지션이 전량 청산 상태인지 판정한다.
+ * 잔여 증거금이 MARGIN_TOLERANCE 이하이면 전량 청산.
+ */
+export function isFullyClosed(
+  initialMargin: number,
+  scaleIns: Pick<TradeScaleIn, 'margin'>[],
+  closes: Pick<TradeClose, 'close_margin' | 'quantity_pct'>[],
+): boolean {
+  return calcRemainingMargin(initialMargin, scaleIns, closes) <= MARGIN_TOLERANCE
+}
+
+/**
+ * 확정 수익 합계 (분할 청산 PnL의 합)
+ */
+export function calcRealizedPnl(closes: Pick<TradeClose, 'pnl'>[]): number {
+  return closes.reduce((s, c) => s + c.pnl, 0)
+}
 
 // ── 개별 거래 P&L 계산 ──
 

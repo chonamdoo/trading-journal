@@ -1,8 +1,8 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, TradeClose } from '@/types'
-import { calcPnL } from '@/lib/calc'
+import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, TradeClose, TradeScaleIn, ScaleInType } from '@/types'
+import { calcPnL, calcWeightedAvgPrice, calcRemainingMargin, calcClosePnl } from '@/lib/calc'
 import { invalidateCacheByPrefix } from '@/lib/cache'
 import { dtLocalToDate } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
@@ -38,6 +38,12 @@ import {
   addTradeClose as apiAddTradeClose,
   deleteTradeClose as apiDeleteTradeClose,
 } from '@/lib/api/tradeCloses'
+import {
+  getTradeScaleIns as apiGetTradeScaleIns,
+  getTradeScaleInsByTradeIds as apiGetTradeScaleInsByTradeIds,
+  addTradeScaleIn as apiAddTradeScaleIn,
+  deleteTradeScaleIn as apiDeleteTradeScaleIn,
+} from '@/lib/api/tradeScaleIns'
 import {
   uploadScreenshot as apiUploadScreenshot,
   getScreenshots as apiGetScreenshots,
@@ -169,6 +175,19 @@ interface TradeStore {
   loadTradeCloses: (tradeId: string) => Promise<TradeClose[]>
   loadAllTradeCloses: () => Promise<void>
   deleteTradeClose: (tradeId: string, closeId: string) => Promise<{ success: boolean; error?: string }>
+  // 추가진입 (물타기/불타기)
+  tradeScaleIns: Record<string, TradeScaleIn[]>
+  addScaleIn: (params: {
+    tradeId: string
+    entryPrice: number
+    margin: number
+    entryDatetime: string
+    type: ScaleInType
+    note?: string
+  }) => Promise<{ success: boolean; error?: string }>
+  deleteScaleIn: (tradeId: string, scaleInId: string) => Promise<{ success: boolean; error?: string }>
+  loadTradeScaleIns: (tradeId: string) => Promise<TradeScaleIn[]>
+  loadAllTradeScaleIns: () => Promise<void>
   // 스크린샷
   screenshots: Record<string, TradeScreenshot[]>
   uploadScreenshots: (tradeId: string, files: File[]) => Promise<{ success: boolean; error?: string }>
@@ -199,6 +218,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   error: null,
   isLoaded: false,
   tradeCloses: {},
+  tradeScaleIns: {},
   screenshots: {},
 
   // ── Supabase에서 전체 데이터 로드 ──
@@ -404,10 +424,12 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       set((state) => {
         const { [id]: _ss, ...restScreenshots } = state.screenshots
         const { [id]: _tc, ...restCloses } = state.tradeCloses
+        const { [id]: _si, ...restScaleIns } = state.tradeScaleIns
         return {
           trades: state.trades.filter((t) => t.id !== id),
           screenshots: restScreenshots,
           tradeCloses: restCloses,
+          tradeScaleIns: restScaleIns,
         }
       })
       invalidateAnalysisCache()
@@ -560,6 +582,151 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
   },
 
+  // ── 추가진입 (물타기/불타기) 추가 ──
+  addScaleIn: async (params) => {
+    try {
+      const supabase = getSupabase()
+      const userId = await getCurrentUserId()
+      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
+
+      if (params.entryPrice <= 0) return { success: false, error: '진입 가격은 0보다 커야 합니다.' }
+      if (params.margin <= 0) return { success: false, error: '증거금은 0보다 커야 합니다.' }
+
+      const trade = get().trades.find((t) => t.id === params.tradeId)
+      if (!trade) return { success: false, error: '거래를 찾을 수 없습니다.' }
+      if (trade.status !== 'open') return { success: false, error: '이미 청산된 포지션입니다.' }
+
+      const res = await apiAddTradeScaleIn(supabase, {
+        tradeId: params.tradeId,
+        userId,
+        entryPrice: params.entryPrice,
+        margin: params.margin,
+        entryDatetime: params.entryDatetime,
+        type: params.type,
+        note: params.note ?? null,
+      })
+
+      if (!res.success) {
+        showToast('error', res.error)
+        return { success: false, error: res.error }
+      }
+
+      const newScaleIn: TradeScaleIn = {
+        id: res.data.id,
+        trade_id: res.data.trade_id,
+        user_id: res.data.user_id,
+        entry_price: res.data.entry_price,
+        margin: res.data.margin,
+        entry_datetime: res.data.entry_datetime,
+        type: res.data.type,
+        note: res.data.note,
+        created_at: res.data.created_at,
+      }
+
+      set((state) => ({
+        tradeScaleIns: {
+          ...state.tradeScaleIns,
+          [params.tradeId]: [...(state.tradeScaleIns[params.tradeId] || []), newScaleIn],
+        },
+      }))
+
+      const label = params.type === 'scale_in_down' ? '물타기' : '불타기'
+      showToast('success', `${label} 완료: $${params.margin} @ $${params.entryPrice}`)
+      return { success: true }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '추가진입 중 오류 발생'
+      showToast('error', msg)
+      return { success: false, error: msg }
+    }
+  },
+
+  // ── 추가진입 삭제 ──
+  deleteScaleIn: async (tradeId: string, scaleInId: string) => {
+    try {
+      const supabase = getSupabase()
+      const res = await apiDeleteTradeScaleIn(supabase, scaleInId, tradeId)
+      if (!res.success) {
+        showToast('error', res.error)
+        return { success: false, error: res.error }
+      }
+      set((state) => ({
+        tradeScaleIns: {
+          ...state.tradeScaleIns,
+          [tradeId]: (state.tradeScaleIns[tradeId] || []).filter((s) => s.id !== scaleInId),
+        },
+      }))
+      showToast('success', '추가진입 기록이 삭제되었습니다.')
+      return { success: true }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '추가진입 삭제 중 오류 발생'
+      showToast('error', msg)
+      return { success: false, error: msg }
+    }
+  },
+
+  // ── 특정 거래의 추가진입 기록 로드 ──
+  loadTradeScaleIns: async (tradeId: string) => {
+    try {
+      const supabase = getSupabase()
+      const res = await apiGetTradeScaleIns(supabase, tradeId)
+      if (!res.success) return []
+
+      const scaleIns: TradeScaleIn[] = res.data.map((r) => ({
+        id: r.id,
+        trade_id: r.trade_id,
+        user_id: r.user_id,
+        entry_price: r.entry_price,
+        margin: r.margin,
+        entry_datetime: r.entry_datetime,
+        type: r.type,
+        note: r.note,
+        created_at: r.created_at,
+      }))
+
+      set((state) => ({
+        tradeScaleIns: { ...state.tradeScaleIns, [tradeId]: scaleIns },
+      }))
+      return scaleIns
+    } catch (err) {
+      console.error('추가진입 기록 로드 실패:', err)
+      return []
+    }
+  },
+
+  // ── 모든 오픈 거래의 추가진입 기록 로드 ──
+  loadAllTradeScaleIns: async () => {
+    try {
+      const supabase = getSupabase()
+      const openTradeIds = get().trades
+        .filter((t) => t.status === 'open')
+        .map((t) => t.id)
+      if (openTradeIds.length === 0) return
+
+      const res = await apiGetTradeScaleInsByTradeIds(supabase, openTradeIds)
+      if (!res.success) return
+
+      const grouped: Record<string, TradeScaleIn[]> = {}
+      for (const r of res.data) {
+        const si: TradeScaleIn = {
+          id: r.id,
+          trade_id: r.trade_id,
+          user_id: r.user_id,
+          entry_price: r.entry_price,
+          margin: r.margin,
+          entry_datetime: r.entry_datetime,
+          type: r.type,
+          note: r.note,
+          created_at: r.created_at,
+        }
+        if (!grouped[r.trade_id]) grouped[r.trade_id] = []
+        grouped[r.trade_id].push(si)
+      }
+      set((state) => ({ tradeScaleIns: { ...state.tradeScaleIns, ...grouped } }))
+    } catch {
+      // 무시
+    }
+  },
+
   // ── 분할 청산 추가 ──
   addTradeClose: async (params) => {
     try {
@@ -575,9 +742,13 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       if (!trade) return { success: false, error: '거래를 찾을 수 없습니다.' }
       if (trade.status !== 'open') return { success: false, error: '이미 청산된 거래입니다.' }
 
-      const dirMultiplier = trade.direction === 'LONG' ? 1 : -1
-      const ratio = (params.exitPrice - trade.entry_price) / trade.entry_price * dirMultiplier
-      const pnl = Math.round(trade.margin * trade.leverage * ratio * (params.quantityPct / 100) * 100) / 100
+      // WAP 기반 PnL 계산 (추가진입 고려)
+      const scaleIns = get().tradeScaleIns[params.tradeId] || []
+      const wap = calcWeightedAvgPrice(trade.margin, trade.entry_price, scaleIns)
+      const existingCloses = get().tradeCloses[params.tradeId] || []
+      const remaining = calcRemainingMargin(trade.margin, scaleIns, existingCloses)
+      const closeMargin = Math.round(remaining * (params.quantityPct / 100) * 100) / 100
+      const pnl = calcClosePnl(closeMargin, trade.leverage, trade.direction, params.exitPrice, wap)
 
       const res = await apiAddTradeClose(supabase, {
         tradeId: params.tradeId,
@@ -585,6 +756,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         exitPrice: params.exitPrice,
         exitDatetime: params.exitDatetime,
         quantityPct: params.quantityPct,
+        closeMargin,
         pnl,
       })
 
@@ -601,6 +773,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         exit_price: res.data.close.exit_price,
         exit_datetime: res.data.close.exit_datetime,
         quantity_pct: res.data.close.quantity_pct,
+        close_margin: res.data.close.close_margin ?? undefined,
         pnl: res.data.close.pnl,
         created_at: res.data.close.created_at,
       }
@@ -655,6 +828,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         exit_price: r.exit_price,
         exit_datetime: r.exit_datetime,
         quantity_pct: r.quantity_pct,
+        close_margin: r.close_margin ?? undefined,
         pnl: r.pnl,
         created_at: r.created_at,
       }))
@@ -690,6 +864,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
           exit_price: r.exit_price,
           exit_datetime: r.exit_datetime,
           quantity_pct: r.quantity_pct,
+          close_margin: r.close_margin ?? undefined,
           pnl: r.pnl,
           created_at: r.created_at,
         }

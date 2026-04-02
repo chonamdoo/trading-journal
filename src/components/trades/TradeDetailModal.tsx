@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Trade, TradeClose, TradeScreenshot } from '@/types'
+import type { Trade, TradeClose, TradeScaleIn, TradeScreenshot } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import {
@@ -22,10 +22,13 @@ interface TradeDetailModalProps {
   onDelete?: (id: string) => void
   /** 분할 청산 기록 */
   tradeCloses?: TradeClose[]
+  /** 추가진입 기록 */
+  tradeScaleIns?: TradeScaleIn[]
   /** 스크린샷 */
   screenshots?: TradeScreenshot[]
   onLoadScreenshots?: (tradeId: string) => void
   onLoadTradeCloses?: (tradeId: string) => void
+  onLoadTradeScaleIns?: (tradeId: string) => void
 }
 
 /**
@@ -39,9 +42,11 @@ export function TradeDetailModal({
   onEdit,
   onDelete,
   tradeCloses = [],
+  tradeScaleIns = [],
   screenshots = [],
   onLoadScreenshots,
   onLoadTradeCloses,
+  onLoadTradeScaleIns,
 }: TradeDetailModalProps) {
   const [loading, setLoading] = useState(false)
 
@@ -52,6 +57,7 @@ export function TradeDetailModal({
       Promise.all([
         onLoadScreenshots?.(trade.id),
         onLoadTradeCloses?.(trade.id),
+        onLoadTradeScaleIns?.(trade.id),
       ]).finally(() => setLoading(false))
     }
   }, [open, trade?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -211,6 +217,43 @@ export function TradeDetailModal({
         {loading && (
           <div className="text-center py-4 text-content-muted text-[13px]">
             데이터 로딩 중...
+          </div>
+        )}
+
+        {/* 추가진입 기록 */}
+        {tradeScaleIns.length > 0 && (
+          <div className="mb-sp-6">
+            <div className="h-px bg-border mb-sp-6" />
+            <div className="text-[11px] font-semibold text-content-muted uppercase tracking-[0.5px] mb-3">
+              추가진입 기록 ({tradeScaleIns.length}회)
+            </div>
+            <div className="space-y-2">
+              {tradeScaleIns.map((si, idx) => (
+                <div
+                  key={si.id}
+                  className="flex items-center justify-between bg-surface-hover rounded-input px-3 py-2 text-[12px]"
+                >
+                  <div className="flex items-center gap-sp-4">
+                    <span className="text-content-muted font-mono">#{idx + 1}</span>
+                    <span className={`text-[11px] font-medium ${si.type === 'scale_in_down' ? 'text-red-400' : 'text-green-400'}`}>
+                      {si.type === 'scale_in_down' ? '물타기' : '불타기'}
+                    </span>
+                    <span className="text-content-muted">@</span>
+                    <span className="font-mono">${formatPrice(si.entry_price)}</span>
+                  </div>
+                  <span className="font-mono font-semibold text-content-secondary">
+                    +${formatNumber(si.margin)}
+                  </span>
+                </div>
+              ))}
+              {/* 합계 */}
+              <div className="flex items-center justify-between px-3 pt-2 border-t border-border text-[12px]">
+                <span className="text-content-muted font-medium">추가 증거금 합계</span>
+                <span className="font-mono font-bold text-content-secondary">
+                  +${formatNumber(tradeScaleIns.reduce((s, si) => s + si.margin, 0))}
+                </span>
+              </div>
+            </div>
           </div>
         )}
 

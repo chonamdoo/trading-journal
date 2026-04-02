@@ -21,6 +21,7 @@ function normalizeCloseRow(row: Record<string, unknown>): TradeCloseRow {
     ...row,
     exit_price: Number(row.exit_price),
     quantity_pct: Number(row.quantity_pct),
+    close_margin: row.close_margin != null ? Number(row.close_margin) : null,
     pnl: Number(row.pnl),
   } as TradeCloseRow;
 }
@@ -88,6 +89,7 @@ export async function addTradeClose(
     exitPrice: number
     exitDatetime: string
     quantityPct: number
+    closeMargin?: number | null
     pnl: number
   },
 ): Promise<ApiResult<{ close: TradeCloseRow; isFullyClosed: boolean }>> {
@@ -114,16 +116,21 @@ export async function addTradeClose(
     }
 
     // 분할 청산 레코드 삽입
+    const insertData: Record<string, unknown> = {
+      trade_id: params.tradeId,
+      user_id: params.userId,
+      exit_price: params.exitPrice,
+      exit_datetime: params.exitDatetime,
+      quantity_pct: params.quantityPct,
+      pnl: params.pnl,
+    };
+    if (params.closeMargin != null) {
+      insertData.close_margin = params.closeMargin;
+    }
+
     const { data: closeRow, error: insertErr } = await supabase
       .from('trade_closes')
-      .insert({
-        trade_id: params.tradeId,
-        user_id: params.userId,
-        exit_price: params.exitPrice,
-        exit_datetime: params.exitDatetime,
-        quantity_pct: params.quantityPct,
-        pnl: params.pnl,
-      })
+      .insert(insertData)
       .select()
       .single();
 

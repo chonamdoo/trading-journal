@@ -292,8 +292,26 @@ export interface TradeClose {
   user_id?: string
   exit_price: number
   exit_datetime: string
-  quantity_pct: number  // 청산 비율 (1~100)
+  quantity_pct: number   // 청산 비율 (UI 표시용, 현재 총 포지션 대비 %)
+  close_margin?: number  // 청산 증거금 절대값 (정확한 계산 기준)
   pnl: number
+  created_at?: string
+}
+
+// ── 추가진입 (물타기/불타기) ──
+
+/** 추가진입 타입: 물타기(역방향) / 불타기(순방향) */
+export type ScaleInType = 'scale_in_down' | 'scale_in_up'
+
+export interface TradeScaleIn {
+  id: string
+  trade_id: string
+  user_id?: string
+  entry_price: number
+  margin: number
+  entry_datetime: string
+  type: ScaleInType       // scale_in_down=물타기, scale_in_up=불타기
+  note?: string | null
   created_at?: string
 }
 

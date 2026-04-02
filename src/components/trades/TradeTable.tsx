@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Trade, TradeFilter, TradeClose, TradeScreenshot } from '@/types'
+import type { Trade, TradeFilter, TradeClose, TradeScaleIn, TradeScreenshot } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -21,10 +21,13 @@ interface TradeTableProps {
   onEdit?: (id: string) => void
   /** 분할 청산 기록 */
   tradeCloses?: Record<string, TradeClose[]>
+  /** 추가진입 기록 */
+  tradeScaleIns?: Record<string, TradeScaleIn[]>
   /** 스크린샷 */
   screenshots?: Record<string, TradeScreenshot[]>
   onLoadScreenshots?: (tradeId: string) => Promise<TradeScreenshot[]>
   onLoadTradeCloses?: (tradeId: string) => Promise<TradeClose[]>
+  onLoadTradeScaleIns?: (tradeId: string) => Promise<TradeScaleIn[]>
 }
 
 /**
@@ -37,9 +40,11 @@ export function TradeTable({
   onDelete,
   onEdit,
   tradeCloses = {},
+  tradeScaleIns = {},
   screenshots = {},
   onLoadScreenshots,
   onLoadTradeCloses,
+  onLoadTradeScaleIns,
 }: TradeTableProps) {
   const [detailTrade, setDetailTrade] = useState<Trade | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -248,9 +253,11 @@ export function TradeTable({
           setDeleteId(id)
         }}
         tradeCloses={detailTrade ? tradeCloses[detailTrade.id] || [] : []}
+        tradeScaleIns={detailTrade ? tradeScaleIns[detailTrade.id] || [] : []}
         screenshots={detailTrade ? screenshots[detailTrade.id] || [] : []}
         onLoadScreenshots={onLoadScreenshots ? (id) => onLoadScreenshots(id) : undefined}
         onLoadTradeCloses={onLoadTradeCloses ? (id) => onLoadTradeCloses(id) : undefined}
+        onLoadTradeScaleIns={onLoadTradeScaleIns ? (id) => onLoadTradeScaleIns(id) : undefined}
       />
 
       {/* 삭제 확인 모달 */}

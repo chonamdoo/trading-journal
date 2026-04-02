@@ -20,6 +20,10 @@ export default function DashboardPage() {
   const tradeCloses = useTradeStore((s) => s.tradeCloses)
   const addTradeClose = useTradeStore((s) => s.addTradeClose)
   const loadAllTradeCloses = useTradeStore((s) => s.loadAllTradeCloses)
+  const tradeScaleIns = useTradeStore((s) => s.tradeScaleIns)
+  const addScaleIn = useTradeStore((s) => s.addScaleIn)
+  const loadAllTradeScaleIns = useTradeStore((s) => s.loadAllTradeScaleIns)
+  const loadTradeScaleIns = useTradeStore((s) => s.loadTradeScaleIns)
   const screenshots = useTradeStore((s) => s.screenshots)
   const loadScreenshots = useTradeStore((s) => s.loadScreenshots)
   const loadTradeCloses = useTradeStore((s) => s.loadTradeCloses)
@@ -49,18 +53,23 @@ export default function DashboardPage() {
       <OpenPositions
         trades={trades}
         tradeCloses={tradeCloses}
+        tradeScaleIns={tradeScaleIns}
         onClose={closeTrade}
         onPartialClose={addTradeClose}
+        onScaleIn={addScaleIn}
         onLoadTradeCloses={loadAllTradeCloses}
+        onLoadTradeScaleIns={loadAllTradeScaleIns}
       />
 
       {/* 최근 거래 */}
       <RecentTrades
         trades={trades}
         tradeCloses={tradeCloses}
+        tradeScaleIns={tradeScaleIns}
         screenshots={screenshots}
         onLoadScreenshots={loadScreenshots}
         onLoadTradeCloses={loadTradeCloses}
+        onLoadTradeScaleIns={loadTradeScaleIns}
       />
     </>
   )

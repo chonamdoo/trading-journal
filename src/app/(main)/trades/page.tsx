@@ -12,9 +12,11 @@ export default function TradesPage() {
   const router = useRouter()
   const { trades, deleteTrade } = useTrades()
   const tradeCloses = useTradeStore((s) => s.tradeCloses)
+  const tradeScaleIns = useTradeStore((s) => s.tradeScaleIns)
   const screenshots = useTradeStore((s) => s.screenshots)
   const loadScreenshots = useTradeStore((s) => s.loadScreenshots)
   const loadTradeCloses = useTradeStore((s) => s.loadTradeCloses)
+  const loadTradeScaleIns = useTradeStore((s) => s.loadTradeScaleIns)
 
   return (
     <TradeTable
@@ -22,9 +24,11 @@ export default function TradesPage() {
       onDelete={deleteTrade}
       onEdit={(id) => router.push(`/trades/${id}/edit`)}
       tradeCloses={tradeCloses}
+      tradeScaleIns={tradeScaleIns}
       screenshots={screenshots}
       onLoadScreenshots={loadScreenshots}
       onLoadTradeCloses={loadTradeCloses}
+      onLoadTradeScaleIns={loadTradeScaleIns}
     />
   )
 }
