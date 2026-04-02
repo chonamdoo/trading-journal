@@ -106,8 +106,121 @@ export default function PromoPage() {
         </div>
       </section>
 
-      {/* ── 핵심 기능 ── */}
+      {/* ── AI 리포트 쇼케이스 ── */}
+      <section className="bg-surface border-y border-border">
+        <div className="max-w-4xl mx-auto px-4 py-16">
+          <h2 className="text-center text-xl font-bold mb-2">
+            이런 분석을 매달 받아보세요
+          </h2>
+          <p className="text-center text-sm text-content-muted mb-10">
+            AI가 작성하는 월간 매매 진단 리포트
+          </p>
+
+          <div className="rounded-card border border-border bg-bg p-5 sm:p-6 relative overflow-hidden">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base font-bold text-content">2026년 4월 AI 리포트</span>
+            </div>
+            <div className="flex gap-4 mb-5 text-xs text-content-muted">
+              <span>거래 수: 4건</span>
+              <span>승률: 50%</span>
+              <span className="text-profit font-mono">+71.17 USDT</span>
+            </div>
+
+            <div className="flex flex-col gap-4 text-[13px] text-content-secondary leading-relaxed">
+              <div>
+                <p className="text-sm font-semibold text-content mb-2">🎯 전문가 총평</p>
+                <p>
+                  이번 달 당신의 거래는 운에 크게 의존했으며, 장기적인 생존 가능성이 매우 낮습니다.
+                  총 4건의 거래 중 2건은 명백한 뇌동매매로 기록되었고,
+                  현재의 거래 방식으로는 지속적인 수익 창출은 고사하고 파산 위험에 노출될 수 있습니다.
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-content mb-2">🧩 자산 적합성 분석</p>
+                <p>
+                  <strong className="text-content">BTC</strong>: 3건 거래, 33.3% 승률, 70.27 USDT 누적 손익.
+                  BTC 거래에서 명확한 약점을 보이고 있으며, 3건 중 2건은 0.00 PnL로 기록되어
+                  거래 실패 또는 기록 누락 가능성을 시사합니다.
+                </p>
+                <p className="mt-2">
+                  <strong className="text-content">ETH</strong>: 1건 거래, 100% 승률, 0.90 USDT 누적 손익.
+                  단 한 건의 데이터만으로는 판단하기 어렵습니다.
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-content mb-2">🧭 방향별 분석</p>
+                <p>
+                  <strong className="text-content">LONG</strong>: 4건 거래, 50% 승률, 71.17 USDT 누적 손익.
+                  당신의 거래는 현재 LONG 방향에만 집중되어 있습니다.
+                  <strong className="text-content"> SHORT 포지션에 대한 경험 부족 또는 회피가 명확합니다.</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* fade-out 그라디언트 */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-bg to-transparent" />
+            <div className="absolute bottom-4 left-0 right-0 text-center">
+              <span className="text-xs text-content-muted bg-bg/80 px-3 py-1 rounded-full border border-border">
+                매달 AI가 이런 심층 분석을 작성합니다
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 대시보드 & 매매 기록 쇼케이스 ── */}
       <section className="max-w-4xl mx-auto px-4 py-16">
+        <h2 className="text-center text-xl font-bold mb-2">
+          한눈에 보는 내 매매
+        </h2>
+        <p className="text-center text-sm text-content-muted mb-10">
+          오픈 포지션, 최근 거래, 자산 현황을 실시간으로
+        </p>
+
+        {/* 오픈 포지션 */}
+        <div className="rounded-card border border-border bg-surface p-5 mb-4">
+          <h3 className="text-xs text-content-muted uppercase tracking-wider font-medium mb-3">
+            진행중 포지션
+          </h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-loss/10 text-loss">
+                SHORT
+              </span>
+              <span className="text-base font-bold text-content">ETH</span>
+              <span className="text-xs text-content-muted">x8 · $527.50 증거금</span>
+            </div>
+            <div className="text-right">
+              <p className="font-mono text-sm font-semibold text-content">$2,110.00</p>
+              <p className="text-[11px] text-content-muted">진입가</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 최근 거래 */}
+        <div className="rounded-card border border-border bg-surface p-5 mb-4">
+          <h3 className="text-xs text-content-muted uppercase tracking-wider font-medium mb-3">
+            최근 거래
+          </h3>
+          <div className="flex flex-col divide-y divide-border">
+            <TradeRow asset="BTC" direction="LONG" leverage={10} date="2026-04-02" pnl={70.27} pct={13.1} />
+            <TradeRow asset="ETH" direction="LONG" leverage={8} date="2026-04-01" pnl={0.90} pct={0.1} />
+            <TradeRow asset="BTC" direction="LONG" leverage={10} date="2026-04-02" pnl={0} pct={0} />
+            <TradeRow asset="SOL" direction="SHORT" leverage={15} date="2026-03-29" pnl={3.75} pct={2.5} />
+          </div>
+        </div>
+
+        {/* KPI 요약 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <DemoKpi label="총 자산" value="2,784 USDT" accent />
+          <DemoKpi label="거래 손익" value="+71.17" color="profit" />
+          <DemoKpi label="승률" value="50.0%" />
+          <DemoKpi label="오픈 포지션" value="1개" />
+        </div>
+      </section>
+
+      {/* ── 핵심 기능 ── */}
+      <section className="max-w-4xl mx-auto px-4 pb-16">
         <h2 className="text-center text-xl font-bold mb-2">핵심 기능</h2>
         <p className="text-center text-sm text-content-muted mb-10">
           트레이딩 실력을 수치로 만들어 드립니다
@@ -408,6 +521,58 @@ function ScoreMetric({
       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${gradeColor} mt-1 inline-block`}>
         {grade}
       </span>
+    </div>
+  )
+}
+
+function TradeRow({
+  asset,
+  direction,
+  leverage,
+  date,
+  pnl,
+  pct,
+}: {
+  asset: string
+  direction: 'LONG' | 'SHORT'
+  leverage: number
+  date: string
+  pnl: number
+  pct: number
+}) {
+  const isLong = direction === 'LONG'
+  const isPnlPositive = pnl > 0
+
+  return (
+    <div className="flex items-center justify-between py-3">
+      <div className="flex items-center gap-3">
+        <span
+          className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
+            isLong ? 'bg-profit/10 text-profit' : 'bg-loss/10 text-loss'
+          }`}
+        >
+          {direction}
+        </span>
+        <span className="text-sm font-bold text-content">{asset}</span>
+        <span className="text-xs text-content-muted">x{leverage}</span>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className="text-xs text-content-muted">{date}</span>
+        <span
+          className={`font-mono text-sm font-semibold ${
+            isPnlPositive ? 'text-profit' : pnl === 0 ? 'text-content-muted' : 'text-loss'
+          }`}
+        >
+          {isPnlPositive ? '+' : ''}{pnl.toFixed(2)}
+        </span>
+        <span
+          className={`text-xs ${
+            isPnlPositive ? 'text-profit' : pnl === 0 ? 'text-content-muted' : 'text-loss'
+          }`}
+        >
+          {isPnlPositive ? '+' : ''}{pct.toFixed(1)}%
+        </span>
+      </div>
     </div>
   )
 }
