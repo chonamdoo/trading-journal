@@ -67,7 +67,8 @@ export function TradeForm({
     initialData?.direction ?? 'LONG'
   )
   const [asset, setAsset] = useState(initialData?.asset ?? 'BTC')
-  const [leverage, setLeverage] = useState(initialData?.leverage ?? 10)
+  const [leverageStr, setLeverageStr] = useState(String(initialData?.leverage ?? 10))
+  const leverage = leverageStr === '' ? 0 : parseInt(leverageStr)
   const [inputMode, setInputMode] = useState<'margin' | 'quantity'>('margin')
   const [margin, setMargin] = useState(initialData?.margin?.toString() ?? '')
   const [quantity, setQuantity] = useState('')
@@ -200,7 +201,7 @@ export function TradeForm({
   const resetForm = useCallback(() => {
     setDirection('LONG')
     setAsset(allAssetsProp[0] || 'BTC')
-    setLeverage(10)
+    setLeverageStr('10')
     setInputMode('margin')
     setMargin('')
     setQuantity('')
@@ -227,6 +228,10 @@ export function TradeForm({
     }
     if (!hasEntry || !hasMargin) {
       showToast('error', '진입 가격과 증거금을 입력해주세요.')
+      return
+    }
+    if (!leverage || leverage < 1 || leverage > 125) {
+      showToast('error', '레버리지를 입력해주세요. (1~125)')
       return
     }
 
@@ -338,13 +343,16 @@ export function TradeForm({
             <input
               type="text"
               inputMode="numeric"
-              value={leverage}
+              value={leverageStr}
               onChange={(e) => {
                 const raw = e.target.value.replace(/\D/g, '')
-                if (raw === '') { setLeverage(1); return }
+                if (raw === '') { setLeverageStr(''); return }
                 const v = parseInt(raw)
-                if (v >= 1 && v <= 125) setLeverage(v)
-                else if (v > 125) setLeverage(125)
+                if (v > 125) setLeverageStr('125')
+                else setLeverageStr(String(v))
+              }}
+              onBlur={() => {
+                if (leverageStr === '' || parseInt(leverageStr) < 1) setLeverageStr('10')
               }}
               onFocus={(e) => e.target.select()}
               className="w-[64px] px-2 py-1.5 rounded-input border border-border-input bg-surface text-[13px] font-mono font-bold text-center focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
@@ -355,8 +363,8 @@ export function TradeForm({
             min={1}
             max={125}
             step={1}
-            value={leverage}
-            onChange={(e) => setLeverage(parseInt(e.target.value))}
+            value={leverage || 1}
+            onChange={(e) => setLeverageStr(e.target.value)}
             className="w-full mt-1"
           />
           <div className="flex justify-between text-[11px] text-content-muted mt-[3px]">
