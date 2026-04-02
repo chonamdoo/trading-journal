@@ -145,9 +145,9 @@ export function AIReportSection({ userId }: { userId?: string }) {
       </Card>
 
       {/* 리포트 목록 */}
-      {loading ? (
+      {loading || generating ? (
         <div className="text-center py-8 text-content-muted text-sm">
-          로딩 중...
+          {generating ? '리포트를 생성하고 있습니다...' : '로딩 중...'}
         </div>
       ) : reports.length === 0 ? (
         <Card className="text-center py-12">
