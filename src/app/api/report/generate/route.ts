@@ -174,51 +174,125 @@ export async function POST(request: Request) {
         })),
     }));
 
+    // 종목별 통계 사전 계산
+    const assetStats: Record<string, { count: number; wins: number; pnl: number }> = {};
+    for (const t of trades) {
+      if (!assetStats[t.asset]) assetStats[t.asset] = { count: 0, wins: 0, pnl: 0 };
+      assetStats[t.asset].count++;
+      if ((t.pnl ?? 0) > 0) assetStats[t.asset].wins++;
+      assetStats[t.asset].pnl += t.pnl ?? 0;
+    }
+    const assetStatsStr = Object.entries(assetStats)
+      .sort((a, b) => b[1].pnl - a[1].pnl)
+      .map(([sym, s]) => `${sym}: ${s.count}건, 승률 ${((s.wins / s.count) * 100).toFixed(1)}%, PnL ${s.pnl.toFixed(2)} USDT`)
+      .join('\n');
+
+    // 방향별 통계
+    const longTrades = trades.filter((t) => t.direction === 'LONG');
+    const shortTrades = trades.filter((t) => t.direction === 'SHORT');
+    const longWins = longTrades.filter((t) => (t.pnl ?? 0) > 0).length;
+    const shortWins = shortTrades.filter((t) => (t.pnl ?? 0) > 0).length;
+    const longPnl = longTrades.reduce((s, t) => s + (t.pnl ?? 0), 0);
+    const shortPnl = shortTrades.reduce((s, t) => s + (t.pnl ?? 0), 0);
+
+    // 레버리지별 통계
+    const levBuckets: Record<string, { count: number; wins: number; pnl: number }> = {};
+    for (const t of trades) {
+      const bucket = t.leverage <= 5 ? '1-5x' : t.leverage <= 10 ? '6-10x' : t.leverage <= 25 ? '11-25x' : t.leverage <= 50 ? '26-50x' : '51x+';
+      if (!levBuckets[bucket]) levBuckets[bucket] = { count: 0, wins: 0, pnl: 0 };
+      levBuckets[bucket].count++;
+      if ((t.pnl ?? 0) > 0) levBuckets[bucket].wins++;
+      levBuckets[bucket].pnl += t.pnl ?? 0;
+    }
+    const levStatsStr = Object.entries(levBuckets)
+      .map(([b, s]) => `${b}: ${s.count}건, 승률 ${((s.wins / s.count) * 100).toFixed(1)}%, PnL ${s.pnl.toFixed(2)} USDT`)
+      .join('\n');
+
+    // 평균 수익/손실
+    const winTrades = trades.filter((t) => (t.pnl ?? 0) > 0);
+    const lossTrades = trades.filter((t) => (t.pnl ?? 0) < 0);
+    const avgWin = winTrades.length ? winTrades.reduce((s, t) => s + (t.pnl ?? 0), 0) / winTrades.length : 0;
+    const avgLoss = lossTrades.length ? lossTrades.reduce((s, t) => s + (t.pnl ?? 0), 0) / lossTrades.length : 0;
+    const profitFactor = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : 0;
+    const ev = (winRate / 100) * avgWin + ((100 - winRate) / 100) * avgLoss;
+
+    // reason 비어있는 비율
+    const emptyReasonPct = (trades.filter((t) => !t.reason || t.reason.trim() === '').length / trades.length * 100).toFixed(0);
+
     // Gemini 프롬프트 구성
-    const prompt = `당신은 전문 암호화폐 선물 트레이딩 분석가입니다. 아래 데이터를 분석하여 한국어 월간 트레이딩 리포트를 작성해주세요.
+    const prompt = `## 페르소나
+너는 20년 경력의 '퀀트 트레이딩 전략가'이자 '트레이딩 심리학 전문 코치'다.
+단순한 수치 나열이 아니라, 매매 데이터 이면에 숨겨진 사용자의 심리적 허점과 전략적 오류를 날카롭게 파고들어 '뼈 때리는' 조언을 건네야 한다.
+한국어로 작성하라.
 
-## 분석 기간
-${year}년 ${month}월 (${periodStart} ~ ${periodEnd})
+## 분석 지침 (Framework)
+1. **Edge 분석**: 이 사용자의 수익이 '실력(재현 가능한 패턴)'인지 '운(단순 시장 상승)'인지 판별하라.
+2. **종목 궁합**: 변동성과 거래량 대비 사용자의 타점이 가장 잘 맞는 코인과 최악인 코인을 분류하라.
+3. **리스크 프로파일**: 레버리지 활용 능력과 MDD(최대 낙폭) 관리 능력을 1~10점으로 평가하라.
+4. **금지 목록**: 현재 손실의 80%를 차지하는 '나쁜 습관(예: 뇌동매매, 물타기 실패, FOMO 추격)'을 명확히 규정하고 금지 명령을 내려라.
 
-## 거래 데이터 (${trades.length}건)
-${JSON.stringify(tradesForAnalysis, null, 2)}
+## 입력 데이터
 
-## 기본 통계
-- 총 거래: ${trades.length}건
-- 승리: ${wins}건 / 패배: ${trades.length - wins}건
+### 기본 정보
+- 분석 기간: ${year}년 ${month}월 (${periodStart} ~ ${periodEnd})
+- 기본 자산: USDT
+
+### 기본 통계
+- 총 거래: ${trades.length}건 (승리 ${wins}건 / 패배 ${trades.length - wins}건)
 - 승률: ${winRate.toFixed(1)}%
 - 총 손익: ${totalPnl.toFixed(2)} USDT
+- 평균 수익: ${avgWin.toFixed(2)} USDT | 평균 손실: ${avgLoss.toFixed(2)} USDT
+- 손익비(Profit Factor): ${profitFactor.toFixed(2)}
+- 기대값(EV): ${ev.toFixed(2)} USDT/거래
+- 진입 이유 미기록 비율: ${emptyReasonPct}%
 
-## 분석 요청사항
-아래 형식의 마크다운으로 리포트를 작성해주세요:
+### 종목별 통계
+${assetStatsStr}
 
-### 📊 성과 요약
-전체적인 이번 달 트레이딩 성과를 2~3문장으로 요약해주세요.
+### 방향별 통계
+- LONG: ${longTrades.length}건, 승률 ${longTrades.length ? ((longWins / longTrades.length) * 100).toFixed(1) : 0}%, PnL ${longPnl.toFixed(2)} USDT
+- SHORT: ${shortTrades.length}건, 승률 ${shortTrades.length ? ((shortWins / shortTrades.length) * 100).toFixed(1) : 0}%, PnL ${shortPnl.toFixed(2)} USDT
+
+### 레버리지별 통계
+${levStatsStr}
+
+### 전체 거래 내역
+${JSON.stringify(tradesForAnalysis, null, 2)}
+
+## 출력 형식 (마크다운)
+아래 형식을 정확히 지켜서 작성하라:
+
+### 🎯 전문가 총평
+한 줄 요약(볼드)으로 시작하고, 2~3문장으로 이번 달 트레이딩의 핵심을 짚어라. Edge 분석 결과를 포함하라.
+
+### 📊 승률·손익비 분석
+승률, 손익비, 기대값(EV)을 해석하고 이 수치가 의미하는 바를 설명하라. 현재 전략이 장기적으로 수익을 낼 수 있는 구조인지 판단하라.
 
 ### 🏆 종목별 분석
-종목별 거래 횟수, 승률, 누적 손익을 표로 정리하고 인사이트를 제공해주세요.
-
-### 📈 승리 패턴
-승리한 거래들의 공통점을 분석해주세요 (진입 이유, 방향, 레버리지, 종목 등).
-
-### 📉 손실 패턴
-손실이 발생한 거래들의 공통점을 분석해주세요.
+종목별 거래 횟수, 승률, 누적 손익을 표로 정리하라. 종목 궁합 분석 결과를 포함하라.
 
 ### ⚖️ 방향별 분석
-롱/숏 각각의 승률과 평균 수익을 비교해주세요.
+롱/숏 각각의 승률과 평균 수익을 비교하고, 어느 방향에 강점이 있는지 판단하라.
 
-### 🔧 레버리지 분석
-레버리지 구간별 성과를 분석해주세요.
+### 🔧 레버리지·리스크 분석
+레버리지 구간별 성과를 분석하라. 리스크 프로파일 점수(1~10)를 매기고 근거를 설명하라.
 
-${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크린샷에서 관찰되는 차트 패턴과 진입/청산 타이밍에 대해 분석해주세요.' : ''}
+### ✅ Do More (적극 권장)
+데이터에서 발견된 재현 가능한 승리 패턴을 구체적으로 명시하라. 어떤 종목, 방향, 레버리지, 진입 이유 조합이 가장 좋았는지.
 
-### 💡 개선 제안
-구체적이고 실행 가능한 개선 제안을 3~5개 제시해주세요. 각 제안은 데이터에 기반해야 합니다.
+### 🚫 Stop Doing (즉시 중단)
+손실의 대부분을 차지하는 나쁜 습관을 명확히 지적하라. 금지 명령 형태로 작성하라.
 
-### 📋 한줄 요약
-이번 달 트레이딩을 한 문장으로 요약해주세요.
+${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크린샷에서 관찰되는 차트 패턴과 진입/청산 타이밍의 적절성을 분석하라.' : ''}
 
-중요: 마크다운 형식을 정확히 지켜주세요. 데이터에 없는 내용을 지어내지 마세요. reason이나 notes가 비어있는 거래가 많으면 "진입 이유 기록 습관" 개선을 제안해주세요.`;
+### 📋 다음 달 액션 플랜
+구체적이고 실행 가능한 규칙을 5개 제시하라. 숫자와 기준이 명확해야 한다. (예: "레버리지 10x 이하로 제한", "DOGE 롱 포지션 금지")
+
+중요:
+- 데이터에 없는 내용을 지어내지 마라.
+- 달콤한 위로 대신 냉정한 팩트를 전달하라.
+- ${parseInt(emptyReasonPct) > 50 ? '진입 이유 미기록 비율이 ' + emptyReasonPct + '%로 매우 높다. 이것을 반드시 지적하고 기록 습관 개선을 최우선 액션으로 포함하라.' : ''}
+- 물타기(scale-in) 데이터가 있다면 물타기 성공/실패율도 분석하라.`;
 
     // Gemini API 호출
     const contents = [
