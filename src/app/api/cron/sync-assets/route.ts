@@ -31,13 +31,30 @@ export async function GET(request: Request) {
 
   try {
     // Binance Futures exchangeInfo 조회
-    const res = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo', {
-      next: { revalidate: 0 },
-    });
+    // fapi.binance.com은 미국 IP 차단 → api.binance.com 우선 시도
+    const urls = [
+      'https://api.binance.com/fapi/v1/exchangeInfo',
+      'https://fapi.binance.com/fapi/v1/exchangeInfo',
+    ];
 
-    if (!res.ok) {
+    let res: Response | null = null;
+    let lastError = '';
+
+    for (const url of urls) {
+      try {
+        res = await fetch(url, { cache: 'no-store' });
+        if (res.ok) break;
+        lastError = `${url} → ${res.status}`;
+        res = null;
+      } catch (e) {
+        lastError = `${url} → ${e instanceof Error ? e.message : 'fetch failed'}`;
+        res = null;
+      }
+    }
+
+    if (!res || !res.ok) {
       return NextResponse.json(
-        { error: `Binance API error: ${res.status}` },
+        { error: `Binance API unavailable: ${lastError}` },
         { status: 502 },
       );
     }
