@@ -361,11 +361,23 @@ export function TradeForm({
       <div className="grid grid-cols-2 gap-3 mb-4 max-sm:grid-cols-1">
         <div className="flex flex-col gap-sp-2">
           <label className="text-[12px] font-medium text-content-secondary tracking-[0.1px]">
-            레버리지{' '}
-            <span className="font-mono text-content font-bold text-sm">
-              x{leverage}
-            </span>
+            레버리지
           </label>
+          <div className="flex items-center gap-2">
+            <span className="text-content-muted text-[12px]">x</span>
+            <input
+              type="number"
+              min={1}
+              max={125}
+              step={1}
+              value={leverage}
+              onChange={(e) => {
+                const v = parseInt(e.target.value)
+                if (!isNaN(v) && v >= 1 && v <= 125) setLeverage(v)
+              }}
+              className="w-[64px] px-2 py-1.5 rounded-input border border-border-input bg-surface text-[13px] font-mono font-bold text-center focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
+            />
+          </div>
           <input
             type="range"
             min={1}

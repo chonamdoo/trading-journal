@@ -545,7 +545,7 @@ export function OpenPositions({
                   }`}
                   onClick={() => setScaleInType('scale_in_down')}
                 >
-                  물타기 (역추매)
+                  물타기
                 </button>
                 <button
                   type="button"
@@ -556,7 +556,7 @@ export function OpenPositions({
                   }`}
                   onClick={() => setScaleInType('scale_in_up')}
                 >
-                  불타기 (순추매)
+                  불타기
                 </button>
               </div>
             </div>
