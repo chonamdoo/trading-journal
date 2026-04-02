@@ -99,43 +99,44 @@ export async function POST(request: Request) {
       .select('*')
       .in('trade_id', tradeIds);
 
-    // 스크린샷 URL 조회 (수익 상위 5 + 손실 상위 5)
-    const sortedByPnl = [...trades]
-      .filter((t) => t.pnl != null)
-      .sort((a, b) => (b.pnl ?? 0) - (a.pnl ?? 0));
-    const topWins = sortedByPnl.slice(0, 5).map((t) => t.id);
-    const topLosses = sortedByPnl.slice(-5).map((t) => t.id);
-    const screenshotTradeIds = [...new Set([...topWins, ...topLosses])];
+    // 스크린샷 base64 변환 (수익/손실 상위 각 5건, 실패 시 스킵)
+    const screenshotParts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [];
+    try {
+      const sortedByPnl = [...trades]
+        .filter((t) => t.pnl != null)
+        .sort((a, b) => (b.pnl ?? 0) - (a.pnl ?? 0));
+      const topWins = sortedByPnl.slice(0, 5).map((t) => t.id);
+      const topLosses = sortedByPnl.slice(-5).map((t) => t.id);
+      const screenshotTradeIds = [...new Set([...topWins, ...topLosses])];
 
-    const { data: screenshots } = await supabase
-      .from('trade_screenshots')
-      .select('*')
-      .in('trade_id', screenshotTradeIds)
-      .order('sort_order', { ascending: true });
+      const { data: screenshots } = await supabase
+        .from('trade_screenshots')
+        .select('*')
+        .in('trade_id', screenshotTradeIds)
+        .order('sort_order', { ascending: true });
 
-    // 스크린샷 이미지를 base64로 변환 (최대 10장)
-    const screenshotParts: GeminiContent['parts'] = [];
-    const limitedScreenshots = (screenshots ?? []).slice(0, 10);
-
-    for (const ss of limitedScreenshots) {
-      const { data: fileData } = await supabase.storage
-        .from('trade-screenshots')
-        .download(ss.storage_path);
-
-      if (fileData) {
-        const buffer = Buffer.from(await fileData.arrayBuffer());
-        const base64 = buffer.toString('base64');
-        const trade = trades.find((t) => t.id === ss.trade_id);
-        screenshotParts.push({
-          text: `[스크린샷: ${trade?.asset} ${trade?.direction} | PnL: ${trade?.pnl?.toFixed(2)} USDT]`,
-        });
-        screenshotParts.push({
-          inlineData: {
-            mimeType: ss.mime_type,
-            data: base64,
-          },
-        });
+      for (const ss of (screenshots ?? []).slice(0, 10)) {
+        try {
+          const { data: fileData } = await supabase.storage
+            .from('trade-screenshots')
+            .download(ss.storage_path);
+          if (fileData) {
+            const buffer = Buffer.from(await fileData.arrayBuffer());
+            const base64 = buffer.toString('base64');
+            const trade = trades.find((t) => t.id === ss.trade_id);
+            screenshotParts.push({
+              text: `[스크린샷: ${trade?.asset} ${trade?.direction} | PnL: ${trade?.pnl?.toFixed(2)} USDT]`,
+            });
+            screenshotParts.push({
+              inlineData: { mimeType: ss.mime_type, data: base64 },
+            });
+          }
+        } catch {
+          // 개별 스크린샷 실패 시 스킵
+        }
       }
+    } catch {
+      // 스크린샷 전체 실패 시 텍스트만으로 진행
     }
 
     // 통계 계산
@@ -295,7 +296,7 @@ ${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크�
 
     return NextResponse.json({ success: true, report });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : '알 수 없는 오류';
+    const msg = err instanceof Error ? `${err.message} | ${err.stack?.split('\n')[1]?.trim() ?? ''}` : '알 수 없는 오류';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
