@@ -15,6 +15,21 @@ export const metadata: Metadata = {
   title: '거래일지 | 암호화폐 선물 트레이더를 위한 AI 매매일지',
   description:
     '매매 기록, AI 월간 리포트, Trading Score까지. 데이터 기반 트레이딩 성장을 도와드립니다.',
+  openGraph: {
+    title: '거래일지 — 내 트레이딩, 데이터로 증명하다',
+    description:
+      '암호화폐 선물 트레이더를 위한 AI 기반 매매 일지. 매매 기록, AI 월간 리포트, Trading Score까지.',
+    url: 'https://www.mytradelog.app/promo',
+    siteName: '거래일지',
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '거래일지 — 내 트레이딩, 데이터로 증명하다',
+    description:
+      '암호화폐 선물 트레이더를 위한 AI 기반 매매 일지. 매매 기록, AI 월간 리포트, Trading Score까지.',
+  },
 }
 
 export default function PromoPage() {
