@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { showToast } from '@/components/ui/Toast'
 import { useTrades } from '@/hooks/useTrades'
+import { useAssets } from '@/hooks/useAssets'
 import { useTheme } from '@/hooks/useTheme'
 import { createClient } from '@/lib/supabase/client'
 import { curCapital, totalPnL, totalReturnPct, totalDeposits } from '@/lib/calc'
 import { formatNumber, formatPnl, toKrw, today, genId } from '@/lib/format'
-import { DEFAULT_ASSETS, TARGET_COLORS } from '@/lib/constants'
+import { TARGET_COLORS } from '@/lib/constants'
 
 /**
  * 설정 페이지
@@ -31,6 +32,8 @@ export default function SettingsPage() {
     setInitialCapital,
   } = useTrades()
   const { theme, toggleTheme } = useTheme()
+  const { favorites, allAssets, addFavorite, removeFavorite } = useAssets(profile?.id)
+  const [favInput, setFavInput] = useState('')
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
   const tdep = totalDeposits(deposits)
@@ -177,23 +180,66 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* 코인 목록 */}
+      {/* 즐겨찾기 종목 관리 */}
       <Card className="mb-3">
         <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-4">
-          코인 목록
+          즐겨찾기 종목
         </h2>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {DEFAULT_ASSETS.map((asset) => (
-            <span
-              key={asset}
-              className="px-[10px] py-1 bg-surface-hover rounded-badge text-[12px] font-medium text-content-secondary"
-            >
-              {asset}
-            </span>
-          ))}
+        {favorites.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {favorites.map((symbol) => (
+              <span
+                key={symbol}
+                className="group flex items-center gap-1 px-[10px] py-1 bg-surface-hover rounded-badge text-[12px] font-medium text-content-secondary"
+              >
+                {symbol}
+                <button
+                  type="button"
+                  onClick={() => removeFavorite(symbol)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-content-muted hover:text-red-400 ml-0.5"
+                  title="즐겨찾기 제거"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[12px] text-content-muted mb-3">
+            즐겨찾기가 없습니다. 자주 거래하는 종목을 추가하세요.
+          </p>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="종목 심볼 (예: DOGE)"
+            maxLength={20}
+            className="flex-1 px-3 py-1.5 bg-surface border border-border-input rounded-input text-[12px] font-mono uppercase outline-none focus:border-accent-primary"
+            value={favInput}
+            onChange={(e) => setFavInput(e.target.value.toUpperCase())}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && favInput.trim()) {
+                addFavorite(favInput.trim())
+                setFavInput('')
+              }
+            }}
+          />
+          <Button
+            size="sm"
+            onClick={() => {
+              if (favInput.trim()) {
+                addFavorite(favInput.trim())
+                setFavInput('')
+              }
+            }}
+          >
+            추가
+          </Button>
         </div>
-        <p className="text-[12px] text-content-muted">
-          기본 12종 코인이 포함되어 있습니다. 커스텀 코인은 거래 입력 시 추가할 수 있습니다.
+        <p className="text-[11px] text-content-muted mt-2">
+          거래 입력 시 즐겨찾기 종목이 상단에 표시됩니다. 전체 {allAssets.length}개 종목 검색 가능.
         </p>
       </Card>
 

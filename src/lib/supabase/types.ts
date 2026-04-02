@@ -146,6 +146,12 @@ export interface Database {
           }
         ];
       };
+      supported_assets: {
+        Row: SupportedAssetRow;
+        Insert: SupportedAssetInsert;
+        Update: SupportedAssetUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -443,6 +449,31 @@ export interface TradeScreenshotInsert {
 
 export interface TradeScreenshotUpdate {
   sort_order?: number;
+}
+
+// ────────────────────────────────────────────
+// supported_assets 테이블 (바이낸스 선물 종목)
+// ────────────────────────────────────────────
+
+export interface SupportedAssetRow {
+  symbol: string;
+  base_asset: string;
+  quote_asset: string;
+  is_active: boolean;
+  synced_at: string;
+}
+
+export interface SupportedAssetInsert {
+  symbol: string;
+  base_asset: string;
+  quote_asset?: string;
+  is_active?: boolean;
+  synced_at?: string;
+}
+
+export interface SupportedAssetUpdate {
+  is_active?: boolean;
+  synced_at?: string;
 }
 
 // ────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Card } from '@/components/ui/Card'
 import { showToast } from '@/components/ui/Toast'
-import { DEFAULT_ASSETS } from '@/lib/constants'
+import { AssetCombobox } from '@/components/ui/AssetCombobox'
 import {
   formatNumber,
   formatPnl,
@@ -19,8 +19,12 @@ import {
 import { ImageUploader } from './ImageUploader'
 
 interface TradeFormProps {
-  /** 커스텀 코인 목록 */
-  customAssets?: string[]
+  /** 즐겨찾기 종목 */
+  favorites?: string[]
+  /** 최근 거래 종목 */
+  recentAssets?: string[]
+  /** 전체 종목 (supported_assets + 기본) */
+  allAssets?: string[]
   /** 현재 자산 (증거금 비율 표시용) */
   currentCapital?: number
   /** 저장 핸들러 (동기/비동기 모두 지원) */
@@ -46,7 +50,9 @@ interface TradeFormProps {
  * Critical Bug #3 해결: 유효성 검사 순서를 올바르게 배치
  */
 export function TradeForm({
-  customAssets = [],
+  favorites = [],
+  recentAssets = [],
+  allAssets: allAssetsProp = [],
   currentCapital = 0,
   onSave,
   initialData,
@@ -56,15 +62,11 @@ export function TradeForm({
   onUploadScreenshots,
   onDeleteScreenshot,
 }: TradeFormProps) {
-  const allAssets = [...DEFAULT_ASSETS, ...customAssets]
-
   // ── 폼 상태 (Critical Bug #2: direction을 상태로 관리) ──
   const [direction, setDirection] = useState<Direction>(
     initialData?.direction ?? 'LONG'
   )
-  const [asset, setAsset] = useState(initialData?.asset ?? allAssets[0])
-  const [assetMode, setAssetMode] = useState<'select' | 'custom'>('select')
-  const [customAsset, setCustomAsset] = useState('')
+  const [asset, setAsset] = useState(initialData?.asset ?? 'BTC')
   const [leverage, setLeverage] = useState(initialData?.leverage ?? 10)
   const [inputMode, setInputMode] = useState<'margin' | 'quantity'>('margin')
   const [margin, setMargin] = useState(initialData?.margin?.toString() ?? '')
@@ -191,22 +193,13 @@ export function TradeForm({
 
   // ── 자산 선택 핸들러 ──
   const handleAssetChange = (value: string) => {
-    if (value === '__custom__') {
-      setAssetMode('custom')
-      setCustomAsset('')
-      setAsset('')
-    } else {
-      setAssetMode('select')
-      setAsset(value)
-    }
+    setAsset(value)
   }
 
   // ── 폼 초기화 ──
   const resetForm = useCallback(() => {
     setDirection('LONG')
-    setAsset(allAssets[0])
-    setAssetMode('select')
-    setCustomAsset('')
+    setAsset(allAssetsProp[0] || 'BTC')
     setLeverage(10)
     setInputMode('margin')
     setMargin('')
@@ -218,15 +211,14 @@ export function TradeForm({
     setReason('')
     setNotes('')
     setPendingFiles([])
-  }, [allAssets])
+  }, [allAssetsProp])
 
   // 저장 중 상태
   const [saving, setSaving] = useState(false)
 
   // ── 저장 핸들러 (Critical Bug #3 해결: 에러 핸들링 순서 수정) ──
   const handleSave = async () => {
-    const finalAsset =
-      assetMode === 'custom' ? customAsset.toUpperCase().trim() : asset
+    const finalAsset = asset.toUpperCase().trim()
 
     // 유효성 검사를 저장 전에 모두 수행 (TDZ 에러 방지)
     if (!finalAsset) {
@@ -288,35 +280,13 @@ export function TradeForm({
           <label className="text-[12px] font-medium text-content-secondary tracking-[0.1px]">
             코인 / 종목
           </label>
-          <div className="flex gap-sp-2">
-            <select
-              className="flex-1 px-[11px] py-[8px] bg-surface border border-border-input rounded-input text-content text-sm outline-none focus:border-info focus:shadow-[0_0_0_3px_rgba(28,110,243,0.1)] appearance-none cursor-pointer pr-[30px] bg-no-repeat bg-[right_10px_center] bg-[url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f6f6c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E&quot;)]"
-              value={assetMode === 'custom' ? '__custom__' : asset}
-              onChange={(e) => handleAssetChange(e.target.value)}
-            >
-              {allAssets.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-              <option value="__custom__">직접 입력...</option>
-            </select>
-            {assetMode === 'custom' && (
-              <input
-                type="text"
-                placeholder="예: WIF"
-                maxLength={20}
-                className="w-[90px] px-[11px] py-[8px] bg-surface border border-border-input rounded-input text-content text-sm font-semibold uppercase outline-none focus:border-info focus:shadow-[0_0_0_3px_rgba(28,110,243,0.1)]"
-                value={customAsset}
-                onChange={(e) => {
-                  const val = e.target.value.toUpperCase()
-                  setCustomAsset(val)
-                  setAsset(val)
-                }}
-                autoFocus
-              />
-            )}
-          </div>
+          <AssetCombobox
+            value={asset}
+            onChange={handleAssetChange}
+            favorites={favorites}
+            recent={recentAssets}
+            allAssets={allAssetsProp}
+          />
         </div>
 
         {/* 방향 선택 (Critical Bug #2 해결) */}

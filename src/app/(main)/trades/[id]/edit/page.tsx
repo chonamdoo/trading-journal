@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { TradeForm } from '@/components/trades/TradeForm'
 import { useTrades, useTradeStore } from '@/hooks/useTrades'
+import { useAssets } from '@/hooks/useAssets'
 import { curCapital } from '@/lib/calc'
 import type { TradeFormData } from '@/types'
 
@@ -20,6 +21,7 @@ export default function EditTradePage() {
   const screenshots = useTradeStore((s) => s.screenshots)
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
+  const { allAssets, favorites, recentAssets } = useAssets(profile?.id)
 
   const tradeId = params.id as string
   const trade = trades.find((t) => t.id === tradeId)
@@ -50,6 +52,9 @@ export default function EditTradePage() {
   return (
     <TradeForm
       currentCapital={capital}
+      favorites={favorites}
+      recentAssets={recentAssets}
+      allAssets={allAssets}
       onSave={handleSave}
       isEdit
       tradeId={tradeId}
