@@ -59,7 +59,7 @@ export default function PromoPage() {
       {/* ── 히어로 ── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
-        <div className="relative max-w-3xl mx-auto px-4 pt-20 pb-16 text-center">
+        <div className="relative max-w-3xl mx-auto px-4 pt-20 pb-10 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">
             내 트레이딩,{' '}
             <span className="text-accent">데이터</span>로 증명하다
@@ -69,6 +69,25 @@ export default function PromoPage() {
             <br />
             기록하고, 분석하고, 성장하세요.
           </p>
+
+          {/* 히어로 수치 하이라이트 */}
+          <div className="flex items-center justify-center gap-6 sm:gap-10 mb-10">
+            <div className="text-center">
+              <p className="font-mono text-2xl sm:text-3xl font-bold text-profit">+10.6%</p>
+              <p className="text-[11px] text-content-muted mt-1">수익률</p>
+            </div>
+            <div className="w-px h-10 bg-border" />
+            <div className="text-center">
+              <p className="font-mono text-2xl sm:text-3xl font-bold text-accent">93<span className="text-base">점</span></p>
+              <p className="text-[11px] text-content-muted mt-1">Trading Score</p>
+            </div>
+            <div className="w-px h-10 bg-border" />
+            <div className="text-center">
+              <p className="font-mono text-2xl sm:text-3xl font-bold text-content">70%</p>
+              <p className="text-[11px] text-content-muted mt-1">승률</p>
+            </div>
+          </div>
+
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/signup"
@@ -193,13 +212,13 @@ export default function PromoPage() {
               </span>
             </div>
             <div className="flex flex-col gap-2">
-              <PnlRow label="ETH" value={46.93} max={46.93} />
-              <PnlRow label="SOL" value={36.19} max={46.93} />
-              <PnlRow label="BTC" value={29.27} max={46.93} />
-              <PnlRow label="DOGE" value={25.11} max={46.93} />
-              <PnlRow label="LINK" value={23.90} max={46.93} />
-              <PnlRow label="ARB" value={18.41} max={46.93} />
-              <PnlRow label="XRP" value={11.21} max={46.93} />
+              <PnlRow label="ETH" value={46.93} max={46.93} rank={0} />
+              <PnlRow label="SOL" value={36.19} max={46.93} rank={1} />
+              <PnlRow label="BTC" value={29.27} max={46.93} rank={2} />
+              <PnlRow label="DOGE" value={25.11} max={46.93} rank={3} />
+              <PnlRow label="LINK" value={23.90} max={46.93} rank={4} />
+              <PnlRow label="ARB" value={18.41} max={46.93} rank={5} />
+              <PnlRow label="XRP" value={11.21} max={46.93} rank={6} />
             </div>
           </div>
         </div>
@@ -397,23 +416,29 @@ function PnlRow({
   label,
   value,
   max,
+  rank,
 }: {
   label: string
   value: number
   max: number
+  rank: number
 }) {
   const pct = (value / max) * 100
+  // 순위에 따라 바 opacity 차등 (1등 밝음 → 점점 흐려짐)
+  const opacity = Math.max(0.3, 1 - rank * 0.1)
 
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm font-medium text-content w-12">{label}</span>
-      <div className="flex-1 h-6 rounded bg-surface-muted overflow-hidden">
+      <div className="flex-1 h-7 rounded bg-surface-muted overflow-hidden">
         <div
-          className="h-full rounded bg-profit/20"
-          style={{ width: `${pct}%` }}
-        >
-          <div className="h-full rounded bg-profit/60" style={{ width: '100%' }} />
-        </div>
+          className="h-full rounded"
+          style={{
+            width: `${pct}%`,
+            background: `linear-gradient(90deg, var(--green) 0%, var(--blue) 100%)`,
+            opacity,
+          }}
+        />
       </div>
       <span className="font-mono text-xs font-semibold text-profit w-16 text-right">
         +{value.toFixed(2)}
