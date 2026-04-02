@@ -146,6 +146,20 @@ export interface Database {
           }
         ];
       };
+      monthly_reports: {
+        Row: MonthlyReportRow;
+        Insert: MonthlyReportInsert;
+        Update: MonthlyReportUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'monthly_reports_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -443,6 +457,47 @@ export interface TradeScreenshotInsert {
 
 export interface TradeScreenshotUpdate {
   sort_order?: number;
+}
+
+// ────────────────────────────────────────────
+// monthly_reports 테이블 (AI 월간 리포트)
+// ────────────────────────────────────────────
+
+export interface MonthlyReportRow {
+  id: string;
+  user_id: string;
+  year: number;
+  month: number;
+  period_start: string;
+  period_end: string;
+  trade_count: number;
+  win_rate: number | null;
+  total_pnl: number | null;
+  report_markdown: string;
+  model_used: string;
+  created_at: string;
+}
+
+export interface MonthlyReportInsert {
+  id?: string;
+  user_id: string;
+  year: number;
+  month: number;
+  period_start: string;
+  period_end: string;
+  trade_count: number;
+  win_rate?: number | null;
+  total_pnl?: number | null;
+  report_markdown: string;
+  model_used?: string;
+}
+
+export interface MonthlyReportUpdate {
+  trade_count?: number;
+  win_rate?: number | null;
+  total_pnl?: number | null;
+  report_markdown?: string;
+  model_used?: string;
 }
 
 // ────────────────────────────────────────────

@@ -22,17 +22,21 @@ import type { SlideItem } from '@/components/analysis/SlideCarousel'
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
 import { DayOfWeekSlide } from '@/components/analysis/DayOfWeekSlide'
 import { MonthlyCalendarSlide } from '@/components/analysis/MonthlyCalendarSlide'
+import { AIReportSection } from '@/components/analysis/AIReportSection'
 import { EquityCurve } from '@/components/charts/EquityChart'
 import { WinRateDonut } from '@/components/charts/WinRateDonut'
 import { PnlBar } from '@/components/charts/PnlBar'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { Card } from '@/components/ui/Card'
 import { useFullAnalytics } from '@/hooks/useAnalytics'
+import { useTrades } from '@/hooks/useTrades'
 import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
 
 export default function AnalysisPage() {
   const analytics = useFullAnalytics()
+  const { profile } = useTrades()
   const [slideIndex, setSlideIndex] = useState(0)
+  const [tab, setTab] = useState<'charts' | 'ai'>('charts')
 
   // useFullAnalytics에서 모든 계산이 useMemo로 캐싱되어 있다.
   // 슬라이드 인덱스가 바뀌어도 trades가 변경되지 않으면 재계산되지 않는다.
@@ -146,10 +150,40 @@ export default function AnalysisPage() {
   ]
 
   return (
-    <SlideCarousel
-      slides={slides}
-      currentIndex={slideIndex}
-      onIndexChange={setSlideIndex}
-    />
+    <div className="flex flex-col gap-4">
+      {/* 탭 전환 */}
+      <div className="flex gap-1 bg-surface rounded-card p-1">
+        <button
+          onClick={() => setTab('charts')}
+          className={`flex-1 py-2 text-sm font-medium rounded-input transition-colors ${
+            tab === 'charts'
+              ? 'bg-accent text-white'
+              : 'text-content-muted hover:text-content'
+          }`}
+        >
+          차트 분석
+        </button>
+        <button
+          onClick={() => setTab('ai')}
+          className={`flex-1 py-2 text-sm font-medium rounded-input transition-colors ${
+            tab === 'ai'
+              ? 'bg-accent text-white'
+              : 'text-content-muted hover:text-content'
+          }`}
+        >
+          AI 리포트
+        </button>
+      </div>
+
+      {tab === 'charts' ? (
+        <SlideCarousel
+          slides={slides}
+          currentIndex={slideIndex}
+          onIndexChange={setSlideIndex}
+        />
+      ) : (
+        <AIReportSection userId={profile?.id} />
+      )}
+    </div>
   )
 }
