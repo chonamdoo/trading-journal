@@ -10,24 +10,9 @@ import type {
   CustomAssetRow,
   ApiResult,
 } from '../supabase/types';
+import { DEFAULT_ASSETS } from '../constants';
 
 type Client = SupabaseClient<Database>;
-
-/** 기본 제공 코인 목록 (12종) */
-export const DEFAULT_ASSETS = [
-  'BTC',
-  'ETH',
-  'SOL',
-  'XRP',
-  'ADA',
-  'DOGE',
-  'AVAX',
-  'BNB',
-  'MATIC',
-  'LINK',
-  'OP',
-  'ARB',
-] as const;
 
 export type DefaultAsset = (typeof DEFAULT_ASSETS)[number];
 
@@ -153,29 +138,6 @@ export async function deleteCustomAsset(
     }
 
     return { success: true, data: undefined };
-  } catch (err) {
-    return { success: false, error: getErrorMessage(err) };
-  }
-}
-
-/**
- * 바이낸스 선물 전체 종목을 조회한다 (supported_assets 테이블).
- * 싱크되지 않았으면 빈 배열 → 이 경우 DEFAULT_ASSETS 폴백.
- */
-export async function getSupportedAssets(
-  supabase: Client,
-): Promise<ApiResult<string[]>> {
-  try {
-    const { data, error } = await supabase
-      .from('supported_assets')
-      .select('symbol')
-      .eq('is_active', true)
-      .order('symbol', { ascending: true });
-
-    if (error) return { success: false, error: error.message };
-
-    const symbols = (data ?? []).map((r) => r.symbol as string);
-    return { success: true, data: symbols };
   } catch (err) {
     return { success: false, error: getErrorMessage(err) };
   }

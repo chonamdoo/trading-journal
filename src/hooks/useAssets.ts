@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_ASSETS } from '@/lib/constants'
 import {
-  getSupportedAssets,
   getCustomAssets,
   getRecentAssets,
   addCustomAsset as apiAddFavorite,
@@ -13,7 +12,7 @@ import {
 
 /**
  * 종목 데이터를 관리하는 훅
- * - allAssets: supported_assets (바이낸스 선물) 또는 DEFAULT_ASSETS 폴백
+ * - allAssets: DEFAULT_ASSETS (3대 거래소 선물 종목) + 유저 직접 입력 종목
  * - favorites: custom_assets (즐겨찾기)
  * - recentAssets: 최근 거래 종목 (trades에서 동적)
  */
@@ -30,18 +29,19 @@ export function useAssets(userId?: string) {
     const load = async () => {
       const supabase = createClient()
 
-      // 3개 쿼리 병렬 실행
-      const [supportedRes, favRes, recentRes] = await Promise.all([
-        getSupportedAssets(supabase),
+      // 즐겨찾기 + 최근 거래 종목 병렬 조회
+      const [favRes, recentRes] = await Promise.all([
         getCustomAssets(supabase, userId),
         getRecentAssets(supabase, userId),
       ])
 
-      // supported_assets가 있으면 사용, 없으면 DEFAULT_ASSETS 폴백
-      if (supportedRes.success && supportedRes.data.length > 0) {
-        setAllAssets(supportedRes.data)
-      } else {
-        setAllAssets([...DEFAULT_ASSETS])
+      // DEFAULT_ASSETS + 유저가 직접 입력한 종목(custom_assets) 합산
+      if (favRes.success) {
+        const customSymbols = favRes.data.map((r) => r.symbol)
+        const extras = customSymbols.filter(
+          (s) => !(DEFAULT_ASSETS as readonly string[]).includes(s)
+        )
+        setAllAssets([...DEFAULT_ASSETS, ...extras])
       }
 
       if (favRes.success) {
