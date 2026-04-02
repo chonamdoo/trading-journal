@@ -336,15 +336,17 @@ export function TradeForm({
           <div className="flex items-center gap-2">
             <span className="text-content-muted text-[12px]">x</span>
             <input
-              type="number"
-              min={1}
-              max={125}
-              step={1}
+              type="text"
+              inputMode="numeric"
               value={leverage}
               onChange={(e) => {
-                const v = parseInt(e.target.value)
-                if (!isNaN(v) && v >= 1 && v <= 125) setLeverage(v)
+                const raw = e.target.value.replace(/\D/g, '')
+                if (raw === '') { setLeverage(1); return }
+                const v = parseInt(raw)
+                if (v >= 1 && v <= 125) setLeverage(v)
+                else if (v > 125) setLeverage(125)
               }}
+              onFocus={(e) => e.target.select()}
               className="w-[64px] px-2 py-1.5 rounded-input border border-border-input bg-surface text-[13px] font-mono font-bold text-center focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-accent-primary"
             />
           </div>
