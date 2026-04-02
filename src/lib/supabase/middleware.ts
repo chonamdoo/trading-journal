@@ -25,7 +25,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /** 인증 없이 접근 가능한 경로 */
-const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/auth/callback'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/reset-password', '/auth/callback', '/api/cron'];
 
 /**
  * Supabase 세션을 갱신하고 인증 상태에 따라 리다이렉트를 처리한다.
