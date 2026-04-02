@@ -38,6 +38,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Gemini API 키가 설정되지 않았습니다.' }, { status: 500 });
   }
 
+  // 월 1회 제한: 이미 해당 월 리포트가 있으면 차단 (관리자 예외)
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim());
+  const isAdmin = adminEmails.includes(user.email ?? '');
+
+  if (!isAdmin) {
+    const { data: existing } = await supabase
+      .from('monthly_reports')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('year', year)
+      .eq('month', month)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(
+        { error: '이미 해당 월의 리포트가 생성되었습니다. 월 1회만 가능합니다.' },
+        { status: 429 },
+      );
+    }
+  }
+
   try {
     // 해당 월의 기간 계산
     const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;

@@ -56,10 +56,8 @@ export function AIReportSection({ userId }: { userId?: string }) {
       (r) => r.year === selectedYear && r.month === selectedMonth,
     )
     if (existing) {
-      const ok = confirm(
-        `${selectedYear}년 ${selectedMonth}월 리포트가 이미 있습니다. 다시 생성하시겠습니까?`,
-      )
-      if (!ok) return
+      setError('이미 해당 월의 리포트가 생성되었습니다. 월 1회만 가능합니다.')
+      return
     }
 
     setGenerating(true)
