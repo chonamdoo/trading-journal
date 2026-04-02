@@ -107,8 +107,8 @@ export default function ReportDetailPage() {
         />
         <KpiCard
           tier="secondary"
-          label="모델"
-          value={report.model_used}
+          label="기간"
+          value={`${report.month}월`}
         />
       </div>
 
@@ -132,7 +132,7 @@ export default function ReportDetailPage() {
       {/* 푸터 */}
       <div className="flex items-center justify-between text-xs text-content-muted pb-4">
         <span>
-          생성: {new Date(report.created_at).toLocaleDateString('ko-KR')} | {report.model_used}
+          생성: {new Date(report.created_at).toLocaleDateString('ko-KR')}
         </span>
         <button
           onClick={handleRegenerate}
