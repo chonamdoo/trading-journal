@@ -220,8 +220,9 @@ ${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크�
 중요: 마크다운 형식을 정확히 지켜주세요. 데이터에 없는 내용을 지어내지 마세요. reason이나 notes가 비어있는 거래가 많으면 "진입 이유 기록 습관" 개선을 제안해주세요.`;
 
     // Gemini API 호출
-    const contents: GeminiContent[] = [
+    const contents = [
       {
+        role: 'user' as const,
         parts: [
           { text: prompt },
           ...screenshotParts,
@@ -229,36 +230,40 @@ ${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크�
       },
     ];
 
+    const geminiBody = {
+      contents,
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 4096,
+      },
+    };
+
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 4096,
-          },
-        }),
+        body: JSON.stringify(geminiBody),
       },
     );
 
+    const geminiData = await geminiRes.json().catch(() => null);
+
     if (!geminiRes.ok) {
-      const errBody = await geminiRes.text();
+      const errMsg = geminiData?.error?.message || JSON.stringify(geminiData).slice(0, 300);
       return NextResponse.json(
-        { error: `Gemini API 오류: ${geminiRes.status}`, detail: errBody.slice(0, 300) },
+        { error: `Gemini API 오류 (${geminiRes.status}): ${errMsg}` },
         { status: 502 },
       );
     }
 
-    const geminiData = await geminiRes.json();
     const reportMarkdown =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     if (!reportMarkdown) {
+      const blockReason = geminiData?.candidates?.[0]?.finishReason || 'unknown';
       return NextResponse.json(
-        { error: 'Gemini에서 응답을 받지 못했습니다.' },
+        { error: `Gemini 응답 없음 (reason: ${blockReason})` },
         { status: 502 },
       );
     }

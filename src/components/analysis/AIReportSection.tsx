@@ -70,10 +70,17 @@ export function AIReportSection({ userId }: { userId?: string }) {
         body: JSON.stringify({ year: selectedYear, month: selectedMonth }),
       })
 
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        setError(`서버 오류 (${res.status})`)
+        setGenerating(false)
+        return
+      }
 
       if (!res.ok) {
-        setError(data.error || '리포트 생성 실패')
+        setError(data.error || data.detail || `리포트 생성 실패 (${res.status})`)
         setGenerating(false)
         return
       }
