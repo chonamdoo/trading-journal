@@ -254,7 +254,7 @@ ${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크�
       const errMsg = geminiData?.error?.message || JSON.stringify(geminiData).slice(0, 300);
       return NextResponse.json(
         { error: `Gemini API 오류 (${geminiRes.status}): ${errMsg}` },
-        { status: 502 },
+        { status: 422 },
       );
     }
 
@@ -265,7 +265,7 @@ ${screenshotParts.length > 0 ? '### 📸 차트 패턴 분석\n첨부된 스크�
       const blockReason = geminiData?.candidates?.[0]?.finishReason || 'unknown';
       return NextResponse.json(
         { error: `Gemini 응답 없음 (reason: ${blockReason})` },
-        { status: 502 },
+        { status: 422 },
       );
     }
 
