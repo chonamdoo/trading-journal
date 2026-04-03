@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { NAV_TABS } from '@/lib/constants'
 
 /** 클라이언트 사이드로 전환되는 메인 탭 경로 */
-const CLIENT_TAB_HREFS = new Set(['/', '/trades/new', '/trades', '/analysis', '/settings'])
+const CLIENT_TAB_HREFS = new Set(['/', '/trades/new', '/plans', '/trades', '/analysis', '/settings'])
 
 /**
  * 네비게이션 탭 바

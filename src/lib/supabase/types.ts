@@ -160,6 +160,27 @@ export interface Database {
           }
         ];
       };
+      trading_plans: {
+        Row: TradingPlanRow;
+        Insert: TradingPlanInsert;
+        Update: TradingPlanUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'trading_plans_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'trading_plans_linked_trade_id_fkey';
+            columns: ['linked_trade_id'];
+            isOneToOne: false;
+            referencedRelation: 'trades';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -501,6 +522,88 @@ export interface MonthlyReportUpdate {
   total_pnl?: number | null;
   report_markdown?: string;
   model_used?: string;
+}
+
+// ────────────────────────────────────────────
+// trading_plans 테이블
+// ────────────────────────────────────────────
+
+/** 플랜 상태 */
+export type PlanStatusDb = 'draft' | 'active' | 'linked' | 'expired' | 'archived';
+
+export interface TradingPlanRow {
+  id: string;
+  user_id: string;
+  title: string;
+  asset: string;
+  direction: TradeDirection;
+  entry_conditions: string;
+  entry_price_min: number | null;
+  entry_price_max: number | null;
+  target_prices: Json;
+  stop_loss_price: number | null;
+  risk_reward_ratio: number | null;
+  position_size_plan: string | null;
+  leverage_plan: number | null;
+  margin_plan: number | null;
+  confidence_level: number;
+  market_analysis: string | null;
+  invalidation_conditions: string | null;
+  status: PlanStatusDb;
+  linked_trade_id: string | null;
+  linked_at: string | null;
+  review_notes: string | null;
+  plan_adherence: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradingPlanInsert {
+  id?: string;
+  user_id: string;
+  title: string;
+  asset: string;
+  direction: TradeDirection;
+  entry_conditions: string;
+  entry_price_min?: number | null;
+  entry_price_max?: number | null;
+  target_prices?: Json;
+  stop_loss_price?: number | null;
+  risk_reward_ratio?: number | null;
+  position_size_plan?: string | null;
+  leverage_plan?: number | null;
+  margin_plan?: number | null;
+  confidence_level?: number;
+  market_analysis?: string | null;
+  invalidation_conditions?: string | null;
+  status?: PlanStatusDb;
+  linked_trade_id?: string | null;
+  linked_at?: string | null;
+  review_notes?: string | null;
+  plan_adherence?: number | null;
+}
+
+export interface TradingPlanUpdate {
+  title?: string;
+  asset?: string;
+  direction?: TradeDirection;
+  entry_conditions?: string;
+  entry_price_min?: number | null;
+  entry_price_max?: number | null;
+  target_prices?: Json;
+  stop_loss_price?: number | null;
+  risk_reward_ratio?: number | null;
+  position_size_plan?: string | null;
+  leverage_plan?: number | null;
+  margin_plan?: number | null;
+  confidence_level?: number;
+  market_analysis?: string | null;
+  invalidation_conditions?: string | null;
+  status?: PlanStatusDb;
+  linked_trade_id?: string | null;
+  linked_at?: string | null;
+  review_notes?: string | null;
+  plan_adherence?: number | null;
 }
 
 // ────────────────────────────────────────────

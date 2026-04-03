@@ -1,10 +1,12 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { KpiGrid } from '@/components/dashboard/KpiGrid'
 import { TargetTracker } from '@/components/dashboard/TargetTracker'
 import { EquityCurve } from '@/components/charts/EquityChart'
 import { OpenPositions } from '@/components/dashboard/OpenPositions'
 import { RecentTrades } from '@/components/dashboard/RecentTrades'
+import { ActivePlans } from '@/components/dashboard/ActivePlans'
 import { useTradeStore } from '@/hooks/useTrades'
 import { useDashboardAnalytics } from '@/hooks/useAnalytics'
 
@@ -15,6 +17,7 @@ import { useDashboardAnalytics } from '@/hooks/useAnalytics'
  * trades 배열이 변경될 때만 재계산된다.
  */
 export default function DashboardPage() {
+  const router = useRouter()
   const targets = useTradeStore((s) => s.targets)
   const closeTrade = useTradeStore((s) => s.closeTrade)
   const tradeCloses = useTradeStore((s) => s.tradeCloses)
@@ -48,6 +51,9 @@ export default function DashboardPage() {
       <div className="mb-3">
         <EquityCurve data={equityData} />
       </div>
+
+      {/* 활성 플랜 */}
+      <ActivePlans onNavigateToPlans={() => router.push('/plans')} />
 
       {/* 오픈 포지션 */}
       <OpenPositions

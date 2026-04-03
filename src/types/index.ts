@@ -332,6 +332,72 @@ export interface TradeScreenshot {
   url: string
 }
 
+// ── 트레이딩 플랜 ──
+
+/** 플랜 상태 */
+export type PlanStatus = 'draft' | 'active' | 'linked' | 'expired' | 'archived'
+
+/** 목표가 항목 */
+export interface TargetPrice {
+  label: string
+  price: number
+  pct: number        // 청산 비율 %
+  hit?: boolean
+}
+
+/** 트레이딩 플랜 */
+export interface TradingPlan {
+  id: string
+  user_id?: string
+  title: string
+  asset: string
+  direction: Direction
+  entry_conditions: string
+  entry_price_min?: number | null
+  entry_price_max?: number | null
+  target_prices: TargetPrice[]
+  stop_loss_price?: number | null
+  risk_reward_ratio?: number | null
+  position_size_plan?: string | null
+  leverage_plan?: number | null
+  margin_plan?: number | null
+  confidence_level: number
+  market_analysis?: string | null
+  invalidation_conditions?: string | null
+  status: PlanStatus
+  linked_trade_id?: string | null
+  linked_at?: string | null
+  review_notes?: string | null
+  plan_adherence?: number | null
+  created_at?: string
+  updated_at?: string
+}
+
+/** 플랜 입력 폼 데이터 */
+export interface PlanFormData {
+  title: string
+  asset: string
+  direction: Direction
+  entry_conditions: string
+  entry_price_min?: number | null
+  entry_price_max?: number | null
+  target_prices: TargetPrice[]
+  stop_loss_price?: number | null
+  leverage_plan?: number | null
+  margin_plan?: number | null
+  position_size_plan?: string
+  confidence_level: number
+  market_analysis?: string
+  invalidation_conditions?: string
+  status: 'draft' | 'active'
+}
+
+/** 플랜 필터 */
+export interface PlanFilter {
+  status?: PlanStatus | ''
+  asset?: string
+}
+
 // ── 토스트 알림 ──
 
 export type ToastType = 'success' | 'error' | 'info'
