@@ -43,16 +43,13 @@ export async function POST(request: Request) {
   const isAdmin = adminEmails.includes(user.email ?? '');
 
   if (!isAdmin) {
-    // 해당 월 종료 후 7일 경과 체크
-    const lastDayOfMonth = new Date(year, month, 0); // month는 1-based → 해당 월의 마지막 날
-    const availableFrom = new Date(lastDayOfMonth);
-    availableFrom.setDate(availableFrom.getDate() + 7);
+    // 현재 월만 생성 허용 (4월이면 4월 리포트만 가능)
     const now = new Date();
-    if (now < availableFrom) {
-      const mm = String(availableFrom.getMonth() + 1).padStart(2, '0');
-      const dd = String(availableFrom.getDate()).padStart(2, '0');
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    if (year !== currentYear || month !== currentMonth) {
       return NextResponse.json(
-        { error: `${year}년 ${month}월 리포트는 ${availableFrom.getFullYear()}.${mm}.${dd} 이후에 생성할 수 있습니다. (월 종료 후 7일 경과 필요)` },
+        { error: `리포트는 해당 월에만 생성할 수 있습니다. 현재는 ${currentYear}년 ${currentMonth}월 리포트만 생성 가능합니다.` },
         { status: 400 },
       );
     }

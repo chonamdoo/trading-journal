@@ -27,15 +27,8 @@ export function AIReportSection({ userId }: { userId?: string }) {
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
-  const [selectedYear, setSelectedYear] = useState(() => {
-    const now = new Date()
-    // 기본값: 지난달
-    return now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
-  })
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date()
-    return now.getMonth() === 0 ? 12 : now.getMonth()
-  })
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1)
 
   const loadReports = useCallback(async () => {
     if (!userId) return
@@ -50,22 +43,14 @@ export function AIReportSection({ userId }: { userId?: string }) {
     loadReports()
   }, [loadReports])
 
-  // 해당 월 종료 후 7일 경과 여부 체크
-  const getAvailableDate = (y: number, m: number) => {
-    const lastDay = new Date(y, m, 0)
-    const available = new Date(lastDay)
-    available.setDate(available.getDate() + 7)
-    return available
-  }
-
-  const availableDate = getAvailableDate(selectedYear, selectedMonth)
-  const isNotYetAvailable = new Date() < availableDate
+  // 현재 월만 생성 허용
+  const now = new Date()
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1
+  const isNotAvailable = !isCurrentMonth
 
   const handleGenerate = async () => {
-    if (isNotYetAvailable) {
-      const mm = String(availableDate.getMonth() + 1).padStart(2, '0')
-      const dd = String(availableDate.getDate()).padStart(2, '0')
-      setError(`${selectedYear}년 ${selectedMonth}월 리포트는 ${availableDate.getFullYear()}.${mm}.${dd} 이후에 생성할 수 있습니다.`)
+    if (isNotAvailable) {
+      setError(`리포트는 해당 월에만 생성할 수 있습니다. 현재는 ${now.getFullYear()}년 ${now.getMonth() + 1}월 리포트만 가능합니다.`)
       return
     }
 
@@ -151,10 +136,10 @@ export function AIReportSection({ userId }: { userId?: string }) {
           </div>
           <button
             onClick={handleGenerate}
-            disabled={generating || isNotYetAvailable}
+            disabled={generating || isNotAvailable}
             className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-input hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {generating ? '분석 중... (약 10초)' : isNotYetAvailable ? `${availableDate.getMonth() + 1}/${availableDate.getDate()}부터 가능` : '리포트 생성'}
+            {generating ? '분석 중... (약 10초)' : isNotAvailable ? '해당 월에만 생성 가능' : '리포트 생성'}
           </button>
         </div>
         {error && (
