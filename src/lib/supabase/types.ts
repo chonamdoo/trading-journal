@@ -205,12 +205,16 @@ export interface Database {
 // profiles 테이블
 // ────────────────────────────────────────────
 
+export type SubscriptionTier = 'free' | 'pro';
+
 export interface ProfileRow {
   id: string;
   email: string;
   display_name: string | null;
   initial_capital: number;
   currency: string;
+  subscription_tier: SubscriptionTier;
+  subscription_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -221,6 +225,8 @@ export interface ProfileInsert {
   display_name?: string | null;
   initial_capital?: number;
   currency?: string;
+  subscription_tier?: SubscriptionTier;
+  subscription_expires_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -231,7 +237,58 @@ export interface ProfileUpdate {
   display_name?: string | null;
   initial_capital?: number;
   currency?: string;
+  subscription_tier?: SubscriptionTier;
+  subscription_expires_at?: string | null;
   updated_at?: string;
+}
+
+// ────────────────────────────────────────────
+// subscription_plans 테이블
+// ────────────────────────────────────────────
+
+export interface SubscriptionPlanFeatures {
+  max_trades_per_month: number;    // -1 = 무제한
+  max_screenshots_per_trade: number;
+  max_active_plans: number;        // -1 = 무제한
+  ai_report: boolean;
+  share_card_watermark: boolean;
+  data_export: boolean;
+}
+
+export interface SubscriptionPlanRow {
+  id: string;
+  name: string;
+  tier: SubscriptionTier;
+  price: number;
+  currency: string;
+  interval: 'month' | 'year' | 'lifetime' | 'free';
+  features: SubscriptionPlanFeatures;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ────────────────────────────────────────────
+// subscriptions 테이블
+// ────────────────────────────────────────────
+
+export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'past_due';
+
+export interface SubscriptionRow {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: SubscriptionStatus;
+  started_at: string;
+  expires_at: string | null;
+  cancelled_at: string | null;
+  payment_provider: string | null;
+  provider_subscription_id: string | null;
+  provider_customer_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 // ────────────────────────────────────────────

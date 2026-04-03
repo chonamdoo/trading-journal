@@ -69,14 +69,46 @@ export interface Target {
 
 // ── 사용자 프로필 ──
 
+export type SubscriptionTier = 'free' | 'pro'
+
 export interface Profile {
   id: string
   email: string
   display_name?: string | null
   initial_capital: number
   currency: string
+  subscription_tier: SubscriptionTier
+  subscription_expires_at?: string | null
   created_at?: string
   updated_at?: string
+}
+
+export interface SubscriptionPlan {
+  id: string
+  name: string
+  tier: SubscriptionTier
+  price: number
+  currency: string
+  interval: 'month' | 'year' | 'lifetime' | 'free'
+  features: {
+    max_trades_per_month: number
+    max_screenshots_per_trade: number
+    max_active_plans: number
+    ai_report: boolean
+    share_card_watermark: boolean
+    data_export: boolean
+  }
+  is_active: boolean
+}
+
+export interface Subscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: 'active' | 'cancelled' | 'expired' | 'past_due'
+  started_at: string
+  expires_at?: string | null
+  cancelled_at?: string | null
 }
 
 // ── 에쿼티 커브 포인트 ──
