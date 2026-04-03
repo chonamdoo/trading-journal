@@ -403,6 +403,7 @@ export interface TradeScaleInRow {
   user_id: string;
   entry_price: number;
   margin: number;
+  quantity: number | null;
   entry_datetime: string;
   type: ScaleInTypeDb;
   note: string | null;
@@ -415,6 +416,7 @@ export interface TradeScaleInInsert {
   user_id: string;
   entry_price: number;
   margin: number;
+  quantity?: number | null;
   entry_datetime: string;
   type: ScaleInTypeDb;
   note?: string | null;
@@ -423,6 +425,7 @@ export interface TradeScaleInInsert {
 export interface TradeScaleInUpdate {
   entry_price?: number;
   margin?: number;
+  quantity?: number | null;
   entry_datetime?: string;
   type?: ScaleInTypeDb;
   note?: string | null;

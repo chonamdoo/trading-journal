@@ -16,6 +16,7 @@ function normalizeRow(row: Record<string, unknown>): TradeScaleInRow {
     ...row,
     entry_price: Number(row.entry_price),
     margin: Number(row.margin),
+    quantity: row.quantity != null ? Number(row.quantity) : null,
   } as TradeScaleInRow;
 }
 
@@ -81,6 +82,7 @@ export async function addTradeScaleIn(
     userId: string
     entryPrice: number
     margin: number
+    quantity?: number | null
     entryDatetime: string
     type: ScaleInTypeDb
     note?: string | null
@@ -110,6 +112,7 @@ export async function addTradeScaleIn(
         user_id: params.userId,
         entry_price: params.entryPrice,
         margin: params.margin,
+        quantity: params.quantity ?? null,
         entry_datetime: params.entryDatetime,
         type: params.type,
         note: params.note ?? null,

@@ -309,6 +309,7 @@ export interface TradeScaleIn {
   user_id?: string
   entry_price: number
   margin: number
+  quantity?: number | null
   entry_datetime: string
   type: ScaleInType       // scale_in_down=물타기, scale_in_up=불타기
   note?: string | null

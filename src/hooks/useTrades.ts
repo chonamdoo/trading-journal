@@ -181,6 +181,7 @@ interface TradeStore {
     tradeId: string
     entryPrice: number
     margin: number
+    quantity?: number | null
     entryDatetime: string
     type: ScaleInType
     note?: string
@@ -591,6 +592,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
       if (params.entryPrice <= 0) return { success: false, error: '진입 가격은 0보다 커야 합니다.' }
       if (params.margin <= 0) return { success: false, error: '증거금은 0보다 커야 합니다.' }
+      if (params.quantity != null && params.quantity <= 0) return { success: false, error: '수량은 0보다 커야 합니다.' }
 
       const trade = get().trades.find((t) => t.id === params.tradeId)
       if (!trade) return { success: false, error: '거래를 찾을 수 없습니다.' }
@@ -601,6 +603,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         userId,
         entryPrice: params.entryPrice,
         margin: params.margin,
+        quantity: params.quantity ?? null,
         entryDatetime: params.entryDatetime,
         type: params.type,
         note: params.note ?? null,
@@ -617,6 +620,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         user_id: res.data.user_id,
         entry_price: res.data.entry_price,
         margin: res.data.margin,
+        quantity: res.data.quantity,
         entry_datetime: res.data.entry_datetime,
         type: res.data.type,
         note: res.data.note,

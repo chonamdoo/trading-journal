@@ -235,7 +235,7 @@ export function TradeDetailModal({
                 >
                   <div className="flex items-center gap-sp-4">
                     <span className="text-content-muted font-mono">#{idx + 1}</span>
-                    <span className={`text-[11px] font-medium ${si.type === 'scale_in_down' ? 'text-red-400' : 'text-green-400'}`}>
+                    <span className={`text-[11px] font-medium ${si.type === 'scale_in_down' ? 'text-loss' : 'text-profit'}`}>
                       {si.type === 'scale_in_down' ? '물타기' : '불타기'}
                     </span>
                     <span className="text-content-muted">@</span>
@@ -243,6 +243,17 @@ export function TradeDetailModal({
                   </div>
                   <span className="font-mono font-semibold text-content-secondary">
                     +${formatNumber(si.margin)}
+                    {(() => {
+                      if (!trade) return null
+                      const leverage = trade.leverage || 1
+                      const qty = si.quantity != null ? si.quantity : (si.margin * leverage) / si.entry_price
+                      const isEstimated = si.quantity == null
+                      return (
+                        <span className="text-content-muted font-normal ml-1 text-[11px]">
+                          · {isEstimated ? '~' : ''}{qty > 0.0001 ? qty.toPrecision(4) : qty.toExponential(1)} {trade.asset}
+                        </span>
+                      )
+                    })()}
                   </span>
                 </div>
               ))}

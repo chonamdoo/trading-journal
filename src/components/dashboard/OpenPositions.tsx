@@ -31,6 +31,7 @@ interface OpenPositionsProps {
     tradeId: string
     entryPrice: number
     margin: number
+    quantity?: number | null
     entryDatetime: string
     type: ScaleInType
     note?: string
@@ -81,6 +82,8 @@ export function OpenPositions({
   const [scaleInDatetime, setScaleInDatetime] = useState(nowDatetimeLocal())
   const [scaleInType, setScaleInType] = useState<ScaleInType>('scale_in_down')
   const [scaleInNote, setScaleInNote] = useState('')
+  const [scaleInMode, setScaleInMode] = useState<'margin' | 'quantity'>('margin')
+  const [scaleInQuantity, setScaleInQuantity] = useState('')
 
   // ── 분할 청산 / 추가진입 기록 토글 ──
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -182,21 +185,41 @@ export function OpenPositions({
   }
 
   const handleScaleIn = async () => {
-    if (!scaleInId || !scaleInPrice || !scaleInMargin) return
+    if (!scaleInId || !scaleInPrice) return
     const price = parseFloat(scaleInPrice)
-    const margin = parseFloat(scaleInMargin)
     if (isNaN(price) || price <= 0) {
       showToast('error', '진입 가격은 0보다 커야 합니다.')
       return
     }
-    if (isNaN(margin) || margin <= 0) {
-      showToast('error', '증거금은 0보다 커야 합니다.')
-      return
+
+    const trade = openTrades.find((t) => t.id === scaleInId)
+    const leverage = trade?.leverage || 1
+
+    let margin: number
+    let quantity: number
+
+    if (scaleInMode === 'margin') {
+      margin = parseFloat(scaleInMargin)
+      if (isNaN(margin) || margin <= 0) {
+        showToast('error', '증거금은 0보다 커야 합니다.')
+        return
+      }
+      quantity = (margin * leverage) / price
+    } else {
+      quantity = parseFloat(scaleInQuantity)
+      if (isNaN(quantity) || quantity <= 0) {
+        showToast('error', '수량은 0보다 커야 합니다.')
+        return
+      }
+      margin = (quantity * price) / leverage
+      margin = Math.round(margin * 100) / 100
     }
+
     const result = await onScaleIn({
       tradeId: scaleInId,
       entryPrice: price,
       margin,
+      quantity,
       entryDatetime: scaleInDatetime,
       type: scaleInType,
       note: scaleInNote || undefined,
@@ -205,9 +228,11 @@ export function OpenPositions({
       setScaleInId(null)
       setScaleInPrice('')
       setScaleInMargin('')
+      setScaleInQuantity('')
       setScaleInDatetime(nowDatetimeLocal())
       setScaleInType('scale_in_down')
       setScaleInNote('')
+      setScaleInMode('margin')
     }
   }
 
@@ -348,16 +373,24 @@ export function OpenPositions({
                       {scaleIns.length > 0 && (
                         <>
                           <div className="text-[10px] font-semibold text-content-muted uppercase tracking-wider mb-1">추가진입</div>
-                          {scaleIns.map((si, idx) => (
-                            <div key={si.id} className="flex items-center justify-between text-[11px]">
-                              <span className="text-content-muted">
-                                #{idx + 1} · {si.type === 'scale_in_down' ? '물타기' : '불타기'} · ${formatNumber(si.entry_price)}
-                              </span>
-                              <span className="font-mono text-content-secondary">
-                                +${formatNumber(si.margin)}
-                              </span>
-                            </div>
-                          ))}
+                          {scaleIns.map((si, idx) => {
+                            const leverage = trade.leverage || 1
+                            const qty = si.quantity != null ? si.quantity : (si.margin * leverage) / si.entry_price
+                            const isEstimated = si.quantity == null
+                            return (
+                              <div key={si.id} className="flex items-center justify-between text-[11px]">
+                                <span className="text-content-muted">
+                                  #{idx + 1} · {si.type === 'scale_in_down' ? '물타기' : '불타기'} · ${formatNumber(si.entry_price)}
+                                </span>
+                                <span className="font-mono text-content-secondary">
+                                  +${formatNumber(si.margin)}
+                                  <span className="text-content-muted ml-1">
+                                    · {isEstimated ? '~' : ''}{qty > 0.0001 ? qty.toPrecision(4) : qty.toExponential(1)} {trade.asset}
+                                  </span>
+                                </span>
+                              </div>
+                            )
+                          })}
                         </>
                       )}
                       {/* 분할 청산 기록 */}
@@ -540,7 +573,7 @@ export function OpenPositions({
                   type="button"
                   className={`flex-1 py-2 px-3 rounded-input text-[12px] font-medium border transition-colors ${
                     scaleInType === 'scale_in_down'
-                      ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                      ? 'bg-loss-bg border-loss/30 text-loss'
                       : 'bg-surface border-border text-content-muted hover:bg-surface-hover'
                   }`}
                   onClick={() => setScaleInType('scale_in_down')}
@@ -551,7 +584,7 @@ export function OpenPositions({
                   type="button"
                   className={`flex-1 py-2 px-3 rounded-input text-[12px] font-medium border transition-colors ${
                     scaleInType === 'scale_in_up'
-                      ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                      ? 'bg-profit-bg border-profit/30 text-profit'
                       : 'bg-surface border-border text-content-muted hover:bg-surface-hover'
                   }`}
                   onClick={() => setScaleInType('scale_in_up')}
@@ -568,13 +601,90 @@ export function OpenPositions({
               value={scaleInPrice}
               onChange={(e) => setScaleInPrice(e.target.value)}
             />
-            <Input
-              label="추가 증거금 (USDT)"
-              type="number"
-              placeholder="0.00"
-              value={scaleInMargin}
-              onChange={(e) => setScaleInMargin(e.target.value)}
-            />
+            {/* 입력 모드 토글 */}
+            <div>
+              <label className="block text-[12px] font-medium text-content-secondary mb-1.5">
+                입력 방식
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={`flex-1 py-2 px-3 rounded-input text-[12px] font-medium border transition-colors ${
+                    scaleInMode === 'margin'
+                      ? 'bg-accent/10 border-accent/30 text-accent'
+                      : 'bg-surface border-border text-content-muted hover:bg-surface-hover'
+                  }`}
+                  onClick={() => {
+                    setScaleInMode('margin')
+                    setScaleInMargin('')
+                    setScaleInQuantity('')
+                  }}
+                >
+                  증거금 (USDT)
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-2 px-3 rounded-input text-[12px] font-medium border transition-colors ${
+                    scaleInMode === 'quantity'
+                      ? 'bg-accent/10 border-accent/30 text-accent'
+                      : 'bg-surface border-border text-content-muted hover:bg-surface-hover'
+                  }`}
+                  onClick={() => {
+                    setScaleInMode('quantity')
+                    setScaleInMargin('')
+                    setScaleInQuantity('')
+                  }}
+                >
+                  수량
+                </button>
+              </div>
+            </div>
+
+            {scaleInMode === 'margin' ? (
+              <div>
+                <Input
+                  label="추가 증거금 (USDT)"
+                  type="number"
+                  placeholder="0.00"
+                  value={scaleInMargin}
+                  onChange={(e) => setScaleInMargin(e.target.value)}
+                />
+                {(() => {
+                  const price = parseFloat(scaleInPrice)
+                  const margin = parseFloat(scaleInMargin)
+                  const leverage = scaleInTrade?.leverage || 1
+                  if (!price || !margin || price <= 0 || margin <= 0) return null
+                  const qty = (margin * leverage) / price
+                  return (
+                    <p className="text-[11px] text-content-muted font-mono mt-1">
+                      = {qty > 0.0001 ? qty.toPrecision(6) : qty.toExponential(2)} {scaleInTrade?.asset}
+                    </p>
+                  )
+                })()}
+              </div>
+            ) : (
+              <div>
+                <Input
+                  label={`추가 수량 (${scaleInTrade?.asset || '코인'})`}
+                  type="number"
+                  placeholder="0.00"
+                  value={scaleInQuantity}
+                  onChange={(e) => setScaleInQuantity(e.target.value)}
+                />
+                {(() => {
+                  const price = parseFloat(scaleInPrice)
+                  const qty = parseFloat(scaleInQuantity)
+                  const leverage = scaleInTrade?.leverage || 1
+                  if (!price || !qty || price <= 0 || qty <= 0) return null
+                  const margin = (qty * price) / leverage
+                  return (
+                    <p className="text-[11px] text-content-muted font-mono mt-1">
+                      = ${formatNumber(Math.round(margin * 100) / 100)} USDT
+                    </p>
+                  )
+                })()}
+              </div>
+            )}
             <Input
               label="진입 일시"
               type="datetime-local"
@@ -592,7 +702,14 @@ export function OpenPositions({
             {/* 새 WAP 미리보기 */}
             {(() => {
               const price = parseFloat(scaleInPrice)
-              const margin = parseFloat(scaleInMargin)
+              const leverage = scaleInTrade?.leverage || 1
+              let margin: number
+              if (scaleInMode === 'margin') {
+                margin = parseFloat(scaleInMargin)
+              } else {
+                const qty = parseFloat(scaleInQuantity)
+                margin = qty > 0 && price > 0 ? (qty * price) / leverage : 0
+              }
               if (!price || !margin || price <= 0 || margin <= 0) return null
               const currentScaleIns = tradeScaleIns[scaleInTrade.id] || []
               const newWap = calcWeightedAvgPrice(
