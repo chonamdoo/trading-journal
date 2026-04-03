@@ -37,11 +37,22 @@ Next.js + Vercel + Supabase 환경의 암호화폐 선물 매매일지 프로젝
   → ⑥ PASS → 완료 / REJECT → ③으로 (최대 3회)
 ```
 
-> 각 단계의 상세 호출 방법은 `.claude/rules/subagent-workflow.md` 참조
+### 서브에이전트 호출 (각 단계 공통)
 
----
+- 각 에이전트는 **독립된 컨텍스트**에서 실행. 만드는 AI ≠ 평가하는 AI.
+- 호출 시 **Adaptive Thinking (Effort: Max)** 활성화.
+- 루프 반복 시 **Context Compaction** — 핵심 피드백만 전달.
 
-## 필수 참조 문서
+| 단계 | 에이전트 파일 | 읽을 문서 | 출력 |
+|------|-------------|----------|------|
+| ① PM/Planner | `.claude/agents/pm_planner.md` | 전체 docs/, 코드 구조, `evaluation_criteria.md` | `SPEC.md` |
+| ② Designer | `.claude/agents/designer.md` | SPEC.md, design-guide, design-v2, `evaluation_criteria.md` | `DESIGN.md` |
+| ③ Developer | `.claude/agents/developer.md` | SPEC.md, DESIGN.md, design-guide, security-reviewer, `evaluation_criteria.md` | 코드 + `SELF_CHECK.md` |
+| ③-R | Developer (피드백) | 위 + QA_REPORT.md — "구체적 개선 지시" 반영 | 코드 수정 |
+| ④ Security | `.claude/agents/security_expert.md` | SPEC.md 대상 파일, security-reviewer, security-audit | `SECURITY_REPORT.md` |
+| ⑤ Reviewer | `.claude/agents/reviewer.md` | SPEC/DESIGN/SECURITY_REPORT, `evaluation_criteria.md`, 빌드(`npx next build --no-lint`) | `QA_REPORT.md` |
+
+### 참조 문서
 
 | 문서 | 용도 |
 |------|------|
@@ -76,6 +87,7 @@ Next.js + Vercel + Supabase 환경의 암호화폐 선물 매매일지 프로젝
 
 ## 주의사항
 
-- Developer와 Reviewer는 반드시 다른 서브에이전트로 호출 (분리가 핵심)
+- Developer와 Reviewer는 반드시 **다른 서브에이전트**로 호출 (분리가 핵심)
 - 모든 작업은 **기획→승인→개발→QA→반영** 순서를 따릅니다
-- 서브에이전트 호출 시 반드시 필요한 문서를 읽도록 지시하세요
+- 서브에이전트 호출 시 반드시 해당 에이전트 파일 + 필요 문서를 읽도록 지시
+- REJECT/조건부 → ③으로 복귀, 최대 3회 반복 후 현 상태로 보고
