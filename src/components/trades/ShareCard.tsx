@@ -49,7 +49,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
       <div
         ref={ref}
         style={{
-          width: 400,
+          width: 500,
           backgroundColor: '#111110',
           color: '#f0f0ee',
           fontFamily: "'Pretendard', 'Noto Sans KR', sans-serif",
@@ -122,9 +122,9 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           </div>
         )}
 
-        {/* 스크린샷 */}
+        {/* 스크린샷 (풀폭 — 카드 패딩 밖으로 확장) */}
         {screenshotUrl && (
-          <div style={{ marginBottom: 16, borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ margin: '0 -24px 16px -24px', overflow: 'hidden' }}>
             <img src={screenshotUrl} alt="chart" style={{ width: '100%', display: 'block' }} />
           </div>
         )}

@@ -71,7 +71,7 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
     setGenerating(true)
     try {
       const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2,
+        pixelRatio: 3,
         cacheBust: true,
         backgroundColor: '#111110',
       })
