@@ -20,18 +20,35 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
   const cardRef = useRef<HTMLDivElement>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null)
+  const [screenshotDataUrl, setScreenshotDataUrl] = useState<string | null>(null)
+  const [screenshotReady, setScreenshotReady] = useState(false)
 
-  // 스크린샷 서명된 URL 가져오기
+  // 스크린샷을 base64 Data URL로 변환 (CORS 우회)
   useEffect(() => {
-    if (!screenshot) { setScreenshotUrl(null); return }
+    if (!screenshot) {
+      setScreenshotDataUrl(null)
+      setScreenshotReady(true)
+      return
+    }
+    setScreenshotReady(false)
     const supabase = createClient()
     supabase.storage
       .from('trade-screenshots')
-      .createSignedUrl(screenshot.storage_path, 300)
-      .then(({ data }) => {
-        if (data?.signedUrl) setScreenshotUrl(data.signedUrl)
+      .download(screenshot.storage_path)
+      .then(async ({ data, error }) => {
+        if (error || !data) {
+          setScreenshotReady(true)
+          return
+        }
+        const reader = new FileReader()
+        reader.onload = () => {
+          setScreenshotDataUrl(reader.result as string)
+          setScreenshotReady(true)
+        }
+        reader.onerror = () => setScreenshotReady(true)
+        reader.readAsDataURL(data)
       })
+      .catch(() => setScreenshotReady(true))
   }, [screenshot])
 
   // ESC 키
@@ -66,15 +83,14 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
     }
   }, [])
 
-  // 모달 열릴 때 자동 생성
+  // 스크린샷 준비 완료 후 자동 생성
   useEffect(() => {
-    if (open) {
+    if (open && screenshotReady) {
       setImageUrl(null)
-      // 렌더링 완료 후 생성
-      const timer = setTimeout(handleGenerate, 200)
+      const timer = setTimeout(handleGenerate, 300)
       return () => clearTimeout(timer)
     }
-  }, [open, handleGenerate])
+  }, [open, screenshotReady, handleGenerate])
 
   const handleShare = async () => {
     if (!imageUrl) return
@@ -87,7 +103,6 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
         showToast('error', '이 브라우저에서는 공유가 지원되지 않습니다.')
       }
     } catch (err) {
-      // 사용자 취소는 무시
       if (err instanceof Error && err.name === 'AbortError') return
       showToast('error', '공유에 실패했습니다.')
     }
@@ -115,10 +130,15 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
   if (!open) return null
 
   const canNativeShare = typeof navigator !== 'undefined' && 'canShare' in navigator
+  const hasScreenshot = !!screenshotDataUrl
+  const missingFields: string[] = []
+  if (!trade.reason) missingFields.push('진입 근거')
+  if (!trade.notes) missingFields.push('복기 메모')
+  if (!trade.stop_loss_price) missingFields.push('손절가')
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[5vh] overflow-y-auto"
+      className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-[5vh] overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
@@ -139,6 +159,15 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
           </button>
         </div>
 
+        {/* 빈 필드 안내 */}
+        {missingFields.length > 0 && !imageUrl && (
+          <div className="bg-warning-bg border border-warning/20 rounded-input px-3 py-2.5 mb-sp-4">
+            <p className="text-[12px] text-warning">
+              {missingFields.join(', ')}을(를) 작성하면 더 완성도 높은 카드를 만들 수 있습니다.
+            </p>
+          </div>
+        )}
+
         {/* 카드 미리보기 / 생성된 이미지 */}
         <div className="flex justify-center mb-sp-6">
           {imageUrl ? (
@@ -149,13 +178,15 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
               trade={trade}
               plan={plan}
               screenshot={screenshot}
-              screenshotUrl={screenshotUrl}
+              screenshotUrl={screenshotDataUrl}
             />
           )}
         </div>
 
-        {generating && (
-          <p className="text-center text-[12px] text-content-muted mb-sp-4">이미지 생성 중...</p>
+        {(generating || !screenshotReady) && (
+          <p className="text-center text-[12px] text-content-muted mb-sp-4">
+            {!screenshotReady ? '스크린샷 로딩 중...' : '이미지 생성 중...'}
+          </p>
         )}
 
         {/* 액션 버튼 */}
@@ -169,7 +200,7 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
           </div>
         )}
 
-        {!imageUrl && !generating && (
+        {!imageUrl && !generating && screenshotReady && (
           <div className="flex justify-center">
             <Button onClick={handleGenerate}>이미지 생성</Button>
           </div>

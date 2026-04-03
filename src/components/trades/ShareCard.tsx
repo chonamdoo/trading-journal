@@ -37,6 +37,8 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
     const returnPct = trade.pnl != null && trade.margin > 0
       ? (trade.pnl / trade.margin) * 100
       : null
+    const hasScreenshot = !!screenshotUrl
+    const textLimit = hasScreenshot ? 100 : 200
     const isProfit = (trade.pnl ?? 0) >= 0
     const pnlColor = isProfit ? '#18794e' : '#c62a2a'
     const dirColor = trade.direction === 'LONG' ? '#18794e' : '#c62a2a'
@@ -134,7 +136,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               진입 근거
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.6, color: '#d4d4d2', whiteSpace: 'pre-wrap', margin: 0 }}>
-              {trade.reason.length > 150 ? trade.reason.slice(0, 150) + '...' : trade.reason}
+              {trade.reason.length > textLimit ? trade.reason.slice(0, textLimit) + '...' : trade.reason}
             </p>
           </div>
         )}
@@ -146,7 +148,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
               복기 메모
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.6, color: '#d4d4d2', whiteSpace: 'pre-wrap', margin: 0 }}>
-              {trade.notes.length > 150 ? trade.notes.slice(0, 150) + '...' : trade.notes}
+              {trade.notes.length > textLimit ? trade.notes.slice(0, textLimit) + '...' : trade.notes}
             </p>
           </div>
         )}
