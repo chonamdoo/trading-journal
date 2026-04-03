@@ -17,10 +17,11 @@ export function PlanCompareView({ plan, trade, tradeCloses = [] }: PlanCompareVi
     ? ((trade.entry_price - planEntry) / planEntry) * 100
     : null
 
-  // 실제 R:R 계산
+  // 실제 R:R 계산 (trade.stop_loss_price 우선, 없으면 plan.stop_loss_price 폴백)
+  const effectiveStopLoss = trade.stop_loss_price ?? plan.stop_loss_price
   let actualRR: number | null = null
-  if (planEntry && plan.stop_loss_price && trade.pnl != null) {
-    const risk = Math.abs(planEntry - plan.stop_loss_price)
+  if (planEntry && effectiveStopLoss && trade.pnl != null) {
+    const risk = Math.abs(planEntry - effectiveStopLoss)
     if (risk > 0 && trade.margin > 0 && trade.leverage > 0) {
       const positionSize = trade.margin * trade.leverage
       const actualReward = Math.abs(trade.pnl) / positionSize * planEntry
@@ -29,6 +30,11 @@ export function PlanCompareView({ plan, trade, tradeCloses = [] }: PlanCompareVi
         : -Math.round((actualReward / risk) * 100) / 100
     }
   }
+
+  // 손절가 편차 계산
+  const slDeviation = plan.stop_loss_price && trade.stop_loss_price
+    ? ((trade.stop_loss_price - plan.stop_loss_price) / plan.stop_loss_price) * 100
+    : null
 
   // 목표가 도달 여부
   const targetHits = plan.target_prices.map((tp) => {
@@ -57,7 +63,9 @@ export function PlanCompareView({ plan, trade, tradeCloses = [] }: PlanCompareVi
     {
       label: '손절가',
       plan: plan.stop_loss_price ? `$${formatPrice(plan.stop_loss_price)}` : '—',
-      actual: trade.status === 'closed' && trade.pnl != null && trade.pnl < 0 ? `$${formatPrice(trade.exit_price!)}` : '—',
+      actual: trade.stop_loss_price ? `$${formatPrice(trade.stop_loss_price)}` : '—',
+      diff: slDeviation != null ? `${slDeviation >= 0 ? '+' : ''}${slDeviation.toFixed(2)}%` : undefined,
+      diffClass: slDeviation != null ? (Math.abs(slDeviation) < 1 ? 'text-profit' : 'text-warning') : undefined,
     },
     {
       label: 'R:R',

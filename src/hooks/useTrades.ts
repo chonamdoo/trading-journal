@@ -77,6 +77,7 @@ function rowToTrade(row: Record<string, unknown>): Trade {
     leverage: Number(row.leverage),
     entry_price: Number(row.entry_price),
     exit_price: row.exit_price != null ? Number(row.exit_price) : null,
+    stop_loss_price: row.stop_loss_price != null ? Number(row.stop_loss_price) : null,
     margin: Number(row.margin),
     status: row.status as Trade['status'],
     pnl: row.pnl != null ? Number(row.pnl) : null,
@@ -330,6 +331,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         leverage: data.leverage,
         entry_price: data.entry_price,
         exit_price: data.exit_price || null,
+        stop_loss_price: data.stop_loss_price || null,
         margin: data.margin,
         status,
         pnl,
@@ -376,6 +378,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       if (data.reason !== undefined) updates.reason = data.reason || null
       if (data.notes !== undefined) updates.notes = data.notes || null
       if (data.tags !== undefined) updates.tags = data.tags || null
+      if (data.stop_loss_price !== undefined) updates.stop_loss_price = data.stop_loss_price || null
 
       // exit_price가 있으면 P&L 재계산
       const currentTrade = get().trades.find((t) => t.id === id)

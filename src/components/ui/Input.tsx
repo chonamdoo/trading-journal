@@ -3,6 +3,7 @@ import { type InputHTMLAttributes, forwardRef } from 'react'
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   hint?: string
+  hintClassName?: string
   error?: string
 }
 
@@ -12,7 +13,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  * - 숫자 입력 시 모노스페이스 폰트 자동 적용
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  function Input({ label, hint, error, className = '', type, ...props }, ref) {
+  function Input({ label, hint, hintClassName, error, className = '', type, ...props }, ref) {
     const isNumber = type === 'number'
     return (
       <div className="flex flex-col gap-sp-2">
@@ -20,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <label className="text-[12px] font-medium text-content-secondary tracking-[0.1px]">
             {label}
             {hint && (
-              <span className="text-[11px] text-content-muted font-normal ml-1">
+              <span className={`text-[11px] font-normal ml-1 ${hintClassName || 'text-content-muted'}`}>
                 {hint}
               </span>
             )}

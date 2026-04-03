@@ -18,6 +18,7 @@ export interface Trade {
   leverage: number                // 1 ~ 125
   entry_price: number
   exit_price?: number | null
+  stop_loss_price?: number | null // 손절가 (USDT)
   margin: number                  // 투입 증거금 (USDT)
   status: TradeStatus
   pnl?: number | null             // 실현 손익 (USDT)
@@ -36,6 +37,7 @@ export interface TradeFormData {
   margin: number
   entry_price: number
   exit_price?: number | null
+  stop_loss_price?: number | null
   entry_datetime: string
   exit_datetime?: string | null
   reason?: string

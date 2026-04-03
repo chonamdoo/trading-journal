@@ -255,6 +255,7 @@ export interface TradeRow {
   leverage: number;
   entry_price: number;
   exit_price: number | null;
+  stop_loss_price: number | null;
   margin: number;
   status: TradeStatus;
   pnl: number | null;
@@ -276,6 +277,7 @@ export interface TradeInsert {
   leverage?: number;
   entry_price: number;
   exit_price?: number | null;
+  stop_loss_price?: number | null;
   margin: number;
   status?: TradeStatus;
   pnl?: number | null;
@@ -293,6 +295,7 @@ export interface TradeUpdate {
   leverage?: number;
   entry_price?: number;
   exit_price?: number | null;
+  stop_loss_price?: number | null;
   margin?: number;
   status?: TradeStatus;
   pnl?: number | null;
