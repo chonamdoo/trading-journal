@@ -64,14 +64,21 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // 세션 갱신 (만료된 토큰 자동 리프레시)
-  // 주의: getUser()를 사용해야 실제 서버 검증이 이루어진다.
-  // getSession()은 JWT를 로컬에서만 검증하므로 보안상 불충분하다.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { pathname } = request.nextUrl;
+  const isApiRoute = pathname.startsWith('/api/');
+
+  // API 라우트: getUser()로 서버 검증 (보안 중요)
+  // 페이지 네비게이션: getSession()으로 로컬 JWT 디코딩 (네트워크 호출 없음, ~50-100ms 절감)
+  // getSession()은 만료된 토큰도 자동 리프레시하므로 페이지 라우팅에는 충분하다.
+  // 실제 데이터 접근은 Supabase RLS + 클라이언트의 getUser()가 보호한다.
+  let user: { id: string } | null = null;
+  if (isApiRoute) {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } else {
+    const { data } = await supabase.auth.getSession();
+    user = data.session?.user ?? null;
+  }
 
   // OAuth 콜백 코드가 /login으로 잘못 도착한 경우 → /auth/callback으로 리다이렉트
   if (pathname === '/login' && request.nextUrl.searchParams.has('code')) {

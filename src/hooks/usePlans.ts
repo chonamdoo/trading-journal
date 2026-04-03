@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/components/ui/Toast'
 import type { TradingPlanRow } from '@/lib/supabase/types'
 
+import { useTradeStore } from './useTrades'
 import {
   getPlans as apiGetPlans,
   getActivePlans as apiGetActivePlans,
@@ -52,6 +53,8 @@ interface PlanStore {
   activePlans: TradingPlan[]
   loading: boolean
   isLoaded: boolean
+  /** activePlans 로드 완료 여부 (대시보드 재진입 시 재호출 방지) */
+  activePlansLoaded: boolean
 
   loadPlans: (filters?: { status?: PlanStatus | ''; asset?: string }) => Promise<void>
   loadActivePlans: () => Promise<void>
@@ -69,7 +72,10 @@ interface PlanStore {
 export const usePlanStore = create<PlanStore>((set, get) => {
   const getSupabase = () => createClient()
 
-  const getUserId = async () => {
+  /** useTradeStore에 캐시된 userId를 우선 사용, 없으면 auth API 호출 */
+  const getUserId = async (): Promise<string | undefined> => {
+    const cached = useTradeStore.getState().userId
+    if (cached) return cached
     const supabase = getSupabase()
     const { data: { user } } = await supabase.auth.getUser()
     return user?.id
@@ -80,6 +86,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     activePlans: [],
     loading: false,
     isLoaded: false,
+    activePlansLoaded: false,
 
     loadPlans: async (filters) => {
       const userId = await getUserId()
@@ -101,6 +108,9 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     },
 
     loadActivePlans: async () => {
+      // 이미 로드됐으면 스킵 (대시보드 재진입 시 중복 호출 방지)
+      if (get().activePlansLoaded) return
+
       const userId = await getUserId()
       if (!userId) return
 
@@ -108,7 +118,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
       const res = await apiGetActivePlans(supabase, userId, 3)
 
       if (res.success) {
-        set({ activePlans: res.data.map(rowToPlan) })
+        set({ activePlans: res.data.map(rowToPlan), activePlansLoaded: true })
       }
     },
 
@@ -152,7 +162,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
       if (!res.success) return { success: false, error: res.error }
 
       const newPlan = rowToPlan(res.data)
-      set((s) => ({ plans: [newPlan, ...s.plans] }))
+      set((s) => ({ plans: [newPlan, ...s.plans], activePlansLoaded: false }))
       if (newPlan.status === 'active') {
         set((s) => ({ activePlans: [newPlan, ...s.activePlans].slice(0, 3) }))
       }
@@ -208,6 +218,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
         activePlans: updated.status === 'active'
           ? [updated, ...s.activePlans.filter((p) => p.id !== id)].slice(0, 3)
           : s.activePlans.filter((p) => p.id !== id),
+        activePlansLoaded: false,
       }))
       return { success: true }
     },
@@ -221,6 +232,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
       set((s) => ({
         plans: s.plans.filter((p) => p.id !== id),
         activePlans: s.activePlans.filter((p) => p.id !== id),
+        activePlansLoaded: false,
       }))
       return { success: true }
     },

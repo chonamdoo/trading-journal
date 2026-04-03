@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import Image from 'next/image'
 import type { TradeScreenshot } from '@/types'
 import { showToast } from '@/components/ui/Toast'
 
@@ -259,9 +260,11 @@ export function ImageUploader({
             {/* 기존 업로드된 이미지 */}
             {existingScreenshots.map((ss) => (
               <div key={ss.id} className="relative group">
-                <img
+                <Image
                   src={ss.url}
                   alt={ss.file_name}
+                  width={72}
+                  height={72}
                   className="w-[72px] h-[72px] object-cover rounded-badge border border-border cursor-pointer"
                   onClick={() => setLightboxUrl(ss.url)}
                 />

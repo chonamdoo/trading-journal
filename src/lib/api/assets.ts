@@ -143,41 +143,6 @@ export async function deleteCustomAsset(
   }
 }
 
-/**
- * 유저의 최근 거래 종목을 조회한다 (최근 5개, 중복 제거).
- */
-export async function getRecentAssets(
-  supabase: Client,
-  userId: string,
-): Promise<ApiResult<string[]>> {
-  try {
-    const { data, error } = await supabase
-      .from('trades')
-      .select('asset')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error) return { success: false, error: error.message };
-
-    // 중복 제거하여 최근 5개만
-    const seen = new Set<string>();
-    const recent: string[] = [];
-    for (const r of data ?? []) {
-      const asset = r.asset as string;
-      if (!seen.has(asset)) {
-        seen.add(asset);
-        recent.push(asset);
-        if (recent.length >= 5) break;
-      }
-    }
-
-    return { success: true, data: recent };
-  } catch (err) {
-    return { success: false, error: getErrorMessage(err) };
-  }
-}
-
 // ────────────────────────────────────────────
 // 유틸리티
 // ────────────────────────────────────────────

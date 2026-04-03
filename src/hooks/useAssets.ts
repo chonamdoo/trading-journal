@@ -1,93 +1,86 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_ASSETS } from '@/lib/constants'
 import {
-  getCustomAssets,
-  getRecentAssets,
   addCustomAsset as apiAddFavorite,
   deleteCustomAsset as apiDeleteFavorite,
 } from '@/lib/api/assets'
+import { useTradeStore } from './useTrades'
 
 /**
  * 종목 데이터를 관리하는 훅
- * - allAssets: DEFAULT_ASSETS (3대 거래소 선물 종목) + 유저 직접 입력 종목
- * - favorites: custom_assets (즐겨찾기)
- * - recentAssets: 최근 거래 종목 (trades에서 동적)
+ *
+ * TradeStore에서 초기 로드된 customAssets를 읽고,
+ * recentAssets는 trades 데이터에서 파생한다 (추가 API 호출 없음).
  */
 export function useAssets(userId?: string) {
-  const [allAssets, setAllAssets] = useState<string[]>([...DEFAULT_ASSETS])
-  const [favorites, setFavorites] = useState<string[]>([])
-  const [favoriteRows, setFavoriteRows] = useState<{ id: string; symbol: string }[]>([])
-  const [recentAssets, setRecentAssets] = useState<string[]>([])
-  const [loaded, setLoaded] = useState(false)
+  const trades = useTradeStore((s) => s.trades)
+  const customAssets = useTradeStore((s) => s.customAssets)
+  const isLoaded = useTradeStore((s) => s.isLoaded)
 
-  useEffect(() => {
-    if (!userId) return
+  // DEFAULT_ASSETS + 커스텀 종목 합산
+  const allAssets = useMemo(() => {
+    const extras = customAssets
+      .map((r) => r.symbol)
+      .filter((s) => !(DEFAULT_ASSETS as readonly string[]).includes(s))
+    return [...DEFAULT_ASSETS, ...extras]
+  }, [customAssets])
 
-    const load = async () => {
-      const supabase = createClient()
+  const favorites = useMemo(() => customAssets.map((r) => r.symbol), [customAssets])
 
-      // 즐겨찾기 + 최근 거래 종목 병렬 조회
-      const [favRes, recentRes] = await Promise.all([
-        getCustomAssets(supabase, userId),
-        getRecentAssets(supabase, userId),
-      ])
-
-      // DEFAULT_ASSETS + 유저가 직접 입력한 종목(custom_assets) 합산
-      if (favRes.success) {
-        const customSymbols = favRes.data.map((r) => r.symbol)
-        const extras = customSymbols.filter(
-          (s) => !(DEFAULT_ASSETS as readonly string[]).includes(s)
-        )
-        setAllAssets([...DEFAULT_ASSETS, ...extras])
+  // trades에서 최근 거래 종목 파생 (API 호출 없음)
+  const recentAssets = useMemo(() => {
+    const sorted = [...trades].sort((a, b) => {
+      const da = a.created_at ?? a.date
+      const db = b.created_at ?? b.date
+      return db.localeCompare(da)
+    })
+    const seen = new Set<string>()
+    const recent: string[] = []
+    for (const t of sorted) {
+      if (!seen.has(t.asset)) {
+        seen.add(t.asset)
+        recent.push(t.asset)
+        if (recent.length >= 5) break
       }
-
-      if (favRes.success) {
-        setFavorites(favRes.data.map((r) => r.symbol))
-        setFavoriteRows(favRes.data.map((r) => ({ id: r.id, symbol: r.symbol })))
-      }
-
-      if (recentRes.success) {
-        setRecentAssets(recentRes.data)
-      }
-
-      setLoaded(true)
     }
+    return recent
+  }, [trades])
 
-    load()
-  }, [userId])
-
-  const addFavorite = async (symbol: string) => {
+  const addFavorite = useCallback(async (symbol: string) => {
     if (!userId) return
     const supabase = createClient()
     const res = await apiAddFavorite(supabase, userId, symbol)
     if (res.success) {
-      setFavorites((prev) => [...prev, res.data.symbol])
-      setFavoriteRows((prev) => [...prev, { id: res.data.id, symbol: res.data.symbol }])
+      // TradeStore의 customAssets 직접 갱신
+      useTradeStore.setState((s) => ({
+        customAssets: [...s.customAssets, { id: res.data.id, symbol: res.data.symbol }],
+      }))
     }
     return res
-  }
+  }, [userId])
 
-  const removeFavorite = async (symbol: string) => {
+  const removeFavorite = useCallback(async (symbol: string) => {
     if (!userId) return
-    const row = favoriteRows.find((r) => r.symbol === symbol)
+    const row = customAssets.find((r) => r.symbol === symbol)
     if (!row) return
     const supabase = createClient()
     const res = await apiDeleteFavorite(supabase, row.id)
     if (res.success) {
-      setFavorites((prev) => prev.filter((s) => s !== symbol))
-      setFavoriteRows((prev) => prev.filter((r) => r.symbol !== symbol))
+      useTradeStore.setState((s) => ({
+        customAssets: s.customAssets.filter((r) => r.symbol !== symbol),
+      }))
     }
     return res
-  }
+  }, [userId, customAssets])
 
   return {
     allAssets,
     favorites,
     recentAssets,
-    loaded,
+    loaded: isLoaded,
     addFavorite,
     removeFavorite,
   }

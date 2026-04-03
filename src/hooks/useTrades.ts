@@ -19,6 +19,9 @@ import {
   closeTrade as apiCloseTrade,
 } from '@/lib/api/trades'
 import {
+  getCustomAssets as apiGetCustomAssets,
+} from '@/lib/api/assets'
+import {
   getDeposits as apiGetDeposits,
   createDeposit as apiCreateDeposit,
   deleteDeposit as apiDeleteDeposit,
@@ -148,6 +151,10 @@ interface TradeStore {
   error: string | null
   /** 초기 데이터 로드 완료 여부 (탭 전환 시 재호출 방지) */
   isLoaded: boolean
+  /** 캐시된 userId (loadData 시 세팅, CRUD마다 auth.getUser() 재호출 방지) */
+  userId: string | null
+  /** 사용자 커스텀 에셋 (즐겨찾기) */
+  customAssets: { id: string; symbol: string }[]
   // 데이터 로드
   loadData: () => Promise<void>
   /** 강제 새로고침 (isLoaded를 무시하고 다시 로드) */
@@ -203,11 +210,21 @@ function getSupabase(): SupabaseClient<Database> {
   return createClient() as unknown as SupabaseClient<Database>
 }
 
-/** 현재 로그인한 사용자 ID를 가져온다 */
+/** 현재 로그인한 사용자 ID를 가져온다 (초기 로드 전용) */
 async function getCurrentUserId(): Promise<string | null> {
   const supabase = getSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   return user?.id ?? null
+}
+
+/**
+ * 캐시된 userId를 반환한다.
+ * loadData()에서 캐싱된 값을 우선 사용하고, 없으면 auth API 호출로 폴백.
+ */
+async function getCachedUserId(get: () => TradeStore): Promise<string | null> {
+  const cached = get().userId
+  if (cached) return cached
+  return getCurrentUserId()
 }
 
 /** Zustand 전역 스토어 */
@@ -219,6 +236,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   loading: false,
   error: null,
   isLoaded: false,
+  userId: null,
+  customAssets: [],
   tradeCloses: {},
   tradeScaleIns: {},
   screenshots: {},
@@ -232,16 +251,19 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const supabase = getSupabase()
       const userId = await getCurrentUserId()
       if (!userId) {
-        set({ loading: false, trades: [], deposits: [], targets: [], profile: null })
+        set({ loading: false, trades: [], deposits: [], targets: [], profile: null, userId: null })
         return
       }
+      // userId 캐싱 — 이후 CRUD에서 auth.getUser() 재호출 방지
+      set({ userId })
 
-      // 병렬로 데이터 로드
-      const [tradesRes, depositsRes, targetsRes, profileRes] = await Promise.all([
+      // 병렬로 데이터 로드 (커스텀 에셋도 함께)
+      const [tradesRes, depositsRes, targetsRes, profileRes, customAssetsRes] = await Promise.all([
         apiGetTrades(supabase, userId, { pageSize: 1000 }),
         apiGetDeposits(supabase, userId),
         apiGetTargets(supabase, userId),
         apiGetProfile(supabase, userId),
+        apiGetCustomAssets(supabase, userId),
       ])
 
       const trades = tradesRes.success
@@ -256,8 +278,11 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const profile = profileRes.success
         ? rowToProfile(profileRes.data as unknown as Record<string, unknown>)
         : null
+      const customAssets = customAssetsRes.success
+        ? customAssetsRes.data.map((r) => ({ id: r.id, symbol: r.symbol }))
+        : []
 
-      set({ trades, deposits, targets, profile, loading: false, isLoaded: true })
+      set({ trades, deposits, targets, profile, customAssets, loading: false, isLoaded: true })
 
       // 에러가 있으면 토스트로 알림
       if (!tradesRes.success) showToast('error', `거래 로드 실패: ${tradesRes.error}`)
@@ -273,7 +298,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
   // ── 강제 새로고침 (isLoaded 무시) ──
   reloadData: async () => {
-    set({ isLoaded: false })
+    set({ isLoaded: false, userId: null })
     await get().loadData()
   },
 
@@ -298,7 +323,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) return { success: false, error: '로그인이 필요합니다.' }
 
       const status = data.exit_price ? 'closed' : 'open'
@@ -413,7 +438,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   deleteTrade: async (id: string) => {
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
 
       // Storage 파일 삭제 (DB 행은 CASCADE로 자동 삭제)
       if (userId) {
@@ -475,7 +500,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   addDeposit: async (date: string, amount: number, memo?: string) => {
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) {
         showToast('error', '로그인이 필요합니다.')
         return
@@ -523,7 +548,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   addTarget: async (label: string, amount: number) => {
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) {
         showToast('error', '로그인이 필요합니다.')
         return
@@ -563,7 +588,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   setInitialCapital: async (amount: number) => {
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) {
         showToast('error', '로그인이 필요합니다.')
         return
@@ -590,7 +615,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   addScaleIn: async (params) => {
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) return { success: false, error: '로그인이 필요합니다.' }
 
       if (params.entryPrice <= 0) return { success: false, error: '진입 가격은 0보다 커야 합니다.' }
@@ -673,6 +698,10 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
   // ── 특정 거래의 추가진입 기록 로드 ──
   loadTradeScaleIns: async (tradeId: string) => {
+    // 이미 로드된 데이터가 있으면 API 호출 없이 반환
+    const cached = get().tradeScaleIns[tradeId]
+    if (cached) return cached
+
     try {
       const supabase = getSupabase()
       const res = await apiGetTradeScaleIns(supabase, tradeId)
@@ -738,7 +767,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   addTradeClose: async (params) => {
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) return { success: false, error: '로그인이 필요합니다.' }
 
       if (params.exitPrice <= 0) return { success: false, error: '청산 가격은 0보다 커야 합니다.' }
@@ -823,6 +852,10 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
   // ── 특정 거래의 분할 청산 기록 로드 ──
   loadTradeCloses: async (tradeId: string) => {
+    // 이미 로드된 데이터가 있으면 API 호출 없이 반환
+    const cached = get().tradeCloses[tradeId]
+    if (cached) return cached
+
     try {
       const supabase = getSupabase()
       const res = await apiGetTradeCloses(supabase, tradeId)
@@ -912,7 +945,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     if (files.length === 0) return { success: true }
     try {
       const supabase = getSupabase()
-      const userId = await getCurrentUserId()
+      const userId = await getCachedUserId(get)
       if (!userId) return { success: false, error: '로그인이 필요합니다.' }
 
       // 기존 스크린샷이 있으면 먼저 삭제 (실패 시 새 업로드를 진행하지 않음)
@@ -973,6 +1006,10 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
   // ── 특정 거래의 스크린샷 로드 ──
   loadScreenshots: async (tradeId: string) => {
+    // 이미 로드된 데이터가 있으면 API 호출 없이 반환
+    const cached = get().screenshots[tradeId]
+    if (cached) return cached
+
     try {
       const supabase = getSupabase()
       const res = await apiGetScreenshots(supabase, tradeId)

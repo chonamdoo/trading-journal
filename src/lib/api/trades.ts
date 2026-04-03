@@ -326,31 +326,6 @@ export async function getAllClosedTrades(
   }
 }
 
-/**
- * 사용자별 거래에 사용된 코인 목록을 조회한다.
- */
-export async function getUsedAssets(
-  supabase: Client,
-  userId: string
-): Promise<ApiResult<string[]>> {
-  try {
-    const { data, error } = await supabase
-      .from('trades')
-      .select('asset')
-      .eq('user_id', userId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    // 중복 제거
-    const assets = [...new Set((data ?? []).map((row) => row.asset))];
-    return { success: true, data: assets };
-  } catch (err) {
-    return { success: false, error: getErrorMessage(err) };
-  }
-}
-
 // ────────────────────────────────────────────
 // 유틸리티
 // ────────────────────────────────────────────

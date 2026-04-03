@@ -7,6 +7,17 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // ── 이미지 최적화: Supabase Storage CDN URL 허용 ──
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+
   // ── 정적 에셋 및 API 캐싱 헤더 ──
   async headers() {
     return [

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import type { Trade, TradeClose, TradeScaleIn, TradeScreenshot, TradingPlan } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -324,9 +325,11 @@ export function TradeDetailModal({
                   rel="noopener noreferrer"
                   className="block"
                 >
-                  <img
+                  <Image
                     src={ss.url}
                     alt={ss.file_name}
+                    width={240}
+                    height={180}
                     className="w-full max-w-[240px] rounded-input border border-border object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                   />

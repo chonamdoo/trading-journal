@@ -17,6 +17,9 @@ interface CacheEntry<T = unknown> {
   createdAt: number
 }
 
+/** SWR 백그라운드 갱신 중인 키 추적 */
+const refreshingKeys = new Set<string>()
+
 /** 기본 TTL 상수 (밀리초) */
 export const CACHE_TTL = {
   /** 분석 결과 캐시: 5분 (거래 데이터 변경 시 무효화) */
@@ -87,6 +90,60 @@ export function getCachedSync<T>(
     createdAt: now,
   })
 
+  return data
+}
+
+/**
+ * Stale-While-Revalidate 패턴의 캐시.
+ *
+ * - TTL 이내: 캐시 반환 (fresh)
+ * - TTL 만료 ~ staleMs 이내: stale 데이터 즉시 반환 + 백그라운드에서 fetcher 실행
+ * - staleMs 초과: fetcher 실행 후 반환 (getCached와 동일 동작)
+ *
+ * @param key - 캐시 키
+ * @param fetcher - 데이터 가져오기 함수
+ * @param ttlMs - fresh TTL (밀리초)
+ * @param staleMs - stale 허용 시간 (밀리초). TTL 만료 후 이 시간까지 stale 데이터 반환.
+ */
+export async function getCachedSWR<T>(
+  key: string,
+  fetcher: () => T | Promise<T>,
+  ttlMs: number,
+  staleMs: number,
+): Promise<T> {
+  const now = Date.now()
+  const cached = cacheStore.get(key) as CacheEntry<T> | undefined
+
+  if (cached) {
+    // fresh: TTL 이내
+    if (cached.expiry > now) {
+      return cached.data
+    }
+
+    // stale: TTL 만료 ~ staleMs 이내 → stale 데이터 반환 + 백그라운드 갱신
+    const staleDeadline = cached.expiry + staleMs
+    if (now < staleDeadline) {
+      // 이미 백그라운드 갱신 중이면 중복 요청 방지
+      if (!refreshingKeys.has(key)) {
+        refreshingKeys.add(key)
+        Promise.resolve(fetcher())
+          .then((data) => {
+            cacheStore.set(key, { data, expiry: Date.now() + ttlMs, createdAt: Date.now() })
+          })
+          .catch(() => {
+            // 갱신 실패 시 stale 데이터 유지 (silent fail)
+          })
+          .finally(() => {
+            refreshingKeys.delete(key)
+          })
+      }
+      return cached.data
+    }
+  }
+
+  // 캐시 없거나 stale 기한도 만료 → 동기적 fetcher 실행
+  const data = await fetcher()
+  cacheStore.set(key, { data, expiry: now + ttlMs, createdAt: now })
   return data
 }
 
