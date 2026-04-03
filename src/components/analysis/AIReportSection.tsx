@@ -50,7 +50,25 @@ export function AIReportSection({ userId }: { userId?: string }) {
     loadReports()
   }, [loadReports])
 
+  // 해당 월 종료 후 7일 경과 여부 체크
+  const getAvailableDate = (y: number, m: number) => {
+    const lastDay = new Date(y, m, 0)
+    const available = new Date(lastDay)
+    available.setDate(available.getDate() + 7)
+    return available
+  }
+
+  const availableDate = getAvailableDate(selectedYear, selectedMonth)
+  const isNotYetAvailable = new Date() < availableDate
+
   const handleGenerate = async () => {
+    if (isNotYetAvailable) {
+      const mm = String(availableDate.getMonth() + 1).padStart(2, '0')
+      const dd = String(availableDate.getDate()).padStart(2, '0')
+      setError(`${selectedYear}년 ${selectedMonth}월 리포트는 ${availableDate.getFullYear()}.${mm}.${dd} 이후에 생성할 수 있습니다.`)
+      return
+    }
+
     // 같은 월 기존 리포트 확인
     const existing = reports.find(
       (r) => r.year === selectedYear && r.month === selectedMonth,
@@ -133,10 +151,10 @@ export function AIReportSection({ userId }: { userId?: string }) {
           </div>
           <button
             onClick={handleGenerate}
-            disabled={generating}
+            disabled={generating || isNotYetAvailable}
             className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-input hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {generating ? '분석 중... (약 10초)' : '리포트 생성'}
+            {generating ? '분석 중... (약 10초)' : isNotYetAvailable ? `${availableDate.getMonth() + 1}/${availableDate.getDate()}부터 가능` : '리포트 생성'}
           </button>
         </div>
         {error && (
