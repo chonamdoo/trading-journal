@@ -1,8 +1,8 @@
 /**
  * Supabase Database 타입 정의
  *
- * Supabase CLI의 `supabase gen types typescript` 명령으로 자동 생성할 수도 있지만,
- * 초기 개발 단계에서는 수동으로 정의하여 사용한다.
+ * `supabase gen types typescript`으로 생성된 Database 구조 +
+ * 앱에서 사용하는 커스텀 Row/Insert/Update 타입 별칭.
  */
 
 // ────────────────────────────────────────────
@@ -17,8 +17,11 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-/** Supabase SDK가 요구하는 Database 인터페이스 */
-export interface Database {
+/** Supabase SDK가 요구하는 Database 타입 */
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: '14.4';
+  };
   public: {
     Tables: {
       profiles: {
@@ -181,8 +184,107 @@ export interface Database {
           }
         ];
       };
+      supported_assets: {
+        Row: {
+          base_asset: string;
+          is_active: boolean;
+          quote_asset: string;
+          symbol: string;
+          synced_at: string;
+        };
+        Insert: {
+          base_asset: string;
+          is_active?: boolean;
+          quote_asset?: string;
+          symbol: string;
+          synced_at?: string;
+        };
+        Update: {
+          base_asset?: string;
+          is_active?: boolean;
+          quote_asset?: string;
+          symbol?: string;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      subscription_plans: {
+        Row: SubscriptionPlanRow;
+        Insert: {
+          id?: string;
+          name: string;
+          tier: string;
+          price?: number;
+          currency?: string;
+          interval?: string;
+          features?: Json;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          tier?: string;
+          price?: number;
+          currency?: string;
+          interval?: string;
+          features?: Json;
+          is_active?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: SubscriptionRow;
+        Insert: {
+          id?: string;
+          user_id: string;
+          plan_id: string;
+          status?: string;
+          started_at?: string;
+          expires_at?: string | null;
+          cancelled_at?: string | null;
+          payment_provider?: string | null;
+          provider_subscription_id?: string | null;
+          provider_customer_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          plan_id?: string;
+          status?: string;
+          expires_at?: string | null;
+          cancelled_at?: string | null;
+          payment_provider?: string | null;
+          provider_subscription_id?: string | null;
+          provider_customer_id?: string | null;
+          metadata?: Json;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'subscriptions_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'subscription_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'subscriptions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      [_ in never]: never;
+    };
     Functions: {
       migrate_json_data: {
         Args: {
@@ -196,8 +298,12 @@ export interface Database {
         Returns: Json;
       };
     };
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 }
 
@@ -207,7 +313,7 @@ export interface Database {
 
 export type SubscriptionTier = 'free' | 'pro';
 
-export interface ProfileRow {
+export type ProfileRow = {
   id: string;
   email: string;
   display_name: string | null;
@@ -219,7 +325,7 @@ export interface ProfileRow {
   updated_at: string;
 }
 
-export interface ProfileInsert {
+export type ProfileInsert = {
   id: string;
   email: string;
   display_name?: string | null;
@@ -231,7 +337,7 @@ export interface ProfileInsert {
   updated_at?: string;
 }
 
-export interface ProfileUpdate {
+export type ProfileUpdate = {
   id?: string;
   email?: string;
   display_name?: string | null;
@@ -246,7 +352,7 @@ export interface ProfileUpdate {
 // subscription_plans 테이블
 // ────────────────────────────────────────────
 
-export interface SubscriptionPlanFeatures {
+export type SubscriptionPlanFeatures = {
   max_trades_per_month: number;    // -1 = 무제한
   max_screenshots_per_trade: number;
   max_active_plans: number;        // -1 = 무제한
@@ -255,7 +361,7 @@ export interface SubscriptionPlanFeatures {
   data_export: boolean;
 }
 
-export interface SubscriptionPlanRow {
+export type SubscriptionPlanRow = {
   id: string;
   name: string;
   tier: SubscriptionTier;
@@ -275,7 +381,7 @@ export interface SubscriptionPlanRow {
 
 export type SubscriptionStatus = 'active' | 'cancelled' | 'expired' | 'past_due';
 
-export interface SubscriptionRow {
+export type SubscriptionRow = {
   id: string;
   user_id: string;
   plan_id: string;
@@ -301,7 +407,7 @@ export type TradeDirection = 'LONG' | 'SHORT';
 /** 거래 상태 */
 export type TradeStatus = 'open' | 'closed';
 
-export interface TradeRow {
+export type TradeRow = {
   id: string;
   user_id: string;
   date: string;
@@ -323,7 +429,7 @@ export interface TradeRow {
   updated_at: string;
 }
 
-export interface TradeInsert {
+export type TradeInsert = {
   id?: string;
   user_id: string;
   date: string;
@@ -343,7 +449,7 @@ export interface TradeInsert {
   tags?: string[] | null;
 }
 
-export interface TradeUpdate {
+export type TradeUpdate = {
   date?: string;
   entry_datetime?: string | null;
   exit_datetime?: string | null;
@@ -365,7 +471,7 @@ export interface TradeUpdate {
 // deposits 테이블
 // ────────────────────────────────────────────
 
-export interface DepositRow {
+export type DepositRow = {
   id: string;
   user_id: string;
   date: string;
@@ -374,7 +480,7 @@ export interface DepositRow {
   created_at: string;
 }
 
-export interface DepositInsert {
+export type DepositInsert = {
   id?: string;
   user_id: string;
   date: string;
@@ -382,7 +488,7 @@ export interface DepositInsert {
   memo?: string | null;
 }
 
-export interface DepositUpdate {
+export type DepositUpdate = {
   date?: string;
   amount?: number;
   memo?: string | null;
@@ -392,7 +498,7 @@ export interface DepositUpdate {
 // targets 테이블
 // ────────────────────────────────────────────
 
-export interface TargetRow {
+export type TargetRow = {
   id: string;
   user_id: string;
   label: string;
@@ -401,7 +507,7 @@ export interface TargetRow {
   created_at: string;
 }
 
-export interface TargetInsert {
+export type TargetInsert = {
   id?: string;
   user_id: string;
   label: string;
@@ -409,7 +515,7 @@ export interface TargetInsert {
   sort_order?: number;
 }
 
-export interface TargetUpdate {
+export type TargetUpdate = {
   label?: string;
   amount?: number;
   sort_order?: number;
@@ -419,20 +525,20 @@ export interface TargetUpdate {
 // custom_assets 테이블
 // ────────────────────────────────────────────
 
-export interface CustomAssetRow {
+export type CustomAssetRow = {
   id: string;
   user_id: string;
   symbol: string;
   created_at: string;
 }
 
-export interface CustomAssetInsert {
+export type CustomAssetInsert = {
   id?: string;
   user_id: string;
   symbol: string;
 }
 
-export interface CustomAssetUpdate {
+export type CustomAssetUpdate = {
   symbol?: string;
 }
 
@@ -440,7 +546,7 @@ export interface CustomAssetUpdate {
 // trade_closes 테이블 (분할 청산)
 // ────────────────────────────────────────────
 
-export interface TradeCloseRow {
+export type TradeCloseRow = {
   id: string;
   trade_id: string;
   user_id: string;
@@ -452,7 +558,7 @@ export interface TradeCloseRow {
   created_at: string;
 }
 
-export interface TradeCloseInsert {
+export type TradeCloseInsert = {
   id?: string;
   trade_id: string;
   user_id: string;
@@ -463,7 +569,7 @@ export interface TradeCloseInsert {
   pnl: number;
 }
 
-export interface TradeCloseUpdate {
+export type TradeCloseUpdate = {
   exit_price?: number;
   exit_datetime?: string;
   quantity_pct?: number;
@@ -478,7 +584,7 @@ export interface TradeCloseUpdate {
 /** 추가진입 타입 */
 export type ScaleInTypeDb = 'scale_in_down' | 'scale_in_up';
 
-export interface TradeScaleInRow {
+export type TradeScaleInRow = {
   id: string;
   trade_id: string;
   user_id: string;
@@ -491,7 +597,7 @@ export interface TradeScaleInRow {
   created_at: string;
 }
 
-export interface TradeScaleInInsert {
+export type TradeScaleInInsert = {
   id?: string;
   trade_id: string;
   user_id: string;
@@ -503,7 +609,7 @@ export interface TradeScaleInInsert {
   note?: string | null;
 }
 
-export interface TradeScaleInUpdate {
+export type TradeScaleInUpdate = {
   entry_price?: number;
   margin?: number;
   quantity?: number | null;
@@ -516,7 +622,7 @@ export interface TradeScaleInUpdate {
 // trade_screenshots 테이블
 // ────────────────────────────────────────────
 
-export interface TradeScreenshotRow {
+export type TradeScreenshotRow = {
   id: string;
   trade_id: string;
   user_id: string;
@@ -528,7 +634,7 @@ export interface TradeScreenshotRow {
   created_at: string;
 }
 
-export interface TradeScreenshotInsert {
+export type TradeScreenshotInsert = {
   id?: string;
   trade_id: string;
   user_id: string;
@@ -539,7 +645,7 @@ export interface TradeScreenshotInsert {
   sort_order?: number;
 }
 
-export interface TradeScreenshotUpdate {
+export type TradeScreenshotUpdate = {
   sort_order?: number;
 }
 
@@ -547,7 +653,7 @@ export interface TradeScreenshotUpdate {
 // monthly_reports 테이블 (AI 월간 리포트)
 // ────────────────────────────────────────────
 
-export interface MonthlyReportRow {
+export type MonthlyReportRow = {
   id: string;
   user_id: string;
   year: number;
@@ -562,7 +668,7 @@ export interface MonthlyReportRow {
   created_at: string;
 }
 
-export interface MonthlyReportInsert {
+export type MonthlyReportInsert = {
   id?: string;
   user_id: string;
   year: number;
@@ -576,7 +682,7 @@ export interface MonthlyReportInsert {
   model_used?: string;
 }
 
-export interface MonthlyReportUpdate {
+export type MonthlyReportUpdate = {
   trade_count?: number;
   win_rate?: number | null;
   total_pnl?: number | null;
@@ -591,7 +697,7 @@ export interface MonthlyReportUpdate {
 /** 플랜 상태 */
 export type PlanStatusDb = 'draft' | 'active' | 'linked' | 'expired' | 'archived';
 
-export interface TradingPlanRow {
+export type TradingPlanRow = {
   id: string;
   user_id: string;
   title: string;
@@ -618,7 +724,7 @@ export interface TradingPlanRow {
   updated_at: string;
 }
 
-export interface TradingPlanInsert {
+export type TradingPlanInsert = {
   id?: string;
   user_id: string;
   title: string;
@@ -643,7 +749,7 @@ export interface TradingPlanInsert {
   plan_adherence?: number | null;
 }
 
-export interface TradingPlanUpdate {
+export type TradingPlanUpdate = {
   title?: string;
   asset?: string;
   direction?: TradeDirection;

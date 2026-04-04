@@ -6,7 +6,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, TradeCloseRow, ApiResult } from '../supabase/types';
+import type { Database, TradeCloseRow, TradeCloseInsert, ApiResult } from '../supabase/types';
 
 type Client = SupabaseClient<Database>;
 
@@ -116,17 +116,15 @@ export async function addTradeClose(
     }
 
     // 분할 청산 레코드 삽입
-    const insertData: Record<string, unknown> = {
+    const insertData: TradeCloseInsert = {
       trade_id: params.tradeId,
       user_id: params.userId,
       exit_price: params.exitPrice,
       exit_datetime: params.exitDatetime,
       quantity_pct: params.quantityPct,
       pnl: params.pnl,
+      close_margin: params.closeMargin ?? undefined,
     };
-    if (params.closeMargin != null) {
-      insertData.close_margin = params.closeMargin;
-    }
 
     const { data: closeRow, error: insertErr } = await supabase
       .from('trade_closes')

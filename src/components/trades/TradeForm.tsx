@@ -288,8 +288,8 @@ export function TradeForm({
       stop_loss_price: !isNaN(slVal) && slVal > 0 ? slVal : null,
       entry_datetime: entryDatetime,
       exit_datetime: hasExit ? exitDatetime : null,
-      reason: reason.trim() || null,
-      notes: notes.trim() || null,
+      reason: reason.trim() || undefined,
+      notes: notes.trim() || undefined,
     }
 
     setSaving(true)
@@ -299,10 +299,7 @@ export function TradeForm({
         // 스크린샷 업로드 (거래 저장 후)
         const id = isEdit ? tradeId : result.tradeId
         if (id && pendingFiles.length > 0 && onUploadScreenshots) {
-          const uploadResult = await onUploadScreenshots(id, pendingFiles)
-          if (uploadResult && !uploadResult.success) {
-            showToast('error', uploadResult.error ?? '스크린샷 업로드에 실패했습니다.')
-          }
+          await onUploadScreenshots(id, pendingFiles)
         }
         // 플랜 연결 (C-2)
         const tradeResultId = isEdit ? tradeId : result.tradeId

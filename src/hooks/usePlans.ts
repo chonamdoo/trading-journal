@@ -29,7 +29,7 @@ function rowToPlan(row: TradingPlanRow): TradingPlan {
     entry_conditions: row.entry_conditions,
     entry_price_min: row.entry_price_min,
     entry_price_max: row.entry_price_max,
-    target_prices: (row.target_prices ?? []) as TargetPrice[],
+    target_prices: (row.target_prices ?? []) as unknown as TargetPrice[],
     stop_loss_price: row.stop_loss_price,
     risk_reward_ratio: row.risk_reward_ratio,
     position_size_plan: row.position_size_plan,
@@ -59,7 +59,7 @@ interface PlanStore {
   loadPlans: (filters?: { status?: PlanStatus | ''; asset?: string }) => Promise<void>
   loadActivePlans: () => Promise<void>
   createPlan: (data: PlanFormData) => Promise<{ success: boolean; error?: string }>
-  updatePlan: (id: string, data: Partial<PlanFormData> & {
+  updatePlan: (id: string, data: Partial<Omit<PlanFormData, 'status'>> & {
     review_notes?: string | null
     plan_adherence?: number | null
     status?: PlanStatus

@@ -124,7 +124,7 @@ export function PlanCompareView({ plan, trade, tradeCloses = [] }: PlanCompareVi
       )}
 
       {/* R:R 바 */}
-      <RiskRewardBar ratio={plan.risk_reward_ratio} />
+      <RiskRewardBar ratio={plan.risk_reward_ratio ?? null} />
     </div>
   )
 }

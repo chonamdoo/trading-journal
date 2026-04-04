@@ -111,7 +111,7 @@ export function PlanDetail({
                     : 'bg-surface border-border text-content-muted hover:border-border-strong'
                 }`}
               >
-                {{ draft: '초안', active: '활성', expired: '만료', archived: '보관' }[s]}
+                {{ draft: '초안', active: '활성', linked: '연결됨', expired: '만료', archived: '보관' }[s]}
               </button>
             ))}
           </div>
@@ -177,7 +177,7 @@ export function PlanDetail({
               </div>
             ))}
           </div>
-          <RiskRewardBar ratio={plan.risk_reward_ratio} />
+          <RiskRewardBar ratio={plan.risk_reward_ratio ?? null} />
         </Card>
       )}
 

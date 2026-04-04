@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, TradeClose, TradeScaleIn, ScaleInType } from '@/types'
+import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, TradeClose, TradeScaleIn, ScaleInType, SubscriptionTier } from '@/types'
 import { calcPnL, calcWeightedAvgPrice, calcRemainingMargin, calcClosePnl } from '@/lib/calc'
 import { invalidateCacheByPrefix } from '@/lib/cache'
 import { dtLocalToDate } from '@/lib/format'
@@ -130,6 +130,7 @@ function rowToProfile(row: Record<string, unknown>): Profile {
     display_name: row.display_name as string | null,
     initial_capital: Number(row.initial_capital),
     currency: row.currency as string,
+    subscription_tier: (row.subscription_tier as SubscriptionTier) ?? 'free',
     created_at: row.created_at as string | undefined,
     updated_at: row.updated_at as string | undefined,
   }

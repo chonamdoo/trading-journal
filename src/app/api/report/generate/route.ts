@@ -299,7 +299,7 @@ export async function POST(request: Request) {
       .gte('created_at', `${periodStart}T00:00:00`)
       .lte('created_at', `${periodEnd}T23:59:59`);
 
-    const linkedPlans = (plans ?? []).filter((p) => p.trade_id != null);
+    const linkedPlans = (plans ?? []).filter((p) => p.linked_trade_id != null);
     const totalPlans = (plans ?? []).length;
     const planAdherenceData = linkedPlans
       .filter((p) => p.plan_adherence != null)
@@ -309,7 +309,7 @@ export async function POST(request: Request) {
       : null;
 
     // 플랜 있는 거래 vs 없는 거래 성과 비교
-    const linkedTradeIds = new Set(linkedPlans.map((p) => p.trade_id));
+    const linkedTradeIds = new Set(linkedPlans.map((p) => p.linked_trade_id));
     const plannedTrades = trades.filter((t) => linkedTradeIds.has(t.id));
     const unplannedTrades = trades.filter((t) => !linkedTradeIds.has(t.id));
     const plannedWinRate = plannedTrades.length
