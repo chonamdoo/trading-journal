@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Shield,
   ChevronRight,
+  ChevronDown,
   Calendar,
   Layers,
   ClipboardList,
@@ -160,6 +161,43 @@ export default function PromoPage() {
           <strong className="text-content">패턴을 모르기 때문입니다.</strong>{' '}
           데이터로 자신의 매매를 분석하면, 반복되는 실수가 보입니다.
         </p>
+      </section>
+
+      {/* ── 귀찮음 해소 ── */}
+      <section className="bg-surface border-y border-border">
+        <div className="max-w-4xl mx-auto px-4 py-16">
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
+              귀찮음을 없앴습니다
+            </p>
+            <h2 className="text-xl font-bold mb-2">
+              기록이 귀찮다는 거 알아요
+            </h2>
+            <p className="text-sm text-content-muted max-w-sm mx-auto">
+              그래서 30초 안에 끝나게 만들었습니다
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <QuickCaptureFlow />
+            <PlanAutofillDemo />
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4 mt-10">
+            <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
+              <p className="font-mono text-[32px] font-bold text-content leading-none">28초</p>
+              <p className="text-xs text-content-muted mt-1">평균 거래 기록 시간</p>
+            </div>
+            <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
+              <p className="font-mono text-[32px] font-bold text-accent leading-none">탭 3번</p>
+              <p className="text-xs text-content-muted mt-1">계획 세웠으면 기록 완료</p>
+            </div>
+            <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
+              <p className="font-mono text-[32px] font-bold text-profit leading-none">0</p>
+              <p className="text-xs text-content-muted mt-1">플랜→자동채움 시 직접 입력 수</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── AI 리포트 쇼케이스 ── */}
@@ -646,6 +684,128 @@ function ScoreMetric({
       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${gradeColor} mt-1 inline-block`}>
         {grade}
       </span>
+    </div>
+  )
+}
+
+function QuickCaptureFlow() {
+  return (
+    <div className="rounded-card border border-border bg-bg p-5">
+      <p className="text-[11px] uppercase tracking-wider text-content-muted mb-4">
+        모바일에서 30초 기록
+      </p>
+
+      {/* 수직(모바일) / 수평(sm+) 스텝 플로우 */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* Step 1 */}
+        <div className="flex-1">
+          <p className="text-[10px] font-mono text-content-muted mb-1">01</p>
+          <p className="text-xs font-semibold text-content mb-2">코인 선택</p>
+          <div className="flex gap-1.5">
+            <span className="bg-accent/10 text-accent border border-accent/30 rounded-badge px-2 py-1 text-xs font-semibold">BTC</span>
+            <span className="bg-bg text-content-muted border border-border rounded-badge px-2 py-1 text-xs">ETH</span>
+            <span className="bg-bg text-content-muted border border-border rounded-badge px-2 py-1 text-xs">SOL</span>
+          </div>
+        </div>
+
+        <ChevronRight className="w-4 h-4 text-content-muted hidden sm:block shrink-0" aria-hidden="true" />
+        <ChevronDown className="w-4 h-4 text-content-muted sm:hidden shrink-0 self-center" aria-hidden="true" />
+
+        {/* Step 2 */}
+        <div className="flex-1">
+          <p className="text-[10px] font-mono text-content-muted mb-1">02</p>
+          <p className="text-xs font-semibold text-content mb-2">방향 &amp; 레버리지</p>
+          <div className="flex items-center gap-1.5">
+            <span className="border border-profit bg-profit-bg text-profit rounded-badge px-2 py-1 text-xs font-semibold">LONG</span>
+            <span className="font-mono text-xs font-semibold text-content px-1.5 py-0.5 bg-surface-muted rounded-badge">x10</span>
+          </div>
+        </div>
+
+        <ChevronRight className="w-4 h-4 text-content-muted hidden sm:block shrink-0" aria-hidden="true" />
+        <ChevronDown className="w-4 h-4 text-content-muted sm:hidden shrink-0 self-center" aria-hidden="true" />
+
+        {/* Step 3 */}
+        <div className="flex-1">
+          <p className="text-[10px] font-mono text-content-muted mb-1">03</p>
+          <p className="text-xs font-semibold text-content mb-2">가격 입력</p>
+          <div className="flex flex-col gap-1.5">
+            <div className="bg-bg border border-border-input rounded-input px-2 py-1">
+              <p className="text-[10px] text-content-muted">진입가</p>
+              <p className="font-mono text-xs">$67,480</p>
+            </div>
+            <div className="bg-bg border border-border-input rounded-input px-2 py-1">
+              <p className="text-[10px] text-content-muted">손절가</p>
+              <p className="font-mono text-xs text-loss">$66,200</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <span className="bg-surface-muted rounded-badge px-2 py-0.5 text-[11px] font-mono text-content-muted">
+          ⏱ 평균 28초
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function PlanAutofillDemo() {
+  return (
+    <div className="rounded-card border border-border bg-bg p-5">
+      <p className="text-[11px] uppercase tracking-wider text-content-muted mb-4">
+        플랜 있으면 입력 끝
+      </p>
+
+      {/* 플랜 미니 카드 */}
+      <div className="bg-surface rounded-input border border-border px-3 py-2 mb-3">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="text-sm font-semibold text-content">BTC</span>
+          <span className="border border-profit bg-profit-bg text-profit rounded-badge px-1.5 py-0.5 text-[11px] font-semibold">LONG</span>
+          <span className="font-mono text-xs text-content-muted">x10</span>
+        </div>
+        <p className="text-xs text-content-muted">진입 $67,500 · 손절 $66,200</p>
+      </div>
+
+      {/* 화살표 + 버튼 */}
+      <div className="flex items-center justify-center gap-3 mb-3">
+        <ChevronDown className="w-4 h-4 text-content-muted" aria-hidden="true" />
+        <button
+          type="button"
+          className="bg-accent text-white rounded-input px-4 py-1.5 text-xs font-semibold"
+          tabIndex={-1}
+          aria-label="거래 입력에 자동 채움 (데모)"
+        >
+          거래 입력에 자동 채움
+        </button>
+      </div>
+
+      {/* 결과 폼 미리보기 */}
+      <div className="bg-surface rounded-input border border-border p-3">
+        <div className="grid grid-cols-2 gap-1.5">
+          <div>
+            <p className="text-[10px] text-content-muted">코인</p>
+            <p className="font-mono text-xs text-content-secondary">BTC</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-content-muted">방향</p>
+            <p className="font-mono text-xs text-content-secondary">LONG</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-content-muted">레버리지</p>
+            <p className="font-mono text-xs text-content-secondary">x10</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-content-muted">진입가</p>
+            <p className="font-mono text-xs text-content-secondary">$67,480</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-[10px] text-content-muted">손절가</p>
+            <p className="font-mono text-xs text-content-secondary">$66,200</p>
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] text-profit font-medium">✓ 5개 필드 자동 입력됨</p>
+      </div>
     </div>
   )
 }
