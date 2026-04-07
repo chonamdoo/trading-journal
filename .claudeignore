@@ -3,33 +3,40 @@
 out/
 build/
 dist/
+tsconfig.tsbuildinfo
 
 # Dependencies
 node_modules/
+package-lock.json
 
-# Deployment
-.vercel/
-
-# Logs
+# Logs / cache
 *.log
+.cache/
+coverage/
 
-# Environment
+# Env
 .env
 .env.local
 .env.*.local
 
-# Static assets (images, fonts)
+# Vercel / OS
+.vercel/
+.DS_Store
+Thumbs.db
+
+# Static assets (read on demand)
 public/static/
 public/og-promo.png
 public/landing/
 
-# Coverage
-coverage/
-
-# Generated specs (read on demand)
+# Generated harness artifacts (read on demand)
 SPEC.md
 SPEC-*.md
+SPEC_TRADING_PLAN.md
 DESIGN.md
 SELF_CHECK.md
 QA_REPORT.md
 SECURITY_REPORT.md
+
+# Heavy reference docs (요약본만 .claude/rules/에서 @import)
+docs/

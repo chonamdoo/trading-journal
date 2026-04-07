@@ -1,3 +1,8 @@
+---
+description: 서브에이전트 호출 워크플로우. 하네스 작업 시 적용. 각 단계별 역할과 필수 참조 문서.
+globs: ""
+---
+
 # 서브에이전트 호출 워크플로우
 
 각 단계에서 Task 도구를 사용하여 서브에이전트를 호출합니다.
@@ -11,20 +16,10 @@
 
 ```
 .claude/agents/pm_planner.md 파일을 읽고, 그 지시를 따라라.
-.claude/agents/evaluation_criteria.md 파일도 읽고 참고하라.
+.claude/rules/evaluation-criteria.md 파일도 읽고 참고하라.
 
-아래 프로젝트 문서를 모두 읽어라:
-- docs/trading-journal-prd.md
-- docs/trading-journal-design-guide.md
-- docs/trading-journal-prd-v2-analysis.md
-- docs/trading-journal-prd-v2-exchange.md
-- docs/trading-journal-design-v2-analysis.md
-- docs/trading-journal-review-phase1.md
-- docs/trading-journal-review-phase2.md
-- docs/trading-journal-review-fe.md
-- docs/trading-journal-review-server.md
-- docs/trading-journal-security-audit.md
-- .claude/security-reviewer.md
+.claude/rules/prd-summary.md 파일을 읽어라. 이것이 PRD 요약이다.
+요약만으로 부족할 때만 원본 docs/를 읽어라.
 
 기존 코드베이스 구조도 파악하라:
 - src/app/ 하위의 페이지 구조
@@ -41,12 +36,11 @@
 
 ```
 .claude/agents/designer.md 파일을 읽고, 그 지시를 따라라.
-.claude/agents/evaluation_criteria.md 파일도 읽고 참고하라.
+.claude/rules/evaluation-criteria.md 파일도 읽고 참고하라.
 SPEC.md 파일을 읽고, UI 설계를 작성하라.
 
-아래 프로젝트 문서를 참고하라:
-- docs/trading-journal-design-guide.md
-- docs/trading-journal-design-v2-analysis.md
+.claude/rules/design-summary.md 파일을 읽어라. 이것이 디자인 요약이다.
+요약만으로 부족할 때만 원본 docs/를 읽어라.
 
 기존 페이지의 레이아웃과 컴포넌트를 파악하라:
 - src/app/ 하위의 기존 페이지들
@@ -60,13 +54,9 @@ SPEC.md 파일을 읽고, UI 설계를 작성하라.
 최초 실행 시:
 ```
 .claude/agents/developer.md 파일을 읽고, 그 지시를 따라라.
-.claude/agents/evaluation_criteria.md 파일도 읽고 참고하라.
+.claude/rules/evaluation-criteria.md 파일도 읽고 참고하라.
 SPEC.md 파일을 읽어라. 이것이 기능 설계서다.
 DESIGN.md 파일을 읽어라. 이것이 UI 설계서다.
-
-아래 프로젝트 문서를 참고하라:
-- docs/trading-journal-design-guide.md
-- .claude/security-reviewer.md
 
 기존 코드 패턴을 파악하기 위해 유사한 기존 파일을 읽어라.
 
@@ -77,10 +67,7 @@ DESIGN.md 파일을 읽어라. 이것이 UI 설계서다.
 피드백 반영 시 (2회차 이상):
 ```
 .claude/agents/developer.md 파일을 읽고, 그 지시를 따라라.
-.claude/agents/evaluation_criteria.md 파일도 읽고 참고하라.
-SPEC.md 파일을 읽어라.
-DESIGN.md 파일을 읽어라.
-QA_REPORT.md 파일을 읽어라. 이것이 QA 피드백이다.
+SPEC.md, DESIGN.md, QA_REPORT.md 파일을 읽어라.
 
 QA 피드백의 "구체적 개선 지시"를 모두 반영하여 코드를 수정하라.
 "방향 판단"이 "완전히 다른 접근 시도"이면 구현 방식 자체를 바꿔라.
@@ -103,14 +90,8 @@ SPEC.md에 명시된 파일들과 구현된 코드를 모두 읽어라.
 
 ```
 .claude/agents/reviewer.md 파일을 읽고, 그 지시를 따라라.
-.claude/agents/evaluation_criteria.md 파일을 읽어라. 이것이 채점 기준이다.
-SPEC.md 파일을 읽어라. 이것이 설계서다.
-DESIGN.md 파일을 읽어라. 이것이 UI 설계서다.
-SECURITY_REPORT.md 파일을 읽어라. 이것이 보안 감사 결과다.
-
-아래 프로젝트 문서를 참고하라:
-- docs/trading-journal-design-guide.md
-- .claude/security-reviewer.md
+.claude/rules/evaluation-criteria.md 파일을 읽어라. 이것이 채점 기준이다.
+SPEC.md, DESIGN.md, SECURITY_REPORT.md 파일을 읽어라.
 
 SPEC.md에 명시된 파일들을 모두 읽어라. 이것이 검수 대상이다.
 
@@ -119,7 +100,7 @@ SPEC.md에 명시된 파일들을 모두 읽어라. 이것이 검수 대상이�
 2. 구현된 코드를 분석하라
 3. SPEC.md의 기능이 구현되었는지 확인하라
 4. SECURITY_REPORT.md의 HIGH 취약점이 해결되었는지 확인하라
-5. evaluation_criteria.md에 따라 4개 항목을 채점하라
+5. evaluation-criteria.md에 따라 4개 항목을 채점하라
 6. 최종 판정(PASS/조건부/REJECT)을 내려라
 7. REJECT 또는 조건부 시, 구체적 개선 지시를 작성하라
 

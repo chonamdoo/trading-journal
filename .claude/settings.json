@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "autoMemoryEnabled": true,
+  "enabledMcpjsonServers": ["qmd"],
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(npm run *)",
+      "Bash(npx next build*)",
+      "Bash(npx supabase *)",
+      "Bash(qmd *)"
+    ]
+  }
+}
