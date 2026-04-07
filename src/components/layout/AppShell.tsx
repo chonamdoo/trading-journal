@@ -1,6 +1,7 @@
 'use client'
 
 import { NavTabs } from './NavTabs'
+import { BottomNav } from './BottomNav'
 import { ThemeToggle } from './ThemeToggle'
 import { ToastContainer } from '@/components/ui/Toast'
 import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
@@ -36,37 +37,31 @@ export function AppShell({ children }: AppShellProps) {
   const returnPct = totalReturnPct(trades, initialCapital, deposits)
 
   return (
-    <div className="max-w-[960px] mx-auto px-sp-9 pt-sp-10 pb-20">
+    <div className="max-w-[960px] mx-auto px-sp-9 pt-sp-10 pb-24 md:pb-8">
       {/* 헤더 */}
-      <header className="flex justify-between items-start mb-7 flex-wrap gap-4">
+      <header className="flex justify-between items-center mb-7 gap-4">
         <div>
-          <div className="mb-0.5">
-            <h1 className="text-[17px] font-semibold tracking-[-0.3px]">
-              거래일지
-            </h1>
-          </div>
-          <p className="text-[13px] text-content-muted">
-            선물 포지션 관리
-          </p>
+          <h1 className="text-[17px] font-semibold tracking-[-0.3px]">거래일지</h1>
+          <p className="text-[13px] text-content-muted hidden md:block">선물 포지션 관리</p>
         </div>
-        <div className="flex flex-col items-end gap-sp-4">
-          <ThemeToggle />
+        <div className="flex items-center gap-4">
           <div className="text-right">
-            <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5">
+            <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5 hidden md:block">
               현재 자산
             </div>
-            <div className="font-mono text-[28px] font-bold tracking-[-1px] leading-none text-profit">
+            <div className="font-mono text-[22px] md:text-[28px] font-bold tracking-[-1px] leading-none text-profit">
               ${formatNumber(currentCapital)}
             </div>
-            <div className={`font-mono text-[13px] mt-1 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
+            <div className={`font-mono text-[12px] md:text-[13px] mt-0.5 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
               {formatPnl(totalPnl)}{' '}
               <span className="opacity-55">{formatPercent(returnPct)}</span>
             </div>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
-      {/* 네비게이션 */}
+      {/* 네비게이션 (데스크탑) */}
       <NavTabs />
 
       {/* 메인 콘텐츠 */}
@@ -87,6 +82,9 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* 토스트 알림 */}
       <ToastContainer />
+
+      {/* 하단 네비게이션 (모바일) */}
+      <BottomNav />
     </div>
   )
 }

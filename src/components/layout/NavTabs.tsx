@@ -41,7 +41,7 @@ export function NavTabs() {
 
   return (
     <nav
-      className="flex gap-0.5 mb-sp-9 bg-surface-muted rounded-input p-[3px] w-fit"
+      className="hidden md:flex gap-0.5 mb-sp-9 bg-surface-muted rounded-input p-[3px] w-fit"
       role="tablist"
     >
       {NAV_TABS.map((tab) => {
