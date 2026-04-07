@@ -3,6 +3,7 @@ import './globals.css'
 import { ThemeScript } from '@/components/layout/ThemeScript'
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://trading-journal.vercel.app'),
   title: '거래일지 | Trading Journal',
   description: '암호화폐 선물 트레이더를 위한 거래 일지',
 }
