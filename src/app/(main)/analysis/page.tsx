@@ -21,6 +21,14 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } 
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
 import { EMOTIONS } from '@/lib/constants'
+
+const EMOTION_DISPLAY = [
+  { id: 'calm', label: '침착', emoji: '😌', color: 'text-info', bgColor: 'bg-info-soft' },
+  { id: 'confident', label: '확신', emoji: '💪', color: 'text-profit', bgColor: 'bg-profit-bg' },
+  { id: 'fomo', label: 'FOMO', emoji: '😰', color: 'text-warning', bgColor: 'bg-warning-bg' },
+  { id: 'revenge', label: '복수매매', emoji: '😤', color: 'text-loss', bgColor: 'bg-loss-bg' },
+  { id: 'anxious', label: '불안', emoji: '😟', color: 'text-content-muted', bgColor: 'bg-surface-muted' },
+] as const
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
 import { DayOfWeekSlide } from '@/components/analysis/DayOfWeekSlide'
 import { MonthlyCalendarSlide } from '@/components/analysis/MonthlyCalendarSlide'
@@ -52,26 +60,64 @@ export default function AnalysisPage() {
   // ── 감정별 승률 데이터 ──
   const emotionWinRateData = useMemo(() => {
     const closedTrades = trades.filter((t) => t.status === 'closed')
-    const groups: Record<string, { wins: number; total: number }> = {}
+    const groups: Record<string, { wins: number; total: number; pnlSum: number }> = {}
 
     for (const t of closedTrades) {
       const key = t.emotion ?? '__unset__'
-      if (!groups[key]) groups[key] = { wins: 0, total: 0 }
+      if (!groups[key]) groups[key] = { wins: 0, total: 0, pnlSum: 0 }
       groups[key].total += 1
+      groups[key].pnlSum += t.pnl ?? 0
       if (t.pnl != null && t.pnl > 0) groups[key].wins += 1
     }
 
     const allKeys = [...EMOTIONS.map((e) => e.id), '__unset__']
     return allKeys.map((key) => {
-      const group = groups[key] ?? { wins: 0, total: 0 }
+      const group = groups[key] ?? { wins: 0, total: 0, pnlSum: 0 }
       const em = EMOTIONS.find((e) => e.id === key)
       return {
+        id: key,
         label: em ? em.label : '미설정',
+        color: em?.color ?? 'text-content-secondary',
+        bgColor: em?.bgColor ?? 'bg-surface-muted',
         winRate: group.total > 0 ? Math.round((group.wins / group.total) * 100) : 0,
         total: group.total,
+        avgPnl: group.total > 0 ? group.pnlSum / group.total : 0,
       }
     })
   }, [trades])
+
+  // ── 감정 인사이트 배너 계산 ──
+  const emotionInsight = useMemo(() => {
+    const closedTrades = trades.filter((t) => t.status === 'closed')
+    const hasAnyEmotion = closedTrades.some((t) => t.emotion != null)
+    if (!hasAnyEmotion) return null
+
+    const tagged = emotionWinRateData.filter((d) => d.id !== '__unset__' && d.total >= 3)
+    if (tagged.length === 0) return null
+
+    // 가장 손실이 큰 감정 (avgPnl이 가장 낮은 것)
+    const worstEmotion = [...tagged].sort((a, b) => a.avgPnl - b.avgPnl)[0]
+    if (worstEmotion.avgPnl < 0) {
+      // 전체 P&L 대비 해당 감정의 총 손실이 미치는 비율
+      const allClosedPnl = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0)
+      const emotionTotalPnl = worstEmotion.avgPnl * worstEmotion.total
+      const impactPct = allClosedPnl !== 0 ? Math.abs(emotionTotalPnl / allClosedPnl) * 100 : 0
+      return {
+        type: 'loss' as const,
+        label: worstEmotion.label,
+        avgPnl: worstEmotion.avgPnl,
+        impactPct: Math.round(impactPct),
+      }
+    }
+
+    // 모두 수익이면 가장 승률 높은 감정 표시
+    const bestEmotion = [...tagged].sort((a, b) => b.winRate - a.winRate)[0]
+    return {
+      type: 'profit' as const,
+      label: bestEmotion.label,
+      winRate: bestEmotion.winRate,
+    }
+  }, [trades, emotionWinRateData])
 
   // ── 슬라이드 정의 ──
   const slides: SlideItem[] = [
@@ -152,49 +198,77 @@ export default function AnalysisPage() {
       id: 'emotion-win-rate',
       title: '감정별 승률',
       content: (
-        <div>
+        <div className="flex flex-col gap-4">
           {emotionWinRateData.every((d) => d.total === 0) ? (
             <div className="flex items-center justify-center h-[220px] text-content-muted text-sm">
               감정 태그가 기록된 거래가 없습니다.
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={emotionWinRateData} margin={{ top: 20, right: 8, left: -16, bottom: 0 }}>
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 12, fill: 'var(--content-secondary)' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: 'var(--content-muted)' }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v: number) => `${v}%`}
-                />
-                <Tooltip
-                  formatter={(value: number, _: string, entry: { payload?: { total?: number } }) => [
-                    `${value}% (${entry.payload?.total ?? 0}건)`,
-                    '승률',
-                  ]}
-                  contentStyle={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 7,
-                    fontSize: 12,
-                  }}
-                />
-                <Bar dataKey="winRate" fill="var(--blue)" radius={[4, 4, 0, 0]} maxBarSize={48}>
-                  <LabelList
-                    dataKey="total"
-                    position="top"
-                    formatter={(v: number) => (v > 0 ? `${v}건` : '')}
-                    style={{ fontSize: 11, fill: 'var(--content-muted)' }}
+            <>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={emotionWinRateData} margin={{ top: 20, right: 8, left: -16, bottom: 0 }}>
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12, fill: 'var(--content-secondary)' }}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 11, fill: 'var(--content-muted)' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => `${v}%`}
+                  />
+                  <Tooltip
+                    formatter={(value: number, _: string, entry: { payload?: { total?: number } }) => [
+                      `${value}% (${entry.payload?.total ?? 0}건)`,
+                      '승률',
+                    ]}
+                    contentStyle={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 7,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="winRate" fill="var(--blue)" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                    <LabelList
+                      dataKey="total"
+                      position="top"
+                      formatter={(v: number) => (v > 0 ? `${v}건` : '')}
+                      style={{ fontSize: 11, fill: 'var(--content-muted)' }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              {/* 감정 분포 요약 */}
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
+                  감정별 매매 비율
+                </p>
+                <div className="grid grid-cols-5 max-sm:grid-cols-2 gap-2">
+                  {EMOTION_DISPLAY.map((em) => {
+                    const d = emotionWinRateData.find((x) => x.id === em.id)
+                    const totalTagged = emotionWinRateData
+                      .filter((x) => x.id !== '__unset__')
+                      .reduce((s, x) => s + x.total, 0)
+                    const ratio = totalTagged > 0 && d ? Math.round((d.total / totalTagged) * 100) : 0
+                    return (
+                      <div
+                        key={em.id}
+                        className={`text-center py-3 px-2 rounded-card ${em.bgColor} flex flex-col items-center gap-1`}
+                      >
+                        <span className="text-2xl" role="img" aria-label={em.label}>{em.emoji}</span>
+                        <span className={`text-[11px] font-medium ${em.color}`}>{em.label}</span>
+                        <span className={`font-mono text-sm font-semibold ${em.color}`}>{ratio}%</span>
+                        <span className="text-[10px] text-content-muted font-mono">{d?.total ?? 0}건</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
           )}
         </div>
       ),
@@ -257,6 +331,43 @@ export default function AnalysisPage() {
           AI 리포트
         </button>
       </div>
+
+      {/* 감정 인사이트 배너 */}
+      {emotionInsight && (
+        <div
+          className={`rounded-card p-sp-8 ${
+            emotionInsight.type === 'loss' ? 'bg-loss-bg' : 'bg-profit-bg'
+          }`}
+          role="note"
+          aria-label="감정 인사이트"
+        >
+          <p
+            className={`text-sm font-medium leading-relaxed ${
+              emotionInsight.type === 'loss' ? 'text-loss' : 'text-profit'
+            }`}
+          >
+            {emotionInsight.type === 'loss' ? (
+              <>
+                <strong>{emotionInsight.label}</strong> 매매 시 평균{' '}
+                <strong>{formatPnl(emotionInsight.avgPnl)}</strong>을 잃고 있습니다
+              </>
+            ) : (
+              <>
+                <strong>{emotionInsight.label}</strong> 매매 시 가장 높은 승률{' '}
+                <strong className="font-mono">{emotionInsight.winRate}%</strong>를 기록하고 있습니다
+              </>
+            )}
+          </p>
+          {emotionInsight.type === 'loss' && (
+            <p
+              className="text-xs text-loss mt-1 opacity-75"
+            >
+              감정적 결정의 손실이 전체 수익률에{' '}
+              <span className="font-mono font-semibold">{emotionInsight.impactPct}%p</span> 영향을 미치고 있습니다.
+            </p>
+          )}
+        </div>
+      )}
 
       {tab === 'charts' ? (
         <SlideCarousel
