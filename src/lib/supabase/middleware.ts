@@ -77,6 +77,11 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // 공개 마켓 데이터 API — 인증 불필요, 미들웨어 스킵
+  if (pathname.startsWith('/api/market/')) {
+    return supabaseResponse;
+  }
+
   const isApiRoute = pathname.startsWith('/api/');
 
   // API 라우트: getUser()로 서버 검증 (보안 중요)

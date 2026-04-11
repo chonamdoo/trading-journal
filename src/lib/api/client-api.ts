@@ -435,3 +435,23 @@ export async function fetchReportById(id: string): Promise<ApiResult<MonthlyRepo
   if (!result.success) return result;
   return { success: true, data: result.data.data };
 }
+
+// ── Market Insight (공개 데이터 — 인증 불필요) ──
+
+export interface MarketInsight {
+  fearGreed: { value: number; classification: string };
+  btcDominance: number;
+  btcPrice: number;
+  btcChange24h: number;
+  totalMarketCap: number;
+}
+
+export async function fetchMarketInsight(): Promise<MarketInsight | null> {
+  try {
+    const res = await fetch('/api/market/insight');
+    if (!res.ok) return null;
+    return res.json() as Promise<MarketInsight>;
+  } catch {
+    return null;
+  }
+}
