@@ -65,6 +65,12 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { pathname } = request.nextUrl;
+
+  // 모바일 API는 자체 Bearer 토큰 인증 사용 — 미들웨어 스킵
+  if (pathname.startsWith('/api/mobile/')) {
+    return supabaseResponse;
+  }
+
   const isApiRoute = pathname.startsWith('/api/');
 
   // API 라우트: getUser()로 서버 검증 (보안 중요)
