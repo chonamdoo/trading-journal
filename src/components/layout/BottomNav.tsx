@@ -43,7 +43,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-t border-border">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-md border-t border-border">
       <div className="flex items-stretch h-16 pb-safe">
         {BOTTOM_TABS.map((tab) => {
           const isActive = getIsActive(tab.href)

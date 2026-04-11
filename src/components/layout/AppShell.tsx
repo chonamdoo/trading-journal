@@ -1,6 +1,6 @@
 'use client'
 
-import { NavTabs } from './NavTabs'
+import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
 import { ThemeToggle } from './ThemeToggle'
 import { ToastContainer } from '@/components/ui/Toast'
@@ -37,54 +37,59 @@ export function AppShell({ children }: AppShellProps) {
   const returnPct = totalReturnPct(trades, initialCapital, deposits)
 
   return (
-    <div className="max-w-[960px] mx-auto px-sp-9 pt-sp-10 pb-24 md:pb-8">
-      {/* 헤더 */}
-      <header className="flex justify-between items-center mb-7 gap-4">
-        <div>
-          <h1 className="text-[17px] font-semibold tracking-[-0.3px]">거래일지</h1>
-          <p className="text-[13px] text-content-muted hidden md:block">선물 포지션 관리</p>
+    <div className="flex min-h-screen bg-bg">
+      {/* 사이드바 (데스크탑) */}
+      <Sidebar />
+
+      {/* 콘텐츠 영역 */}
+      <div className="flex-1 min-w-0">
+        <div className="max-w-[1200px] mx-auto px-sp-9 pt-sp-10 pb-24 lg:pb-8">
+          {/* 헤더 */}
+          <header className="flex justify-between items-center mb-7 gap-4">
+            <div>
+              <h1 className="text-[17px] font-semibold tracking-[-0.3px] hidden lg:block">거래일지</h1>
+              <p className="text-[13px] text-content-muted hidden lg:block">선물 포지션 관리</p>
+            </div>
+            <div className="flex items-center gap-4 ml-auto">
+              <div className="text-right">
+                <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5 hidden lg:block">
+                  현재 자산
+                </div>
+                <div className="font-mono text-[22px] lg:text-[28px] font-bold tracking-[-1px] leading-none text-profit">
+                  ${formatNumber(currentCapital)}
+                </div>
+                <div className={`font-mono text-[12px] lg:text-[13px] mt-0.5 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
+                  {formatPnl(totalPnl)}{' '}
+                  <span className="opacity-55">{formatPercent(returnPct)}</span>
+                </div>
+              </div>
+              <ThemeToggle />
+            </div>
+          </header>
+
+          {/* 메인 콘텐츠 */}
+          <main>
+            {loading ? (
+              <div className="flex flex-col justify-center items-center py-20 gap-3">
+                <div
+                  className="w-6 h-6 border-2 border-content-muted border-t-transparent rounded-full animate-spin"
+                  role="status"
+                  aria-label="로딩 중"
+                />
+                <div className="text-content-muted text-[13px]">데이터를 불러오는 중...</div>
+              </div>
+            ) : (
+              children
+            )}
+          </main>
+
+          {/* 토스트 알림 */}
+          <ToastContainer />
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5 hidden md:block">
-              현재 자산
-            </div>
-            <div className="font-mono text-[22px] md:text-[28px] font-bold tracking-[-1px] leading-none text-profit">
-              ${formatNumber(currentCapital)}
-            </div>
-            <div className={`font-mono text-[12px] md:text-[13px] mt-0.5 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-              {formatPnl(totalPnl)}{' '}
-              <span className="opacity-55">{formatPercent(returnPct)}</span>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
 
-      {/* 네비게이션 (데스크탑) */}
-      <NavTabs />
-
-      {/* 메인 콘텐츠 */}
-      <main>
-        {loading ? (
-          <div className="flex flex-col justify-center items-center py-20 gap-3">
-            <div
-              className="w-6 h-6 border-2 border-content-muted border-t-transparent rounded-full animate-spin"
-              role="status"
-              aria-label="로딩 중"
-            />
-            <div className="text-content-muted text-[13px]">데이터를 불러오는 중...</div>
-          </div>
-        ) : (
-          children
-        )}
-      </main>
-
-      {/* 토스트 알림 */}
-      <ToastContainer />
-
-      {/* 하단 네비게이션 (모바일) */}
-      <BottomNav />
+        {/* 하단 네비게이션 (모바일) */}
+        <BottomNav />
+      </div>
     </div>
   )
 }
