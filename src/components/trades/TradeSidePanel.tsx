@@ -92,7 +92,7 @@ export function TradeSidePanel() {
         </div>
 
         <div className="flex items-center justify-between py-3 border-b border-border">
-          <span className="text-sm text-content-secondary">현재 스트릭</span>
+          <span className="text-sm text-content-secondary">연속 성적</span>
           <span className={`font-mono text-sm font-semibold ${streakColor}`}>
             {streakLabel}
           </span>
