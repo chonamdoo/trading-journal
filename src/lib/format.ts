@@ -72,12 +72,37 @@ export function nowDatetimeLocal(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+/**
+ * UTC ISO 문자열을 datetime-local 형식(로컬 시간)으로 변환한다.
+ * 편집 폼에서 DB 값을 datetime-local input에 채울 때 사용.
+ * 예: "2026-04-09T23:26:00.000Z" → "2026-04-10T08:26" (KST)
+ */
+export function utcToDatetimeLocal(dtStr: string | null | undefined): string {
+  if (!dtStr) return nowDatetimeLocal()
+  const d = new Date(dtStr)
+  if (isNaN(d.getTime())) return nowDatetimeLocal()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 /** datetime-local -> YYYY-MM-DD */
 export function dtLocalToDate(dtStr: string | null | undefined): string {
   return dtStr ? dtStr.slice(0, 10) : today()
 }
 
-/** datetime 표시 포맷 (YYYY.MM.DD HH:mm) */
+/**
+ * datetime-local 문자열을 UTC ISO 8601로 변환한다.
+ * datetime-local은 시간대 정보가 없으므로 브라우저 로컬 시간으로 해석 후 UTC로 변환.
+ * 예: "2026-04-10T08:26" (KST) → "2026-04-10T08:26:00+09:00" 해석 → "2026-04-09T23:26:00.000Z"
+ */
+export function dtLocalToUTC(dtStr: string | null | undefined): string | null {
+  if (!dtStr) return null
+  const d = new Date(dtStr)
+  if (isNaN(d.getTime())) return dtStr
+  return d.toISOString()
+}
+
+/** datetime 표시 포맷 (YYYY.MM.DD HH:mm) — UTC→로컬 변환 포함 */
 export function formatDatetime(dtStr: string | null | undefined): string {
   if (!dtStr) return '-'
   const d = new Date(dtStr)

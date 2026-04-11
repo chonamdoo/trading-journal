@@ -254,7 +254,7 @@ export async function closeTrade(
       .from('trades')
       .update({
         exit_price: exitPrice,
-        exit_datetime: exitDatetime,
+        exit_datetime: new Date(exitDatetime).toISOString(),
         pnl: roundedPnl,
         status: 'closed' as const,
       })

@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, TradeClose, TradeScaleIn, ScaleInType, SubscriptionTier } from '@/types'
 import { calcPnL, calcWeightedAvgPrice, calcRemainingMargin, calcClosePnl } from '@/lib/calc'
 import { invalidateCacheByPrefix } from '@/lib/cache'
-import { dtLocalToDate } from '@/lib/format'
+import { dtLocalToDate, dtLocalToUTC } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
@@ -350,8 +350,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const res = await apiCreateTrade(supabase, {
         user_id: userId,
         date: dtLocalToDate(data.entry_datetime),
-        entry_datetime: data.entry_datetime,
-        exit_datetime: data.exit_price ? data.exit_datetime : null,
+        entry_datetime: dtLocalToUTC(data.entry_datetime),
+        exit_datetime: data.exit_price ? dtLocalToUTC(data.exit_datetime) : null,
         asset: data.asset.toUpperCase().trim(),
         direction: data.direction,
         leverage: data.leverage,
@@ -397,10 +397,10 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       if (data.exit_price !== undefined) updates.exit_price = data.exit_price || null
       if (data.margin !== undefined) updates.margin = data.margin
       if (data.entry_datetime !== undefined) {
-        updates.entry_datetime = data.entry_datetime
+        updates.entry_datetime = dtLocalToUTC(data.entry_datetime)
         updates.date = dtLocalToDate(data.entry_datetime)
       }
-      if (data.exit_datetime !== undefined) updates.exit_datetime = data.exit_datetime || null
+      if (data.exit_datetime !== undefined) updates.exit_datetime = dtLocalToUTC(data.exit_datetime) || null
       if (data.reason !== undefined) updates.reason = data.reason || null
       if (data.notes !== undefined) updates.notes = data.notes || null
       if (data.tags !== undefined) updates.tags = data.tags || null
@@ -633,7 +633,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         entryPrice: params.entryPrice,
         margin: params.margin,
         quantity: params.quantity ?? null,
-        entryDatetime: params.entryDatetime,
+        entryDatetime: dtLocalToUTC(params.entryDatetime) ?? params.entryDatetime,
         type: params.type,
         note: params.note ?? null,
       })
@@ -791,7 +791,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         tradeId: params.tradeId,
         userId,
         exitPrice: params.exitPrice,
-        exitDatetime: params.exitDatetime,
+        exitDatetime: dtLocalToUTC(params.exitDatetime) ?? params.exitDatetime,
         quantityPct: params.quantityPct,
         closeMargin,
         pnl,

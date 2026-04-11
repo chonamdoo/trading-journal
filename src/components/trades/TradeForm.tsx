@@ -14,6 +14,7 @@ import {
   formatPercent,
   formatDuration,
   nowDatetimeLocal,
+  utcToDatetimeLocal,
   pnlColorClass,
 } from '@/lib/format'
 import { ImageUploader } from './ImageUploader'
@@ -89,10 +90,10 @@ export function TradeForm({
     initialData?.exit_price?.toString() ?? ''
   )
   const [entryDatetime, setEntryDatetime] = useState(
-    initialData?.entry_datetime ?? nowDatetimeLocal()
+    initialData?.entry_datetime ? utcToDatetimeLocal(initialData.entry_datetime) : nowDatetimeLocal()
   )
   const [exitDatetime, setExitDatetime] = useState(
-    initialData?.exit_datetime ?? nowDatetimeLocal()
+    initialData?.exit_datetime ? utcToDatetimeLocal(initialData.exit_datetime) : nowDatetimeLocal()
   )
   const [stopLossPrice, setStopLossPrice] = useState(
     initialData?.stop_loss_price?.toString() ?? ''
