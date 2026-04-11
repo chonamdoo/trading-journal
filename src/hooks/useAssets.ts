@@ -1,12 +1,8 @@
 'use client'
 
 import { useMemo, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_ASSETS } from '@/lib/constants'
-import {
-  addCustomAsset as apiAddFavorite,
-  deleteCustomAsset as apiDeleteFavorite,
-} from '@/lib/api/assets'
+import { fetchAddCustomAsset, fetchDeleteCustomAsset } from '@/lib/api/client-api'
 import { useTradeStore } from './useTrades'
 
 /**
@@ -15,7 +11,7 @@ import { useTradeStore } from './useTrades'
  * TradeStore에서 초기 로드된 customAssets를 읽고,
  * recentAssets는 trades 데이터에서 파생한다 (추가 API 호출 없음).
  */
-export function useAssets(userId?: string) {
+export function useAssets(_userId?: string) {
   const trades = useTradeStore((s) => s.trades)
   const customAssets = useTradeStore((s) => s.customAssets)
   const isLoaded = useTradeStore((s) => s.isLoaded)
@@ -50,31 +46,26 @@ export function useAssets(userId?: string) {
   }, [trades])
 
   const addFavorite = useCallback(async (symbol: string) => {
-    if (!userId) return
-    const supabase = createClient()
-    const res = await apiAddFavorite(supabase, userId, symbol)
+    const res = await fetchAddCustomAsset(symbol)
     if (res.success) {
-      // TradeStore의 customAssets 직접 갱신
       useTradeStore.setState((s) => ({
         customAssets: [...s.customAssets, { id: res.data.id, symbol: res.data.symbol }],
       }))
     }
     return res
-  }, [userId])
+  }, [])
 
   const removeFavorite = useCallback(async (symbol: string) => {
-    if (!userId) return
     const row = customAssets.find((r) => r.symbol === symbol)
     if (!row) return
-    const supabase = createClient()
-    const res = await apiDeleteFavorite(supabase, row.id)
+    const res = await fetchDeleteCustomAsset(row.id)
     if (res.success) {
       useTradeStore.setState((s) => ({
         customAssets: s.customAssets.filter((r) => r.symbol !== symbol),
       }))
     }
     return res
-  }, [userId, customAssets])
+  }, [customAssets])
 
   return {
     allAssets,

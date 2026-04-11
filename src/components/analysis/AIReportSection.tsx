@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
-import { createClient } from '@/lib/supabase/client'
-import { getReports } from '@/lib/api/reports'
+import { fetchReports } from '@/lib/api/client-api'
 import type { MonthlyReportRow } from '@/lib/supabase/types'
 
 function formatPnlColor(pnl: number | null) {
@@ -21,7 +20,7 @@ function formatPnlValue(pnl: number | null) {
 /**
  * AI 월간 리포트 생성 + 목록 섹션
  */
-export function AIReportSection({ userId }: { userId?: string }) {
+export function AIReportSection({ userId: _userId }: { userId?: string }) {
   const router = useRouter()
   const [reports, setReports] = useState<MonthlyReportRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -31,13 +30,11 @@ export function AIReportSection({ userId }: { userId?: string }) {
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1)
 
   const loadReports = useCallback(async () => {
-    if (!userId) return
     setLoading(true)
-    const supabase = createClient()
-    const res = await getReports(supabase, userId)
+    const res = await fetchReports()
     if (res.success) setReports(res.data)
     setLoading(false)
-  }, [userId])
+  }, [])
 
   useEffect(() => {
     loadReports()

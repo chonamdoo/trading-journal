@@ -5,55 +5,35 @@ import type { Trade, Deposit, Target, Profile, TradeFormData, TradeScreenshot, T
 import { calcPnL, calcWeightedAvgPrice, calcRemainingMargin, calcClosePnl } from '@/lib/calc'
 import { invalidateCacheByPrefix } from '@/lib/cache'
 import { dtLocalToDate, dtLocalToUTC } from '@/lib/format'
-import { createClient } from '@/lib/supabase/client'
-import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/supabase/types'
 import { showToast } from '@/components/ui/Toast'
 
-// Supabase API 함수들
+// 클라이언트용 fetch 함수들 (Phase 4)
 import {
-  getTrades as apiGetTrades,
-  createTrade as apiCreateTrade,
-  updateTrade as apiUpdateTrade,
-  deleteTrade as apiDeleteTrade,
-  closeTrade as apiCloseTrade,
-} from '@/lib/api/trades'
-import {
-  getCustomAssets as apiGetCustomAssets,
-} from '@/lib/api/assets'
-import {
-  getDeposits as apiGetDeposits,
-  createDeposit as apiCreateDeposit,
-  deleteDeposit as apiDeleteDeposit,
-} from '@/lib/api/deposits'
-import {
-  getTargets as apiGetTargets,
-  createTarget as apiCreateTarget,
-  deleteTarget as apiDeleteTarget,
-} from '@/lib/api/targets'
-import {
-  getProfile as apiGetProfile,
-  setInitialCapital as apiSetInitialCapital,
-} from '@/lib/api/profile'
-import {
-  getTradeCloses as apiGetTradeCloses,
-  getTradeClosesByTradeIds as apiGetTradeClosesByTradeIds,
-  addTradeClose as apiAddTradeClose,
-  deleteTradeClose as apiDeleteTradeClose,
-} from '@/lib/api/tradeCloses'
-import {
-  getTradeScaleIns as apiGetTradeScaleIns,
-  getTradeScaleInsByTradeIds as apiGetTradeScaleInsByTradeIds,
-  addTradeScaleIn as apiAddTradeScaleIn,
-  deleteTradeScaleIn as apiDeleteTradeScaleIn,
-} from '@/lib/api/tradeScaleIns'
-import {
-  uploadScreenshot as apiUploadScreenshot,
-  getScreenshots as apiGetScreenshots,
-  getScreenshotsByTradeIds as apiGetScreenshotsByTradeIds,
-  deleteScreenshot as apiDeleteScreenshot,
-  deleteScreenshotsByTradeId as apiDeleteScreenshotsByTradeId,
-} from '@/lib/api/screenshots'
+  fetchTrades,
+  fetchCreateTrade,
+  fetchUpdateTrade,
+  fetchDeleteTrade,
+  fetchCloseTrade,
+  fetchTradeCloses,
+  fetchAddTradeClose,
+  fetchDeleteTradeClose,
+  fetchTradeScaleIns,
+  fetchAddTradeScaleIn,
+  fetchDeleteTradeScaleIn,
+  fetchScreenshots,
+  fetchUploadScreenshot,
+  fetchDeleteScreenshot,
+  fetchDeposits,
+  fetchCreateDeposit,
+  fetchDeleteDeposit,
+  fetchTargets,
+  fetchCreateTarget,
+  fetchDeleteTarget,
+  fetchProfile,
+  fetchUpdateProfile,
+  fetchCustomAssets,
+  fetchTradeById,
+} from '@/lib/api/client-api'
 
 /**
  * 거래/입금 데이터 변경 시 분석 캐시를 무효화한다.
@@ -207,27 +187,6 @@ interface TradeStore {
   deleteScreenshot: (tradeId: string, screenshotId: string, storagePath: string) => Promise<void>
 }
 
-/** Supabase 클라이언트를 API 함수 호환 타입으로 가져온다 */
-function getSupabase(): SupabaseClient<Database> {
-  return createClient() as unknown as SupabaseClient<Database>
-}
-
-/** 현재 로그인한 사용자 ID를 가져온다 (초기 로드 전용) */
-async function getCurrentUserId(): Promise<string | null> {
-  const supabase = getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.id ?? null
-}
-
-/**
- * 캐시된 userId를 반환한다.
- * loadData()에서 캐싱된 값을 우선 사용하고, 없으면 auth API 호출로 폴백.
- */
-async function getCachedUserId(get: () => TradeStore): Promise<string | null> {
-  const cached = get().userId
-  if (cached) return cached
-  return getCurrentUserId()
-}
 
 /** Zustand 전역 스토어 */
 const useTradeStore = create<TradeStore>((set, get) => ({
@@ -244,29 +203,26 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   tradeScaleIns: {},
   screenshots: {},
 
-  // ── Supabase에서 전체 데이터 로드 ──
+  // ── fetch 기반 전체 데이터 로드 ──
   loadData: async () => {
     // 이미 로드 완료된 상태면 스킵 (탭 전환 시 중복 호출 방지)
     if (get().isLoaded) return
     set({ loading: true, error: null })
     try {
-      const supabase = getSupabase()
-      const userId = await getCurrentUserId()
-      if (!userId) {
+      // 병렬로 데이터 로드 (커스텀 에셋도 함께)
+      const [tradesRes, depositsRes, targetsRes, profileRes, customAssetsRes] = await Promise.all([
+        fetchTrades({ pageSize: 1000 }),
+        fetchDeposits(),
+        fetchTargets(),
+        fetchProfile(),
+        fetchCustomAssets(),
+      ])
+
+      // 401 등 인증 실패 시 trades 응답으로 판단
+      if (!tradesRes.success && tradesRes.error.includes('인증')) {
         set({ loading: false, trades: [], deposits: [], targets: [], profile: null, userId: null })
         return
       }
-      // userId 캐싱 — 이후 CRUD에서 auth.getUser() 재호출 방지
-      set({ userId })
-
-      // 병렬로 데이터 로드 (커스텀 에셋도 함께)
-      const [tradesRes, depositsRes, targetsRes, profileRes, customAssetsRes] = await Promise.all([
-        apiGetTrades(supabase, userId, { pageSize: 1000 }),
-        apiGetDeposits(supabase, userId),
-        apiGetTargets(supabase, userId),
-        apiGetProfile(supabase, userId),
-        apiGetCustomAssets(supabase, userId),
-      ])
 
       const trades = tradesRes.success
         ? tradesRes.data.trades.map((r) => rowToTrade(r as unknown as Record<string, unknown>))
@@ -300,7 +256,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
   // ── 강제 새로고침 (isLoaded 무시) ──
   reloadData: async () => {
-    set({ isLoaded: false, userId: null })
+    set({ isLoaded: false })
     await get().loadData()
   },
 
@@ -324,10 +280,6 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
 
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
-
       const status = data.exit_price ? 'closed' : 'open'
 
       // P&L 계산 (closed인 경우)
@@ -348,8 +300,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         pnl = calcPnL(tempTrade)
       }
 
-      const res = await apiCreateTrade(supabase, {
-        user_id: userId,
+      const res = await fetchCreateTrade({
         date: dtLocalToDate(data.entry_datetime),
         entry_datetime: dtLocalToUTC(data.entry_datetime),
         exit_datetime: data.exit_price ? dtLocalToUTC(data.exit_datetime) : null,
@@ -388,9 +339,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 거래 수정 ──
   updateTrade: async (id: string, data: Partial<TradeFormData>) => {
     try {
-      const supabase = getSupabase()
-
-      // Supabase TradeUpdate 형식으로 변환
+      // TradeUpdate 형식으로 변환
       const updates: Record<string, unknown> = {}
       if (data.asset !== undefined) updates.asset = data.asset.toUpperCase().trim()
       if (data.direction !== undefined) updates.direction = data.direction
@@ -418,7 +367,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         }
       }
 
-      const res = await apiUpdateTrade(supabase, id, updates)
+      const res = await fetchUpdateTrade(id, updates)
       if (!res.success) {
         showToast('error', res.error)
         return { success: false, error: res.error }
@@ -438,18 +387,10 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
   },
 
-  // ── 거래 삭제 (스크린샷 Storage도 함께 정리) ──
+  // ── 거래 삭제 ──
   deleteTrade: async (id: string) => {
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-
-      // Storage 파일 삭제 (DB 행은 CASCADE로 자동 삭제)
-      if (userId) {
-        await apiDeleteScreenshotsByTradeId(supabase, userId, id)
-      }
-
-      const res = await apiDeleteTrade(supabase, id)
+      const res = await fetchDeleteTrade(id)
       if (!res.success) {
         showToast('error', res.error)
         return
@@ -479,8 +420,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
 
     try {
-      const supabase = getSupabase()
-      const res = await apiCloseTrade(supabase, id, exitPrice, exitDatetime)
+      const res = await fetchCloseTrade(id, exitPrice, exitDatetime)
       if (!res.success) {
         showToast('error', res.error)
         return { success: false, error: res.error }
@@ -503,15 +443,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 입금 추가 ──
   addDeposit: async (date: string, amount: number, memo?: string) => {
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) {
-        showToast('error', '로그인이 필요합니다.')
-        return
-      }
-
-      const res = await apiCreateDeposit(supabase, {
-        user_id: userId,
+      const res = await fetchCreateDeposit({
         date,
         amount,
         memo: memo || null,
@@ -534,8 +466,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 입금 삭제 ──
   deleteDeposit: async (id: string) => {
     try {
-      const supabase = getSupabase()
-      const res = await apiDeleteDeposit(supabase, id)
+      const res = await fetchDeleteDeposit(id)
       if (!res.success) {
         showToast('error', res.error)
         return
@@ -551,14 +482,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 목표 추가 ──
   addTarget: async (label: string, amount: number) => {
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) {
-        showToast('error', '로그인이 필요합니다.')
-        return
-      }
-
-      const res = await apiCreateTarget(supabase, userId, label, amount)
+      const res = await fetchCreateTarget({ label, amount })
       if (!res.success) {
         showToast('error', res.error)
         return
@@ -575,8 +499,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 목표 삭제 ──
   deleteTarget: async (id: string) => {
     try {
-      const supabase = getSupabase()
-      const res = await apiDeleteTarget(supabase, id)
+      const res = await fetchDeleteTarget(id)
       if (!res.success) {
         showToast('error', res.error)
         return
@@ -591,14 +514,11 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 초기 자산 설정 ──
   setInitialCapital: async (amount: number) => {
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) {
-        showToast('error', '로그인이 필요합니다.')
+      if (amount < 0) {
+        showToast('error', '초기 자산은 0 이상이어야 합니다.')
         return
       }
-
-      const res = await apiSetInitialCapital(supabase, userId, amount)
+      const res = await fetchUpdateProfile({ initial_capital: amount })
       if (!res.success) {
         showToast('error', res.error)
         return
@@ -618,10 +538,6 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 추가진입 (물타기/불타기) 추가 ──
   addScaleIn: async (params) => {
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
-
       if (params.entryPrice <= 0) return { success: false, error: '진입 가격은 0보다 커야 합니다.' }
       if (params.margin <= 0) return { success: false, error: '증거금은 0보다 커야 합니다.' }
       if (params.quantity != null && params.quantity <= 0) return { success: false, error: '수량은 0보다 커야 합니다.' }
@@ -630,14 +546,12 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       if (!trade) return { success: false, error: '거래를 찾을 수 없습니다.' }
       if (trade.status !== 'open') return { success: false, error: '이미 청산된 포지션입니다.' }
 
-      const res = await apiAddTradeScaleIn(supabase, {
-        tradeId: params.tradeId,
-        userId,
+      const res = await fetchAddTradeScaleIn(params.tradeId, {
         entryPrice: params.entryPrice,
         margin: params.margin,
         quantity: params.quantity ?? null,
         entryDatetime: dtLocalToUTC(params.entryDatetime) ?? params.entryDatetime,
-        type: params.type,
+        type: params.type as import('@/lib/supabase/types').ScaleInTypeDb,
         note: params.note ?? null,
       })
 
@@ -679,8 +593,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 추가진입 삭제 ──
   deleteScaleIn: async (tradeId: string, scaleInId: string) => {
     try {
-      const supabase = getSupabase()
-      const res = await apiDeleteTradeScaleIn(supabase, scaleInId, tradeId)
+      const res = await fetchDeleteTradeScaleIn(tradeId, scaleInId)
       if (!res.success) {
         showToast('error', res.error)
         return { success: false, error: res.error }
@@ -707,8 +620,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     if (cached) return cached
 
     try {
-      const supabase = getSupabase()
-      const res = await apiGetTradeScaleIns(supabase, tradeId)
+      const res = await fetchTradeScaleIns(tradeId)
       if (!res.success) return []
 
       const scaleIns: TradeScaleIn[] = res.data.map((r) => ({
@@ -736,18 +648,19 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 모든 오픈 거래의 추가진입 기록 로드 ──
   loadAllTradeScaleIns: async () => {
     try {
-      const supabase = getSupabase()
       const openTradeIds = get().trades
         .filter((t) => t.status === 'open')
         .map((t) => t.id)
       if (openTradeIds.length === 0) return
 
-      const res = await apiGetTradeScaleInsByTradeIds(supabase, openTradeIds)
-      if (!res.success) return
+      const results = await Promise.all(openTradeIds.map((id) => fetchTradeScaleIns(id)))
 
       const grouped: Record<string, TradeScaleIn[]> = {}
-      for (const r of res.data) {
-        const si: TradeScaleIn = {
+      for (let i = 0; i < openTradeIds.length; i++) {
+        const res = results[i]
+        const tradeId = openTradeIds[i]
+        if (!res.success) continue
+        grouped[tradeId] = res.data.map((r) => ({
           id: r.id,
           trade_id: r.trade_id,
           user_id: r.user_id,
@@ -757,9 +670,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
           type: r.type,
           note: r.note,
           created_at: r.created_at,
-        }
-        if (!grouped[r.trade_id]) grouped[r.trade_id] = []
-        grouped[r.trade_id].push(si)
+        }))
       }
       set((state) => ({ tradeScaleIns: { ...state.tradeScaleIns, ...grouped } }))
     } catch {
@@ -770,10 +681,6 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 분할 청산 추가 ──
   addTradeClose: async (params) => {
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
-
       if (params.exitPrice <= 0) return { success: false, error: '청산 가격은 0보다 커야 합니다.' }
       if (params.quantityPct <= 0 || params.quantityPct > 100) return { success: false, error: '청산 비율은 1~100% 범위여야 합니다.' }
 
@@ -790,9 +697,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const closeMargin = Math.round(remaining * (params.quantityPct / 100) * 100) / 100
       const pnl = calcClosePnl(closeMargin, trade.leverage, trade.direction, params.exitPrice, wap)
 
-      const res = await apiAddTradeClose(supabase, {
-        tradeId: params.tradeId,
-        userId,
+      const res = await fetchAddTradeClose(params.tradeId, {
         exitPrice: params.exitPrice,
         exitDatetime: dtLocalToUTC(params.exitDatetime) ?? params.exitDatetime,
         quantityPct: params.quantityPct,
@@ -828,14 +733,9 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       // 100% 청산 완료 시 부모 거래도 로컬에서 closed 처리
       if (res.data.isFullyClosed) {
         // 서버에서 최신 데이터를 다시 로드하여 정확한 상태 반영
-        const { data: updatedTrade, error: fetchErr } = await supabase
-          .from('trades')
-          .select('*')
-          .eq('id', params.tradeId)
-          .single()
-
-        if (!fetchErr && updatedTrade) {
-          const updated = rowToTrade(updatedTrade as unknown as Record<string, unknown>)
+        const tradeRes = await fetchTradeById(params.tradeId)
+        if (tradeRes.success) {
+          const updated = rowToTrade(tradeRes.data as unknown as Record<string, unknown>)
           set((state) => ({
             trades: state.trades.map((t) => t.id === params.tradeId ? updated : t),
           }))
@@ -861,8 +761,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     if (cached) return cached
 
     try {
-      const supabase = getSupabase()
-      const res = await apiGetTradeCloses(supabase, tradeId)
+      const res = await fetchTradeCloses(tradeId)
       if (!res.success) return []
 
       const closes: TradeClose[] = res.data.map((r) => ({
@@ -890,18 +789,19 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 모든 오픈 거래의 분할 청산 기록 로드 ──
   loadAllTradeCloses: async () => {
     try {
-      const supabase = getSupabase()
       const openTradeIds = get().trades
         .filter((t) => t.status === 'open')
         .map((t) => t.id)
       if (openTradeIds.length === 0) return
 
-      const res = await apiGetTradeClosesByTradeIds(supabase, openTradeIds)
-      if (!res.success) return
+      const results = await Promise.all(openTradeIds.map((id) => fetchTradeCloses(id)))
 
       const grouped: Record<string, TradeClose[]> = {}
-      for (const r of res.data) {
-        const close: TradeClose = {
+      for (let i = 0; i < openTradeIds.length; i++) {
+        const res = results[i]
+        const tradeId = openTradeIds[i]
+        if (!res.success) continue
+        grouped[tradeId] = res.data.map((r) => ({
           id: r.id,
           trade_id: r.trade_id,
           user_id: r.user_id,
@@ -911,9 +811,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
           close_margin: r.close_margin ?? undefined,
           pnl: r.pnl,
           created_at: r.created_at,
-        }
-        if (!grouped[r.trade_id]) grouped[r.trade_id] = []
-        grouped[r.trade_id].push(close)
+        }))
       }
       set((state) => ({ tradeCloses: { ...state.tradeCloses, ...grouped } }))
     } catch {
@@ -924,8 +822,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 분할 청산 삭제 ──
   deleteTradeClose: async (tradeId: string, closeId: string) => {
     try {
-      const supabase = getSupabase()
-      const res = await apiDeleteTradeClose(supabase, closeId)
+      const res = await fetchDeleteTradeClose(tradeId, closeId)
       if (!res.success) {
         showToast('error', res.error)
         return { success: false, error: res.error }
@@ -948,15 +845,11 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   uploadScreenshots: async (tradeId: string, files: File[]) => {
     if (files.length === 0) return { success: true }
     try {
-      const supabase = getSupabase()
-      const userId = await getCachedUserId(get)
-      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
-
       // 기존 스크린샷이 있으면 먼저 삭제 (실패 시 새 업로드를 진행하지 않음)
       const existing = get().screenshots[tradeId] || []
       for (const ss of existing) {
         try {
-          const delRes = await apiDeleteScreenshot(supabase, ss.id, ss.storage_path)
+          const delRes = await fetchDeleteScreenshot(tradeId, ss.id, ss.storage_path)
           if (!delRes.success) {
             showToast('error', '기존 스크린샷 삭제 실패')
             return { success: false, error: '기존 스크린샷 삭제 실패' }
@@ -970,7 +863,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
       // 첫 번째 파일 1장만 업로드 (sort_order 항상 0)
       const file = files[0]
-      const res = await apiUploadScreenshot(supabase, file, userId, tradeId, 0)
+      const res = await fetchUploadScreenshot(tradeId, file, 0)
 
       if (!res.success) {
         showToast('error', `스크린샷 업로드 실패: ${res.error}`)
@@ -1015,8 +908,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     if (cached) return cached
 
     try {
-      const supabase = getSupabase()
-      const res = await apiGetScreenshots(supabase, tradeId)
+      const res = await fetchScreenshots(tradeId)
       if (!res.success) return []
 
       const screenshots: TradeScreenshot[] = res.data.map((d) => ({
@@ -1045,16 +937,17 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 모든 거래의 스크린샷 로드 (대시보드 등에서 사용) ──
   loadAllScreenshots: async () => {
     try {
-      const supabase = getSupabase()
       const tradeIds = get().trades.map((t) => t.id)
       if (tradeIds.length === 0) return
 
-      const res = await apiGetScreenshotsByTradeIds(supabase, tradeIds)
-      if (!res.success) return
+      const results = await Promise.all(tradeIds.map((id) => fetchScreenshots(id)))
 
       const grouped: Record<string, TradeScreenshot[]> = {}
-      for (const d of res.data) {
-        const ss: TradeScreenshot = {
+      for (let i = 0; i < tradeIds.length; i++) {
+        const res = results[i]
+        const tradeId = tradeIds[i]
+        if (!res.success) continue
+        grouped[tradeId] = res.data.map((d) => ({
           id: d.id,
           trade_id: d.trade_id,
           user_id: d.user_id,
@@ -1065,9 +958,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
           sort_order: d.sort_order,
           created_at: d.created_at,
           url: d.url,
-        }
-        if (!grouped[d.trade_id]) grouped[d.trade_id] = []
-        grouped[d.trade_id].push(ss)
+        }))
       }
       set((state) => ({ screenshots: { ...state.screenshots, ...grouped } }))
     } catch {
@@ -1078,8 +969,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   // ── 스크린샷 삭제 ──
   deleteScreenshot: async (tradeId: string, screenshotId: string, storagePath: string) => {
     try {
-      const supabase = getSupabase()
-      const res = await apiDeleteScreenshot(supabase, screenshotId, storagePath)
+      const res = await fetchDeleteScreenshot(tradeId, screenshotId, storagePath)
       if (!res.success) {
         showToast('error', res.error)
         return

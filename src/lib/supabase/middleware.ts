@@ -66,6 +66,12 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // API 요청에 Bearer 토큰이 있으면 미들웨어 세션 갱신 불필요 — 스킵
+  const authHeader = request.headers.get('authorization');
+  if (pathname.startsWith('/api/') && authHeader?.startsWith('Bearer ')) {
+    return supabaseResponse;
+  }
+
   // 모바일 API는 자체 Bearer 토큰 인증 사용 — 미들웨어 스킵
   if (pathname.startsWith('/api/mobile/')) {
     return supabaseResponse;

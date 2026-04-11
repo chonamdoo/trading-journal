@@ -5,8 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Markdown from 'react-markdown'
 import { Card } from '@/components/ui/Card'
 import { KpiCard } from '@/components/ui/KpiCard'
-import { createClient } from '@/lib/supabase/client'
-import { getReportById } from '@/lib/api/reports'
+import { fetchReportById } from '@/lib/api/client-api'
 import type { MonthlyReportRow } from '@/lib/supabase/types'
 
 export default function ReportDetailPage() {
@@ -20,8 +19,7 @@ export default function ReportDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const res = await getReportById(supabase, reportId)
+      const res = await fetchReportById(reportId)
       if (res.success) {
         setReport(res.data)
       }

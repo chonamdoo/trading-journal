@@ -2,21 +2,18 @@
 
 import { create } from 'zustand'
 import type { TradingPlan, PlanFormData, PlanStatus, TargetPrice } from '@/types'
-import { createClient } from '@/lib/supabase/client'
 import { showToast } from '@/components/ui/Toast'
 import type { TradingPlanRow } from '@/lib/supabase/types'
 
-import { useTradeStore } from './useTrades'
 import {
-  getPlans as apiGetPlans,
-  getActivePlans as apiGetActivePlans,
-  getPlanById as apiGetPlanById,
-  createPlan as apiCreatePlan,
-  updatePlan as apiUpdatePlan,
-  deletePlan as apiDeletePlan,
-  linkPlanToTrade as apiLinkPlanToTrade,
-  unlinkPlan as apiUnlinkPlan,
-} from '@/lib/api/plans'
+  fetchPlans,
+  fetchActivePlans,
+  fetchCreatePlan,
+  fetchUpdatePlan,
+  fetchDeletePlan,
+  fetchLinkPlanToTrade,
+  fetchUnlinkPlan,
+} from '@/lib/api/client-api'
 
 /** TradingPlanRow -> TradingPlan 변환 */
 function rowToPlan(row: TradingPlanRow): TradingPlan {
@@ -70,17 +67,6 @@ interface PlanStore {
 }
 
 export const usePlanStore = create<PlanStore>((set, get) => {
-  const getSupabase = () => createClient()
-
-  /** useTradeStore에 캐시된 userId를 우선 사용, 없으면 auth API 호출 */
-  const getUserId = async (): Promise<string | undefined> => {
-    const cached = useTradeStore.getState().userId
-    if (cached) return cached
-    const supabase = getSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    return user?.id
-  }
-
   return {
     plans: [],
     activePlans: [],
@@ -89,12 +75,8 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     activePlansLoaded: false,
 
     loadPlans: async (filters) => {
-      const userId = await getUserId()
-      if (!userId) return
-
       set({ loading: true })
-      const supabase = getSupabase()
-      const res = await apiGetPlans(supabase, userId, {
+      const res = await fetchPlans({
         status: filters?.status || undefined,
         asset: filters?.asset || undefined,
       })
@@ -111,11 +93,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
       // 이미 로드됐으면 스킵 (대시보드 재진입 시 중복 호출 방지)
       if (get().activePlansLoaded) return
 
-      const userId = await getUserId()
-      if (!userId) return
-
-      const supabase = getSupabase()
-      const res = await apiGetActivePlans(supabase, userId, 3)
+      const res = await fetchActivePlans()
 
       if (res.success) {
         set({ activePlans: res.data.map(rowToPlan), activePlansLoaded: true })
@@ -123,9 +101,6 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     },
 
     createPlan: async (data) => {
-      const userId = await getUserId()
-      if (!userId) return { success: false, error: '로그인이 필요합니다.' }
-
       // R:R 자동 계산
       const entryMid = data.entry_price_min && data.entry_price_max
         ? (data.entry_price_min + data.entry_price_max) / 2
@@ -138,9 +113,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
         if (risk > 0) rrRatio = Math.round((reward / risk) * 100) / 100
       }
 
-      const supabase = getSupabase()
-      const res = await apiCreatePlan(supabase, {
-        user_id: userId,
+      const res = await fetchCreatePlan({
         title: data.title,
         asset: data.asset,
         direction: data.direction,
@@ -170,8 +143,6 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     },
 
     updatePlan: async (id, data) => {
-      const supabase = getSupabase()
-
       // R:R 재계산
       let rrRatio: number | null | undefined = undefined
       if (data.entry_price_min !== undefined || data.entry_price_max !== undefined || data.target_prices !== undefined || data.stop_loss_price !== undefined) {
@@ -208,7 +179,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
       if (data.review_notes !== undefined) updates.review_notes = data.review_notes
       if (data.plan_adherence !== undefined) updates.plan_adherence = data.plan_adherence
 
-      const res = await apiUpdatePlan(supabase, id, updates as import('@/lib/supabase/types').TradingPlanUpdate)
+      const res = await fetchUpdatePlan(id, updates as import('@/lib/supabase/types').TradingPlanUpdate)
 
       if (!res.success) return { success: false, error: res.error }
 
@@ -224,8 +195,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     },
 
     deletePlan: async (id) => {
-      const supabase = getSupabase()
-      const res = await apiDeletePlan(supabase, id)
+      const res = await fetchDeletePlan(id)
 
       if (!res.success) return { success: false, error: res.error }
 
@@ -238,8 +208,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     },
 
     linkPlanToTrade: async (planId, tradeId) => {
-      const supabase = getSupabase()
-      const res = await apiLinkPlanToTrade(supabase, planId, tradeId)
+      const res = await fetchLinkPlanToTrade(planId, tradeId)
 
       if (!res.success) return { success: false, error: res.error }
 
@@ -252,8 +221,7 @@ export const usePlanStore = create<PlanStore>((set, get) => {
     },
 
     unlinkPlan: async (planId) => {
-      const supabase = getSupabase()
-      const res = await apiUnlinkPlan(supabase, planId)
+      const res = await fetchUnlinkPlan(planId)
 
       if (!res.success) return { success: false, error: res.error }
 

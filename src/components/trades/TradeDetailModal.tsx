@@ -15,8 +15,7 @@ import {
   pnlColorClass,
 } from '@/lib/format'
 import { ShareCardModal } from './ShareCardModal'
-import { createClient } from '@/lib/supabase/client'
-import { getPlanByTradeId } from '@/lib/api/plans'
+import { fetchPlanByTradeId } from '@/lib/api/client-api'
 
 interface TradeDetailModalProps {
   trade: Trade | null
@@ -373,8 +372,7 @@ export function TradeDetailModal({
             variant="ghost"
             onClick={async () => {
               if (trade) {
-                const supabase = createClient()
-                const res = await getPlanByTradeId(supabase, trade.id)
+                const res = await fetchPlanByTradeId(trade.id)
                 if (res.success && res.data) {
                   const r = res.data
                   setLinkedPlan({
