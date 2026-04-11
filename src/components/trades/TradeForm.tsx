@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import type { Direction, TradeFormData, TradeScreenshot, TradingPlan } from '@/types'
+import type { Direction, Emotion, TradeFormData, TradeScreenshot, TradingPlan } from '@/types'
+import { EMOTIONS } from '@/lib/constants'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
@@ -102,6 +103,9 @@ export function TradeForm({
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [emotion, setEmotion] = useState<Emotion | null>(
+    (initialData?.emotion as Emotion) ?? null
+  )
 
   // ── P&L 미리보기 계산 ──
   const entNum = parseFloat(entryPrice)
@@ -255,6 +259,7 @@ export function TradeForm({
     setNotes('')
     setPendingFiles([])
     setSelectedPlanId(null)
+    setEmotion(null)
   }, [allAssetsProp])
 
   // 저장 중 상태
@@ -291,6 +296,7 @@ export function TradeForm({
       exit_datetime: hasExit ? exitDatetime : null,
       reason: reason.trim() || undefined,
       notes: notes.trim() || undefined,
+      emotion: emotion ?? null,
     }
 
     setSaving(true)
@@ -390,6 +396,35 @@ export function TradeForm({
               ↓ SHORT
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 감정 태그 */}
+      <div className="mb-4">
+        <label className="block text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
+          매매 감정
+        </label>
+        <div className="flex gap-2 flex-wrap" role="group" aria-label="매매 감정 선택">
+          {EMOTIONS.map((e) => {
+            const isSelected = emotion === e.id
+            return (
+              <button
+                key={e.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => setEmotion(isSelected ? null : (e.id as Emotion))}
+                className={`
+                  rounded-full px-3 py-1.5 text-[12px] font-semibold cursor-pointer transition-all border
+                  ${isSelected
+                    ? `${e.color} ${e.bgColor} border-current`
+                    : 'border-border-input bg-surface text-content-secondary'
+                  }
+                `}
+              >
+                {e.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 

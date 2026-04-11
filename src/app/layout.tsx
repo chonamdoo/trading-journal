@@ -29,7 +29,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Pretendard:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Pretendard:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
           rel="stylesheet"
         />
         {/* 다크모드 초기화 스크립트 (FOUC 방지) */}

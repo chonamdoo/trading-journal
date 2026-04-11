@@ -74,6 +74,15 @@ export const NAV_TABS = [
   { id: 'settings', label: '설정', href: '/settings' },
 ] as const
 
+// ── 감정 태그 ──
+export const EMOTIONS = [
+  { id: 'calm', label: '침착', color: 'text-info', bgColor: 'bg-info-soft' },
+  { id: 'confident', label: '확신', color: 'text-profit', bgColor: 'bg-profit-bg' },
+  { id: 'fomo', label: 'FOMO', color: 'text-warning', bgColor: 'bg-warning-bg' },
+  { id: 'revenge', label: '복수매매', color: 'text-loss', bgColor: 'bg-loss-bg' },
+  { id: 'anxious', label: '불안', color: 'text-content-muted', bgColor: 'bg-surface-muted' },
+] as const
+
 // ── 목표 색상 팔레트 ──
 export const TARGET_COLORS = [
   '#18794e', '#1c6ef3', '#7c3aed', '#c2410c', '#0e7490',

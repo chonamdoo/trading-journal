@@ -87,6 +87,7 @@ function rowToTrade(row: Record<string, unknown>): Trade {
     reason: row.reason as string | null,
     notes: row.notes as string | null,
     tags: row.tags as string[] | null,
+    emotion: (row.emotion as Trade['emotion']) ?? null,
     created_at: row.created_at as string | undefined,
     updated_at: row.updated_at as string | undefined,
   }
@@ -364,6 +365,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         reason: data.reason || null,
         notes: data.notes || null,
         tags: data.tags || null,
+        emotion: data.emotion ?? null,
       })
 
       if (!res.success) {
@@ -405,6 +407,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       if (data.notes !== undefined) updates.notes = data.notes || null
       if (data.tags !== undefined) updates.tags = data.tags || null
       if (data.stop_loss_price !== undefined) updates.stop_loss_price = data.stop_loss_price || null
+      if (data.emotion !== undefined) updates.emotion = data.emotion ?? null
 
       // exit_price가 있으면 P&L 재계산
       const currentTrade = get().trades.find((t) => t.id === id)

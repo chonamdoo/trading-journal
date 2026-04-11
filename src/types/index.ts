@@ -3,6 +3,9 @@
 /** 포지션 방향 */
 export type Direction = 'LONG' | 'SHORT'
 
+/** 매매 감정 태그 */
+export type Emotion = 'calm' | 'confident' | 'fomo' | 'revenge' | 'anxious'
+
 /** 거래 상태 */
 export type TradeStatus = 'open' | 'closed'
 
@@ -25,6 +28,7 @@ export interface Trade {
   reason?: string | null          // 진입 이유
   notes?: string | null           // 결과 메모
   tags?: string[] | null           // P2: 전략 태그 (DB에서 null 반환 가능, I-2)
+  emotion?: Emotion | null
   created_at?: string
   updated_at?: string
 }
@@ -43,6 +47,7 @@ export interface TradeFormData {
   reason?: string
   notes?: string
   tags?: string[] | null
+  emotion?: Emotion | null
 }
 
 // ── 추가 입금 ──

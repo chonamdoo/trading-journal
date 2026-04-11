@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { TradeForm } from '@/components/trades/TradeForm'
+import { MotivationBanner } from '@/components/trades/MotivationBanner'
 import { useTrades } from '@/hooks/useTrades'
 import { useTradeStore } from '@/hooks/useTrades'
 import { useAssets } from '@/hooks/useAssets'
@@ -27,6 +28,7 @@ export default function NewTradePage() {
   }, [loadActivePlans])
 
   return (
+    <>
     <TradeForm
       currentCapital={capital}
       favorites={favorites}
@@ -40,5 +42,7 @@ export default function NewTradePage() {
         await uploadScreenshots(tradeId, files)
       }}
     />
+    <MotivationBanner />
+    </>
   )
 }

@@ -425,6 +425,7 @@ export type TradeRow = {
   reason: string | null;
   notes: string | null;
   tags: string[] | null;
+  emotion: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -447,6 +448,7 @@ export type TradeInsert = {
   reason?: string | null;
   notes?: string | null;
   tags?: string[] | null;
+  emotion?: string | null;
 }
 
 export type TradeUpdate = {
@@ -465,6 +467,7 @@ export type TradeUpdate = {
   reason?: string | null;
   notes?: string | null;
   tags?: string[] | null;
+  emotion?: string | null;
 }
 
 // ────────────────────────────────────────────

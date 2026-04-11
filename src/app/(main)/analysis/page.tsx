@@ -16,9 +16,11 @@
  * 6. 승률 도넛 (WinRateDonut + 통계)
  */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
+import { EMOTIONS } from '@/lib/constants'
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
 import { DayOfWeekSlide } from '@/components/analysis/DayOfWeekSlide'
 import { MonthlyCalendarSlide } from '@/components/analysis/MonthlyCalendarSlide'
@@ -46,6 +48,30 @@ export default function AnalysisPage() {
     scoreResult, pnlBarData, fundingData, avgWinLoss,
     trades,
   } = analytics
+
+  // ── 감정별 승률 데이터 ──
+  const emotionWinRateData = useMemo(() => {
+    const closedTrades = trades.filter((t) => t.status === 'closed')
+    const groups: Record<string, { wins: number; total: number }> = {}
+
+    for (const t of closedTrades) {
+      const key = t.emotion ?? '__unset__'
+      if (!groups[key]) groups[key] = { wins: 0, total: 0 }
+      groups[key].total += 1
+      if (t.pnl != null && t.pnl > 0) groups[key].wins += 1
+    }
+
+    const allKeys = [...EMOTIONS.map((e) => e.id), '__unset__']
+    return allKeys.map((key) => {
+      const group = groups[key] ?? { wins: 0, total: 0 }
+      const em = EMOTIONS.find((e) => e.id === key)
+      return {
+        label: em ? em.label : '미설정',
+        winRate: group.total > 0 ? Math.round((group.wins / group.total) * 100) : 0,
+        total: group.total,
+      }
+    })
+  }, [trades])
 
   // ── 슬라이드 정의 ──
   const slides: SlideItem[] = [
@@ -121,7 +147,64 @@ export default function AnalysisPage() {
         ? `${pnlBarData[0]?.label}에서 가장 높은 수익을 기록했습니다.`
         : undefined,
     },
-    // 6. 승률 & 통계
+    // 6. 감정별 승률
+    {
+      id: 'emotion-win-rate',
+      title: '감정별 승률',
+      content: (
+        <div>
+          {emotionWinRateData.every((d) => d.total === 0) ? (
+            <div className="flex items-center justify-center h-[220px] text-content-muted text-sm">
+              감정 태그가 기록된 거래가 없습니다.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={emotionWinRateData} margin={{ top: 20, right: 8, left: -16, bottom: 0 }}>
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12, fill: 'var(--content-secondary)' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fontSize: 11, fill: 'var(--content-muted)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: number) => `${v}%`}
+                />
+                <Tooltip
+                  formatter={(value: number, _: string, entry: { payload?: { total?: number } }) => [
+                    `${value}% (${entry.payload?.total ?? 0}건)`,
+                    '승률',
+                  ]}
+                  contentStyle={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 7,
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="winRate" fill="var(--blue)" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                  <LabelList
+                    dataKey="total"
+                    position="top"
+                    formatter={(v: number) => (v > 0 ? `${v}건` : '')}
+                    style={{ fontSize: 11, fill: 'var(--content-muted)' }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      ),
+      takeaway: (() => {
+        const best = [...emotionWinRateData].filter((d) => d.total > 0).sort((a, b) => b.winRate - a.winRate)[0]
+        if (!best) return '거래에 감정 태그를 기록하면 감정별 승률을 분석할 수 있습니다.'
+        return `${best.label} 상태에서 승률이 ${best.winRate}%로 가장 높습니다.`
+      })(),
+    },
+    // 7. 승률 & 통계
     {
       id: 'win-rate-stats',
       title: '승률 & 통계',
