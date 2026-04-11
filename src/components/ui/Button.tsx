@@ -10,9 +10,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-content text-white font-medium hover:opacity-90 active:scale-[0.98] dark:text-[#111110]',
+    'bg-content text-white font-medium hover:opacity-90 active:scale-[0.98] dark:text-bg',
   ghost:
-    'bg-surface border border-border-strong text-content-secondary hover:bg-surface-hover hover:text-content dark:border-[rgba(255,255,255,0.35)] dark:text-[#c0c0bc] dark:hover:text-content dark:hover:border-[rgba(255,255,255,0.5)] active:scale-[0.98]',
+    'bg-surface border border-border-strong text-content-secondary hover:bg-surface-hover hover:text-content dark:border-border-strong dark:text-content-secondary dark:hover:text-content dark:hover:border-border-strong active:scale-[0.98]',
   danger:
     'bg-surface border border-loss/30 text-loss hover:bg-loss-bg active:scale-[0.98] dark:border-loss/40',
 }

@@ -1,8 +1,11 @@
+import type { TooltipProps } from 'recharts'
+import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent'
+
 /**
  * Recharts 커스텀 툴팁 컴포넌트
  * 디자인 가이드의 색상 토큰을 준수한다.
  */
-export function ChartTooltip({ active, payload, label }: any) {
+export function ChartTooltip({ active, payload, label }: TooltipProps<ValueType, NameType>) {
   if (!active || !payload?.length) return null
 
   return (
@@ -10,7 +13,7 @@ export function ChartTooltip({ active, payload, label }: any) {
       <p className="text-[11px] font-medium text-content-secondary mb-1">
         {label}
       </p>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry, i: number) => (
         <p
           key={i}
           className="font-mono text-[13px] font-semibold text-content"

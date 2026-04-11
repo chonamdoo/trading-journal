@@ -89,4 +89,6 @@ export const RATE_LIMITS = {
   api: { windowMs: 60_000, maxRequests: 60 },
   /** 쓰기 작업: 분당 30회 */
   write: { windowMs: 60_000, maxRequests: 30 },
+  /** AI 생성 엔드포인트: 시간당 5회 (비용 보호) */
+  ai: { windowMs: 3_600_000, maxRequests: 5 },
 } as const;

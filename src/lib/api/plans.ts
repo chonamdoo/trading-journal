@@ -7,6 +7,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, TradingPlanRow, TradingPlanInsert, TradingPlanUpdate, ApiResult, PlanStatusDb } from '../supabase/types';
 import { parseNumeric } from './trades';
+import { getErrorMessage } from './utils';
 
 type Client = SupabaseClient<Database>;
 
@@ -29,11 +30,6 @@ function normalizeRow(row: Record<string, unknown>): TradingPlanRow {
 
 function normalizeRows(rows: Record<string, unknown>[]): TradingPlanRow[] {
   return rows.map(normalizeRow);
-}
-
-function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return '알 수 없는 오류가 발생했습니다.';
 }
 
 /** 필터 파라미터 */

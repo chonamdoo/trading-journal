@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit';
 
 /**
  * AI 월간 트레이딩 리포트 생성 API
@@ -14,7 +16,7 @@ interface GeminiContent {
   parts: { text?: string; inlineData?: { mimeType: string; data: string } }[];
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
   // 인증 확인
@@ -24,6 +26,31 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+  }
+
+  // AI Rate Limit: 사용자별 + IP별 이중 제한 (시간당 5회)
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? request.headers.get('x-real-ip')
+    ?? 'unknown';
+  const userRateCheck = checkRateLimit(`ai:user:${user.id}`, RATE_LIMITS.ai);
+  if (!userRateCheck.allowed) {
+    return NextResponse.json(
+      { error: 'AI 리포트 생성 한도를 초과했습니다. 시간당 5회로 제한됩니다.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil(userRateCheck.retryAfterMs / 1000)) },
+      },
+    );
+  }
+  const ipRateCheck = checkRateLimit(`ai:ip:${ip}`, RATE_LIMITS.ai);
+  if (!ipRateCheck.allowed) {
+    return NextResponse.json(
+      { error: '요청이 너무 많습니다. 잠시 후 다시 시도하세요.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil(ipRateCheck.retryAfterMs / 1000)) },
+      },
+    );
   }
 
   const body = await request.json();

@@ -66,5 +66,15 @@ export async function withAuth(
 /**
  * Rate Limit만 적용 (인증 불필요한 엔드포인트용: login, signup)
  */
+export function withRateLimit(
+  req: NextRequest,
+  rateLimit = RATE_LIMITS.auth,
+): RateLimitResult | null {
+  const ip = getClientIp(req);
+  const result = checkRateLimit(`ip:${ip}`, rateLimit);
+  if (!result.allowed) return result;
+  return null;
+}
+
 export { checkRateLimit, RATE_LIMITS };
 export type { RateLimitResult };

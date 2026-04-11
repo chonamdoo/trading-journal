@@ -72,8 +72,8 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 모바일 API는 자체 Bearer 토큰 인증 사용 — 미들웨어 스킵
-  if (pathname.startsWith('/api/mobile/')) {
+  // 모바일 인증 API는 자체 Bearer 토큰 인증 사용 — 미들웨어 스킵
+  if (pathname.startsWith('/api/mobile/auth/')) {
     return supabaseResponse;
   }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMobileClient } from '@/lib/supabase/mobile-server';
-import { withRateLimit } from '@/lib/api/mobile-auth';
+import { withRateLimit } from '@/lib/api/auth';
 
 export async function POST(req: NextRequest) {
   try {

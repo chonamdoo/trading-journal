@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/api/mobile-auth';
+import { withAuth } from '@/lib/api/auth';
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (supabase) => {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { withRateLimit } from '@/lib/api/mobile-auth';
+import { withRateLimit } from '@/lib/api/auth';
 
 /**
  * POST /api/mobile/auth/google
