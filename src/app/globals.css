@@ -4,115 +4,116 @@
 
 @layer base {
   :root {
-    /* 배경 계층 */
-    --bg:       #fafaf9;
-    --bg2:      #f4f4f2;
+    /* 배경 계층 (v2: warm cream) */
+    --bg:       #F8F6F3;
+    --bg2:      #F1EDE8;
     --surface:  #ffffff;
-    --surface2: #f7f7f6;
-    --surface3: #f0f0ee;
+    --surface2: #F5F3F0;
+    --surface3: #EFEEEB;
 
     /* 테두리 */
     --border:   rgba(0,0,0,0.08);
     --border2:  rgba(0,0,0,0.14);
     --border3:  rgba(0,0,0,0.22);
 
-    /* 텍스트 */
-    --text:     #111110;
-    --text2:    #6f6f6c;
-    --text3:    #858580;
+    /* 텍스트 (v2: charcoal, not pure black) */
+    --text:     #1E293B;
+    --text2:    #64748B;
+    --text3:    #94A3B8;
 
-    /* 시맨틱 색상 */
-    --green:      #18794e;
-    --green-bg:   #e9f6ef;
-    --green-soft: rgba(24,121,78,0.12);
-    --red:        #c62a2a;
-    --red-bg:     #fbeaea;
-    --red-soft:   rgba(198,42,42,0.1);
-    --blue:       #1c6ef3;
-    --blue-bg:    #e8f0fe;
-    --blue-soft:  rgba(28,110,243,0.1);
-    --amber:      #9a5b00;
-    --amber-bg:   #fef3e2;
+    /* 시맨틱 색상 (v2: muted tones) */
+    --green:      #059669;
+    --green-bg:   #ecfdf5;
+    --green-soft: rgba(5,150,105,0.12);
+    --red:        #DC2626;
+    --red-bg:     #fef2f2;
+    --red-soft:   rgba(220,38,38,0.1);
+    --blue:       #475569;
+    --blue-bg:    #f1f5f9;
+    --blue-soft:  rgba(71,85,105,0.1);
+    --amber:      #92400e;
+    --amber-bg:   #fffbeb;
 
     /* 차트 전용 */
-    --chart-green:      #18794e;
-    --chart-red:        #c62a2a;
-    --chart-blue:       #1c6ef3;
-    --chart-green-fill: rgba(24,121,78,0.08);
-    --chart-red-fill:   rgba(198,42,42,0.08);
-    --chart-blue-fill:  rgba(28,110,243,0.06);
+    --chart-green:      #059669;
+    --chart-red:        #DC2626;
+    --chart-blue:       #475569;
+    --chart-green-fill: rgba(5,150,105,0.08);
+    --chart-red-fill:   rgba(220,38,38,0.08);
+    --chart-blue-fill:  rgba(71,85,105,0.06);
 
     /* 등급 색상 */
-    --grade-great:     #18794e;
-    --grade-great-bg:  #e9f6ef;
-    --grade-good:      #1c6ef3;
-    --grade-good-bg:   #e8f0fe;
-    --grade-average:   #9a5b00;
-    --grade-average-bg: #fef3e2;
-    --grade-watch:     #c62a2a;
-    --grade-watch-bg:  #fbeaea;
+    --grade-great:     #059669;
+    --grade-great-bg:  #ecfdf5;
+    --grade-good:      #475569;
+    --grade-good-bg:   #f1f5f9;
+    --grade-average:   #92400e;
+    --grade-average-bg: #fffbeb;
+    --grade-watch:     #DC2626;
+    --grade-watch-bg:  #fef2f2;
 
     /* 레이더 차트 */
-    --radar-fill:      rgba(28, 110, 243, 0.25);
-    --radar-stroke:    #1c6ef3;
+    --radar-fill:      rgba(71, 85, 105, 0.25);
+    --radar-stroke:    #475569;
     --radar-grid:      rgba(0, 0, 0, 0.08);
 
     /* 스코어 바 그라데이션 */
-    --score-low:       #c62a2a;
+    --score-low:       #DC2626;
     --score-mid:       #fbbf24;
-    --score-high:      #18794e;
+    --score-high:      #059669;
   }
 
   .dark {
-    --bg:       #111110;
-    --bg2:      #161614;
-    --surface:  #1c1c1a;
-    --surface2: #242422;
-    --surface3: #2c2c29;
+    /* v2 dark: warm dark, not pure black */
+    --bg:       #0F1419;
+    --bg2:      #171C21;
+    --surface:  #1B2025;
+    --surface2: #252A30;
+    --surface3: #30353B;
 
     --border:   rgba(255,255,255,0.07);
     --border2:  rgba(255,255,255,0.15);
     --border3:  rgba(255,255,255,0.30);
 
-    --text:     #f0f0ee;
-    --text2:    #a0a09c;
-    --text3:    #787878;
+    --text:     #E2E8F0;
+    --text2:    #94A3B8;
+    --text3:    #64748B;
 
-    --green:      #4ade80;
-    --green-bg:   rgba(74,222,128,0.1);
-    --green-soft: rgba(74,222,128,0.08);
-    --red:        #f87171;
+    --green:      #34D399;
+    --green-bg:   rgba(52,211,153,0.1);
+    --green-soft: rgba(52,211,153,0.08);
+    --red:        #F87171;
     --red-bg:     rgba(248,113,113,0.1);
     --red-soft:   rgba(248,113,113,0.08);
-    --blue:       #60a5fa;
-    --blue-bg:    rgba(96,165,250,0.1);
-    --blue-soft:  rgba(96,165,250,0.08);
+    --blue:       #94A3B8;
+    --blue-bg:    rgba(148,163,184,0.1);
+    --blue-soft:  rgba(148,163,184,0.08);
     --amber:      #fbbf24;
     --amber-bg:   rgba(251,191,36,0.1);
 
-    --chart-green:      #4ade80;
-    --chart-red:        #f87171;
-    --chart-blue:       #60a5fa;
-    --chart-green-fill: rgba(74,222,128,0.12);
+    --chart-green:      #34D399;
+    --chart-red:        #F87171;
+    --chart-blue:       #94A3B8;
+    --chart-green-fill: rgba(52,211,153,0.12);
     --chart-red-fill:   rgba(248,113,113,0.12);
-    --chart-blue-fill:  rgba(96,165,250,0.10);
+    --chart-blue-fill:  rgba(148,163,184,0.10);
 
-    --grade-great:     #4ade80;
-    --grade-great-bg:  rgba(74, 222, 128, 0.12);
-    --grade-good:      #60a5fa;
-    --grade-good-bg:   rgba(96, 165, 250, 0.12);
+    --grade-great:     #34D399;
+    --grade-great-bg:  rgba(52, 211, 153, 0.12);
+    --grade-good:      #94A3B8;
+    --grade-good-bg:   rgba(148, 163, 184, 0.12);
     --grade-average:   #fbbf24;
     --grade-average-bg: rgba(251, 191, 36, 0.12);
-    --grade-watch:     #f87171;
+    --grade-watch:     #F87171;
     --grade-watch-bg:  rgba(248, 113, 113, 0.12);
 
-    --radar-fill:      rgba(139, 92, 246, 0.3);
-    --radar-stroke:    #a78bfa;
+    --radar-fill:      rgba(148, 163, 184, 0.3);
+    --radar-stroke:    #94A3B8;
     --radar-grid:      rgba(255, 255, 255, 0.08);
 
-    --score-low:       #f87171;
+    --score-low:       #F87171;
     --score-mid:       #fbbf24;
-    --score-high:      #4ade80;
+    --score-high:      #34D399;
   }
 
   /* 기본 스타일 리셋 */
