@@ -174,6 +174,22 @@
   animation: pulse-dot 1s infinite;
 }
 
+/* shimmer 스켈레톤 — animate-pulse 대체 */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface3) 25%,
+    var(--surface2) 50%,
+    var(--surface3) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
 /* 글래스모피즘 카드 */
 .glass-card {
   background: var(--surface);

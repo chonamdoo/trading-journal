@@ -61,11 +61,11 @@ export const AIRecommendationList = memo(function AIRecommendationList({
     return (
       <div className="flex flex-col gap-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex gap-3.5 py-2 animate-pulse">
-            <div className="w-7 h-5 bg-surface-muted rounded-badge flex-shrink-0" />
+          <div key={i} className="flex gap-3.5 py-2">
+            <div className="w-7 h-5 animate-shimmer rounded-badge flex-shrink-0" />
             <div className="flex flex-col gap-2 flex-1">
-              <div className="h-4 bg-surface-muted rounded-badge" />
-              <div className="h-3 w-3/4 bg-surface-muted rounded-badge" />
+              <div className="h-4 animate-shimmer rounded-badge" />
+              <div className="h-3 w-3/4 animate-shimmer rounded-badge" />
             </div>
           </div>
         ))}

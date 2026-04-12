@@ -65,7 +65,7 @@ export const BehavioralPatternCard = memo(function BehavioralPatternCard({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-[72px] rounded-card bg-surface-muted animate-pulse"
+            className="h-[72px] rounded-card animate-shimmer"
             aria-hidden="true"
           />
         ))}
@@ -80,7 +80,7 @@ export const BehavioralPatternCard = memo(function BehavioralPatternCard({
           AI가 패턴을 분석 중입니다
         </p>
         <div
-          className="h-4 bg-surface-muted rounded-badge animate-pulse mt-2"
+          className="h-4 animate-shimmer rounded-badge mt-2"
           aria-hidden="true"
         />
       </div>

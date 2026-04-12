@@ -28,8 +28,8 @@ export const MasterScoreRing = memo(function MasterScoreRing({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center gap-3">
-        <div className="w-[140px] h-[140px] rounded-full bg-surface-muted animate-pulse" />
-        <div className="w-16 h-5 bg-surface-muted rounded-badge animate-pulse" />
+        <div className="w-[140px] h-[140px] rounded-full animate-shimmer" />
+        <div className="w-16 h-5 animate-shimmer rounded-badge" />
       </div>
     )
   }
