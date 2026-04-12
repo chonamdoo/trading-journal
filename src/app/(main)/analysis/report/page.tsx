@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAutoWeeklyReport } from '@/hooks/useAutoWeeklyReport'
 import { AutoReportToast } from '@/components/ui/AutoReportToast'
+import { Skeleton, SkeletonKpi, SkeletonCard, SkeletonBarRows } from '@/components/ui/Skeleton'
 import {
   Radar,
   RadarChart,
@@ -130,6 +131,8 @@ export default function AIReportPage() {
     ? `${latestReport.year}년 ${latestReport.month}월`
     : `${currentYear}년 ${currentMonth}월`
 
+  const isLoading = loadingReport || autoGenerating
+
   const profitFactor = reportStats?.kpis.profitFactor ?? null
   const maxDrawdown = reportStats?.kpis.maxDrawdown ?? null
   const avgHoldTime = reportStats?.kpis.avgHoldTime ?? null
@@ -169,7 +172,13 @@ export default function AIReportPage() {
           <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-3">
             REPORT PERIOD · {reportPeriodLabel}
           </p>
-          {reportStats ? (
+          {isLoading ? (
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-3 w-32 mt-2" />
+            </div>
+          ) : reportStats ? (
             <>
               <h1 className="font-headline text-2xl md:text-4xl font-bold text-content leading-tight max-w-[580px] mb-3">
                 {reportStats.headline.split(' ').map((word, i) =>
@@ -191,20 +200,12 @@ export default function AIReportPage() {
           ) : (
             <>
               <h1 className="font-headline text-4xl font-bold text-content-muted leading-tight max-w-[580px] mb-3">
-                {loadingReport ? '분석 중...' : 'AI 분석이 아직 생성되지 않았습니다'}
+                AI 분석이 아직 생성되지 않았습니다
               </h1>
-              <p className="text-sm text-content-secondary leading-relaxed max-w-[520px] mb-6">
-                {closedTrades.length}건의 거래 데이터를 AI가 분석하여 매매 패턴과 개선 방향을 제시합니다.
+              <p className="text-sm text-content-secondary leading-relaxed max-w-[520px]">
+                거래 데이터가 충분해지면 자동으로 리포트가 생성됩니다.
               </p>
             </>
-          )}
-
-          {!loadingReport && !reportStats && (
-            <p className="text-[13px] text-content-muted mt-4">
-              {autoGenerating
-                ? 'AI가 리포트를 생성하고 있습니다...'
-                : '거래 데이터가 충분해지면 자동으로 리포트가 생성됩니다.'}
-            </p>
           )}
         </div>
 
@@ -213,7 +214,7 @@ export default function AIReportPage() {
           <MasterScoreRing
             score={reportStats?.masterScore ?? 0}
             grade={reportStats?.masterScoreGrade ?? 'watch'}
-            isLoading={loadingReport}
+            isLoading={isLoading}
           />
         </div>
       </div>
@@ -227,12 +228,18 @@ export default function AIReportPage() {
           Behavioral Patterns
         </h2>
         <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
-          {reportStats?.behavioralPatterns.length ? (
+          {isLoading ? (
+            <>
+              <SkeletonCard lines={3} />
+              <SkeletonCard lines={3} />
+              <SkeletonCard lines={3} />
+            </>
+          ) : reportStats?.behavioralPatterns.length ? (
             reportStats.behavioralPatterns.slice(0, 3).map((p) => (
               <BehavioralPatternCard key={p.id} patterns={[p]} />
             ))
           ) : (
-            <BehavioralPatternCard patterns={[]} isLoading={loadingReport} />
+            <BehavioralPatternCard patterns={[]} isLoading={false} />
           )}
         </div>
       </section>
@@ -240,7 +247,7 @@ export default function AIReportPage() {
       {/* Emotion Win Rate + Trading Intelligence */}
       <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
         <ChartCard title="Emotion Win Rate">
-          <EmotionWinRateBar data={emotionWinRates} />
+          {isLoading ? <SkeletonBarRows count={6} /> : <EmotionWinRateBar data={emotionWinRates} />}
         </ChartCard>
 
         <ChartCard title="Trading Intelligence">
@@ -299,28 +306,39 @@ export default function AIReportPage() {
       {/* KPI 행 */}
       <section aria-label="핵심 성과 지표">
         <div className="grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
-          <KpiCard
-            tier="tertiary"
-            label="Profit Factor"
-            value={profitFactor !== null ? profitFactor.toFixed(2) : '--'}
-          />
-          <KpiCard
-            tier="tertiary"
-            label="Max Drawdown"
-            value={maxDrawdown !== null ? `${maxDrawdown.toFixed(1)}%` : '--'}
-            colorClass={maxDrawdown !== null ? 'text-loss' : undefined}
-          />
-          <KpiCard
-            tier="tertiary"
-            label="Avg Hold Time"
-            value={avgHoldTime ?? '--'}
-          />
-          <KpiCard
-            tier="tertiary"
-            label="Win Rate"
-            value={winRate !== null ? `${winRate}%` : '--'}
-            colorClass={winRate !== null && winRate >= 50 ? 'text-profit' : 'text-loss'}
-          />
+          {isLoading ? (
+            <>
+              <SkeletonKpi />
+              <SkeletonKpi />
+              <SkeletonKpi />
+              <SkeletonKpi />
+            </>
+          ) : (
+            <>
+              <KpiCard
+                tier="tertiary"
+                label="Profit Factor"
+                value={profitFactor !== null ? profitFactor.toFixed(2) : '--'}
+              />
+              <KpiCard
+                tier="tertiary"
+                label="Max Drawdown"
+                value={maxDrawdown !== null ? `${maxDrawdown.toFixed(1)}%` : '--'}
+                colorClass={maxDrawdown !== null ? 'text-loss' : undefined}
+              />
+              <KpiCard
+                tier="tertiary"
+                label="Avg Hold Time"
+                value={avgHoldTime ?? '--'}
+              />
+              <KpiCard
+                tier="tertiary"
+                label="Win Rate"
+                value={winRate !== null ? `${winRate}%` : '--'}
+                colorClass={winRate !== null && winRate >= 50 ? 'text-profit' : 'text-loss'}
+              />
+            </>
+          )}
         </div>
       </section>
 
@@ -329,7 +347,7 @@ export default function AIReportPage() {
         <ChartCard title="AI Recommendations">
           <AIRecommendationList
             items={reportStats?.recommendations ?? []}
-            isLoading={loadingReport}
+            isLoading={isLoading}
           />
         </ChartCard>
 
