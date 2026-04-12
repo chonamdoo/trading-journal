@@ -133,30 +133,19 @@ export default function PromoPage() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mt-10">
-            <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
-              <p className="font-mono text-[32px] font-bold text-content leading-none">28초</p>
-              <p className="text-xs text-content-muted mt-1">평균 거래 기록 시간</p>
-            </div>
-            <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
-              <p className="font-mono text-[32px] font-bold text-accent leading-none">탭 3번</p>
-              <p className="text-xs text-content-muted mt-1">계획 세웠으면 기록 완료</p>
-            </div>
-            <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
-              <p className="font-mono text-[32px] font-bold text-profit leading-none">0</p>
-              <p className="text-xs text-content-muted mt-1">플랜→자동채움 시 직접 입력 수</p>
-            </div>
+            <KpiStat value="28초" label="평균 거래 기록 시간" />
+            <KpiStat value="탭 3번" label="계획 세웠으면 기록 완료" color="accent" />
+            <KpiStat value="0" label="플랜→자동채움 시 직접 입력 수" color="profit" />
           </div>
         </div>
       </section>
 
       {/* ── 안 쓰는 이유 공감 + 해결 ── */}
       <section className="max-w-4xl mx-auto px-4 py-16">
-        <h2 className="text-center text-xl font-bold mb-2">
-          매매일지, 안 쓰는 이유 알고 있어요
-        </h2>
-        <p className="text-center text-sm text-content-muted mb-10">
-          다 겪어본 문제들이에요. 그래서 하나씩 해결했습니다.
-        </p>
+        <SectionHeader
+          title="매매일지, 안 쓰는 이유 알고 있어요"
+          desc="다 겪어본 문제들이에요. 그래서 하나씩 해결했습니다."
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <ReasonCard
@@ -186,12 +175,10 @@ export default function PromoPage() {
       {/* ── AI 리포트 쇼케이스 ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
-          <h2 className="text-center text-xl font-bold mb-2">
-            AI가 매달 당신의 매매를 진단합니다
-          </h2>
-          <p className="text-center text-sm text-content-muted mb-10">
-            듣기 좋은 말이 아니라, 냉정한 데이터 분석
-          </p>
+          <SectionHeader
+            title="AI가 매달 당신의 매매를 진단합니다"
+            desc="듣기 좋은 말이 아니라, 냉정한 데이터 분석"
+          />
 
           {/* 헤드라인 + 스코어 링 */}
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 mb-4">
@@ -303,12 +290,10 @@ export default function PromoPage() {
 
       {/* ── 트레이딩 플랜 ── */}
       <section className="max-w-4xl mx-auto px-4 py-16">
-        <h2 className="text-center text-xl font-bold mb-2">
-          계획 없는 매매는 도박입니다
-        </h2>
-        <p className="text-center text-sm text-content-muted mb-10">
-          진입 전에 플랜을 세우고, 실제 거래와 비교하세요
-        </p>
+        <SectionHeader
+          title="계획 없는 매매는 도박입니다"
+          desc="진입 전에 플랜을 세우고, 실제 거래와 비교하세요"
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 플랜 작성 */}
@@ -375,12 +360,10 @@ export default function PromoPage() {
       {/* ── Trading Score ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
-          <h2 className="text-center text-xl font-bold mb-2">
-            내 트레이딩 실력, 숫자로 확인하세요
-          </h2>
-          <p className="text-center text-sm text-content-muted mb-10">
-            승률, 손익비, MDD 등 6가지 지표로 0~100점 수치화
-          </p>
+          <SectionHeader
+            title="내 트레이딩 실력, 숫자로 확인하세요"
+            desc="승률, 손익비, MDD 등 6가지 지표로 0~100점 수치화"
+          />
 
           <div className="rounded-card border border-border bg-bg p-5 mb-4 max-w-2xl mx-auto">
             <div className="flex items-center gap-2 mb-4">
@@ -422,12 +405,10 @@ export default function PromoPage() {
 
       {/* ── 복기 공유 카드 ── */}
       <section className="max-w-4xl mx-auto px-4 py-16">
-        <h2 className="text-center text-xl font-bold mb-2">
-          복기를 한 장으로 공유하세요
-        </h2>
-        <p className="text-center text-sm text-content-muted mb-10">
-          캡쳐 2장 찍어서 보내던 시대는 끝났습니다
-        </p>
+        <SectionHeader
+          title="복기를 한 장으로 공유하세요"
+          desc="캡쳐 2장 찍어서 보내던 시대는 끝났습니다"
+        />
 
         <div className="max-w-sm mx-auto">
           <div className="rounded-card border border-border bg-[#111110] p-5 text-[#f0f0ee]">
@@ -494,12 +475,10 @@ export default function PromoPage() {
       {/* ── Before / After ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
-          <h2 className="text-center text-xl font-bold mb-2">
-            기록하면 달라집니다
-          </h2>
-          <p className="text-center text-sm text-content-muted mb-10">
-            한 달에 10건만 기록해도 AI가 분석합니다. 매일 안 써도 됩니다.
-          </p>
+          <SectionHeader
+            title="기록하면 달라집니다"
+            desc="한 달에 10건만 기록해도 AI가 분석합니다. 매일 안 써도 됩니다."
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
             {/* Before */}
@@ -591,6 +570,33 @@ export default function PromoPage() {
 }
 
 /* ── 하위 컴포넌트 ── */
+
+function SectionHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <>
+      <h2 className="text-center text-xl font-bold mb-2">{title}</h2>
+      <p className="text-center text-sm text-content-muted mb-10">{desc}</p>
+    </>
+  )
+}
+
+function KpiStat({
+  value,
+  label,
+  color,
+}: {
+  value: string
+  label: string
+  color?: 'accent' | 'profit'
+}) {
+  const textColor = color === 'accent' ? 'text-accent' : color === 'profit' ? 'text-profit' : 'text-content'
+  return (
+    <div className="text-center px-6 py-4 rounded-card border border-border bg-bg min-w-[120px]">
+      <p className={`font-mono text-[32px] font-bold leading-none ${textColor}`}>{value}</p>
+      <p className="text-xs text-content-muted mt-1">{label}</p>
+    </div>
+  )
+}
 
 function ReasonCard({
   icon,
