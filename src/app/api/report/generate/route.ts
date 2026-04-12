@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit';
+import type { Json } from '@/lib/supabase/types';
 
 /**
  * AI 월간 트레이딩 리포트 생성 API
@@ -183,6 +184,20 @@ export async function POST(request: NextRequest) {
     const totalPnl = trades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
     const winRate = (wins / trades.length) * 100;
 
+    // 감정별 통계 계산
+    const emotionBuckets: Record<string, { count: number; wins: number; pnl: number }> = {};
+    for (const t of trades) {
+      const emo = (t as Record<string, unknown>).emotion as string | null ?? '__unset__';
+      if (!emotionBuckets[emo]) emotionBuckets[emo] = { count: 0, wins: 0, pnl: 0 };
+      emotionBuckets[emo].count++;
+      if ((t.pnl ?? 0) > 0) emotionBuckets[emo].wins++;
+      emotionBuckets[emo].pnl += t.pnl ?? 0;
+    }
+    const emotionStatsStr = Object.entries(emotionBuckets)
+      .filter(([, s]) => s.count > 0)
+      .map(([emo, s]) => `${emo}: ${s.count}건, 승률 ${((s.wins / s.count) * 100).toFixed(1)}%, PnL ${s.pnl.toFixed(2)} USDT`)
+      .join('\n');
+
     // 거래 데이터를 분석용 JSON으로 변환
     const tradesForAnalysis = trades.map((t) => ({
       asset: t.asset,
@@ -195,6 +210,7 @@ export async function POST(request: NextRequest) {
       reason: t.reason,
       notes: t.notes,
       tags: t.tags,
+      emotion: (t as Record<string, unknown>).emotion ?? null,
       entry_datetime: t.entry_datetime,
       exit_datetime: t.exit_datetime,
       scale_ins: (scaleIns ?? [])
@@ -415,6 +431,9 @@ ${assetStatsStr}
 
 ### 레버리지별 통계
 ${levStatsStr}
+
+### 감정별 통계 (거래 시 기록한 감정 태그)
+${emotionStatsStr || '감정 태그 데이터 없음'}
 ${hasTimeData ? `
 ### 시간대별 통계 (진입 시각 기준, KST)
 ${hourStatsStr}` : ''}
@@ -446,6 +465,9 @@ ${hasTimeData ? `
 ### ⏰ 시간대 분석
 시간대별 성과를 분석하여 승률과 수익이 가장 높은 '골든 타임'과 손실이 집중되는 '데드 타임'을 식별하라. 데드 타임에는 거래 자제 또는 포지션 축소를 권고하라.` : ''}
 
+### 😶 감정별 매매 성과 분석
+감정 태그별(침착/확신/FOMO/복수매매/불안) 승률과 PnL을 비교하라. 가장 수익이 높은 감정 상태와 가장 위험한 감정 상태를 명확히 구분하라. 감정 태그 미설정 비율이 높다면 기록 습관 개선을 권고하라.
+
 ### 🧠 심리적 편향 & 틸트 분석
 거래 데이터에서 발견되는 심리적 오류를 지적하라. 진입 이유(reason), 메모(notes), 거래 패턴에서 뇌동매매, FOMO, 본절 집착 등의 흔적을 찾아라.
 연속 손실 스트릭 데이터와 틸트 패턴(연패 후 레버리지 증가 등)을 반드시 분석하라. 최대 연패 기간 전후의 거래 패턴 변화를 짚어라.
@@ -471,7 +493,35 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
 - 마크다운 표(|---|)를 사용하면 실격이다. 불렛 포인트만 사용하라.
 - ${parseInt(emptyReasonPct) > 50 ? '진입 이유 미기록 비율이 ' + emptyReasonPct + '%로 매우 높다. 이것을 최우선으로 지적하고 "매매 일지를 쓰지 않는 트레이더는 도박꾼이다"라고 경고하라.' : ''}
 - 물타기(scale-in) 데이터가 있다면 물타기 성공/실패율도 분석하라.
-- 연패 스트릭이 5회 이상이면 "즉시 매매 중단 후 복기" 경고를 발령하라.`;
+- 연패 스트릭이 5회 이상이면 "즉시 매매 중단 후 복기" 경고를 발령하라.
+
+## 📦 구조화 데이터 (리포트 마크다운 끝에 반드시 추가)
+마크다운 리포트 작성이 끝나면, 맨 마지막에 아래 형식의 JSON 블록을 \`\`\`json 코드 블록으로 추가하라.
+이 JSON은 UI에서 시각화에 사용된다. 데이터에 기반한 정확한 값만 넣어라.
+
+\`\`\`json
+{
+  "headline": "이번 달 핵심을 요약하는 한 줄 (15자 이내, 에디토리얼 톤)",
+  "masterScore": 0~100 사이 정수 (종합 트레이딩 역량 점수. 승률 25% + 손익비 25% + 리스크 관리 25% + 일관성 25% 가중),
+  "behavioralPatterns": [
+    {"severity": "critical|caution|positive", "title": "패턴 이름", "description": "설명 (1~2문장)", "tag": "라벨"}
+  ],
+  "recommendations": [
+    {"number": 1, "title": "권고 제목", "description": "설명 (1~2문장)", "impact": "high|medium"}
+  ],
+  "kpis": {
+    "profitFactor": 숫자,
+    "maxDrawdown": 퍼센트 숫자,
+    "avgHoldTime": "Xh Ym" 형태 문자열,
+    "winRate": 퍼센트 숫자,
+    "sharpeRatio": 숫자
+  }
+}
+\`\`\`
+- behavioralPatterns는 최대 3개. severity별 1개씩 채워라.
+- recommendations는 최대 4개. impact별 2개씩.
+- avgHoldTime은 entry_datetime~exit_datetime 평균. 데이터 없으면 "--".
+- sharpeRatio는 일별 수익률 기준. 데이터 부족하면 0.`;
 
     // Gemini API 호출
     const contents = [
@@ -511,15 +561,30 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
       );
     }
 
-    const reportMarkdown =
+    const rawText =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
-    if (!reportMarkdown) {
+    if (!rawText) {
       const blockReason = geminiData?.candidates?.[0]?.finishReason || 'unknown';
       return NextResponse.json(
         { error: `Gemini 응답 없음 (reason: ${blockReason})` },
         { status: 422 },
       );
+    }
+
+    // JSON 블록 파싱 (마크다운 끝의 ```json ... ``` 추출)
+    let statsJson: Json | null = null;
+    let reportMarkdown = rawText;
+    const jsonMatch = rawText.match(/```json\s*\n([\s\S]*?)\n```\s*$/);
+    if (jsonMatch) {
+      try {
+        statsJson = JSON.parse(jsonMatch[1]) as Json;
+        // JSON 블록을 마크다운에서 제거
+        reportMarkdown = rawText.slice(0, jsonMatch.index).trimEnd();
+      } catch {
+        // JSON 파싱 실패 시 마크다운 전체 유지, stats는 null
+        statsJson = null;
+      }
     }
 
     // DB 저장 (upsert: 같은 월 재생성 시 덮어쓰기)
@@ -536,6 +601,7 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
           win_rate: Math.round(winRate * 100) / 100,
           total_pnl: Math.round(totalPnl * 100) / 100,
           report_markdown: reportMarkdown,
+          stats: statsJson,
           model_used: 'gemini-2.5-flash-lite',
         },
         { onConflict: 'user_id,year,month' },

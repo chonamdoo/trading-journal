@@ -17,22 +17,22 @@
  */
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
 import { EMOTIONS } from '@/lib/constants'
 
 const EMOTION_DISPLAY = [
-  { id: 'calm', label: '침착', emoji: '😌', color: 'text-info', bgColor: 'bg-info-soft' },
-  { id: 'confident', label: '확신', emoji: '💪', color: 'text-profit', bgColor: 'bg-profit-bg' },
-  { id: 'fomo', label: 'FOMO', emoji: '😰', color: 'text-warning', bgColor: 'bg-warning-bg' },
-  { id: 'revenge', label: '복수매매', emoji: '😤', color: 'text-loss', bgColor: 'bg-loss-bg' },
-  { id: 'anxious', label: '불안', emoji: '😟', color: 'text-content-muted', bgColor: 'bg-surface-muted' },
+  { id: 'calm', label: '침착', char: 'C', color: 'text-info', bgColor: 'bg-info-soft' },
+  { id: 'confident', label: '확신', char: 'F', color: 'text-profit', bgColor: 'bg-profit-bg' },
+  { id: 'fomo', label: 'FOMO', char: 'F', color: 'text-warning', bgColor: 'bg-warning-bg' },
+  { id: 'revenge', label: '복수매매', char: 'R', color: 'text-loss', bgColor: 'bg-loss-bg' },
+  { id: 'anxious', label: '불안', char: 'A', color: 'text-content-muted', bgColor: 'bg-surface-muted' },
 ] as const
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
 import { DayOfWeekSlide } from '@/components/analysis/DayOfWeekSlide'
 import { MonthlyCalendarSlide } from '@/components/analysis/MonthlyCalendarSlide'
-import { AIReportSection } from '@/components/analysis/AIReportSection'
 import { EquityCurve } from '@/components/charts/EquityChart'
 import { WinRateDonut } from '@/components/charts/WinRateDonut'
 import { PnlBar } from '@/components/charts/PnlBar'
@@ -45,8 +45,8 @@ import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/for
 export default function AnalysisPage() {
   const analytics = useFullAnalytics()
   const { profile } = useTrades()
+  const router = useRouter()
   const [slideIndex, setSlideIndex] = useState(0)
-  const [tab, setTab] = useState<'charts' | 'ai'>('charts')
 
   // useFullAnalytics에서 모든 계산이 useMemo로 캐싱되어 있다.
   // 슬라이드 인덱스가 바뀌어도 trades가 변경되지 않으면 재계산되지 않는다.
@@ -270,7 +270,7 @@ export default function AnalysisPage() {
                         key={em.id}
                         className="text-center py-3 px-2 rounded-card bg-surface-hover border border-border flex flex-col items-center gap-1"
                       >
-                        <span className="text-3xl" role="img" aria-label={em.label}>{em.emoji}</span>
+                        <span className={`w-8 h-8 rounded-badge flex items-center justify-center text-xs font-semibold ${em.bgColor} ${em.color}`} aria-label={em.label}>{em.char}</span>
                         <span className={`text-[11px] font-medium ${em.color}`}>{em.label}</span>
                         <span className="font-mono text-sm font-semibold text-content">{ratio}%</span>
                         <span className="text-[10px] text-content-muted font-mono">{d?.total ?? 0}건</span>
@@ -322,22 +322,14 @@ export default function AnalysisPage() {
       {/* 탭 전환 */}
       <div className="flex gap-1 bg-surface rounded-card p-1">
         <button
-          onClick={() => setTab('charts')}
-          className={`flex-1 py-2 text-sm font-medium rounded-input transition-colors ${
-            tab === 'charts'
-              ? 'bg-accent text-white'
-              : 'text-content-muted hover:text-content'
-          }`}
+          className="flex-1 py-2 text-sm font-medium rounded-input transition-colors bg-accent text-white"
+          disabled
         >
           차트 분석
         </button>
         <button
-          onClick={() => setTab('ai')}
-          className={`flex-1 py-2 text-sm font-medium rounded-input transition-colors ${
-            tab === 'ai'
-              ? 'bg-accent text-white'
-              : 'text-content-muted hover:text-content'
-          }`}
+          onClick={() => router.push('/analysis/report')}
+          className="flex-1 py-2 text-sm font-medium rounded-input transition-colors text-content-muted hover:text-content"
         >
           AI 리포트
         </button>
@@ -380,15 +372,11 @@ export default function AnalysisPage() {
         </div>
       )}
 
-      {tab === 'charts' ? (
-        <SlideCarousel
-          slides={slides}
-          currentIndex={slideIndex}
-          onIndexChange={setSlideIndex}
-        />
-      ) : (
-        <AIReportSection userId={profile?.id} />
-      )}
+      <SlideCarousel
+        slides={slides}
+        currentIndex={slideIndex}
+        onIndexChange={setSlideIndex}
+      />
     </div>
   )
 }

@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import type { Direction, Emotion, TradeFormData, TradeScreenshot, TradingPlan } from '@/types'
-import { EMOTIONS } from '@/lib/constants'
 import { Button } from '@/components/ui/Button'
+import { EmotionTag } from '@/components/ai-report/EmotionTag'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Card } from '@/components/ui/Card'
@@ -404,28 +404,7 @@ export function TradeForm({
         <label className="block text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
           매매 감정
         </label>
-        <div className="flex gap-2 flex-wrap" role="group" aria-label="매매 감정 선택">
-          {EMOTIONS.map((e) => {
-            const isSelected = emotion === e.id
-            return (
-              <button
-                key={e.id}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => setEmotion(isSelected ? null : (e.id as Emotion))}
-                className={`
-                  rounded-full px-3 py-1.5 text-[12px] font-semibold cursor-pointer transition-all border
-                  ${isSelected
-                    ? `${e.color} ${e.bgColor} border-current`
-                    : 'border-border-input bg-surface text-content-secondary'
-                  }
-                `}
-              >
-                {e.label}
-              </button>
-            )
-          })}
-        </div>
+        <EmotionTag value={emotion} onChange={setEmotion} />
       </div>
 
       {/* 레버리지 + 증거금 */}

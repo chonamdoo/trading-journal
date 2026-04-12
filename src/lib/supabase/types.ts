@@ -667,6 +667,7 @@ export type MonthlyReportRow = {
   win_rate: number | null;
   total_pnl: number | null;
   report_markdown: string;
+  stats: Json | null;
   model_used: string;
   created_at: string;
 }
@@ -682,6 +683,7 @@ export type MonthlyReportInsert = {
   win_rate?: number | null;
   total_pnl?: number | null;
   report_markdown: string;
+  stats?: Json | null;
   model_used?: string;
 }
 
@@ -690,6 +692,7 @@ export type MonthlyReportUpdate = {
   win_rate?: number | null;
   total_pnl?: number | null;
   report_markdown?: string;
+  stats?: Json | null;
   model_used?: string;
 }
 
