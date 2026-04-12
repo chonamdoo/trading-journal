@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useAutoWeeklyReport } from '@/hooks/useAutoWeeklyReport'
+import { AutoReportToast } from '@/components/ui/AutoReportToast'
 import {
   Radar,
   RadarChart,
@@ -51,8 +53,7 @@ export default function AIReportPage() {
 
   const [latestReport, setLatestReport] = useState<MonthlyReportRow | null>(null)
   const [loadingReport, setLoadingReport] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [generateError, setGenerateError] = useState('')
+  const { isGenerating: autoGenerating, error: autoError } = useAutoWeeklyReport()
 
   const closedTrades = useMemo(
     () => trades.filter((t) => t.status === 'closed'),
@@ -77,7 +78,7 @@ export default function AIReportPage() {
     } else {
       setLatestReport(null)
       if (!res.success) {
-        setGenerateError(res.error ?? '리포트를 불러오는 데 실패했습니다.')
+        // 에러는 autoError로 표시
       }
     }
     setLoadingReport(false)
@@ -96,41 +97,12 @@ export default function AIReportPage() {
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth() + 1
 
-  const handleGenerate = useCallback(async () => {
-    setGenerating(true)
-    setGenerateError('')
-    try {
-      const res = await fetch('/api/report/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ year: currentYear, month: currentMonth }),
-      })
-
-      let data: { error?: string; report?: MonthlyReportRow }
-      try {
-        data = await res.json()
-      } catch {
-        setGenerateError(`서버 오류 (${res.status})`)
-        setGenerating(false)
-        return
-      }
-
-      if (!res.ok) {
-        setGenerateError(data.error ?? `리포트 생성 실패 (${res.status})`)
-        setGenerating(false)
-        return
-      }
-
-      await loadLatestReport()
-      if (data.report?.id) {
-        router.push(`/analysis/reports/${data.report.id}`)
-      }
-    } catch {
-      setGenerateError('네트워크 오류가 발생했습니다.')
-    } finally {
-      setGenerating(false)
+  // 자동 생성 완료 후 리포트 다시 로드
+  useEffect(() => {
+    if (!autoGenerating && !autoError) {
+      loadLatestReport()
     }
-  }, [currentYear, currentMonth, loadLatestReport, router])
+  }, [autoGenerating, autoError, loadLatestReport])
 
   if (trades.length === 0 && !loadingReport) {
     return (
@@ -228,28 +200,12 @@ export default function AIReportPage() {
             </>
           )}
 
-          {!loadingReport && (
-            <div className="mt-6">
-              {generateError && (
-                <div
-                  role="alert"
-                  className="bg-loss-bg rounded-card p-sp-7 mb-3 text-sm text-loss"
-                >
-                  {generateError}
-                </div>
-              )}
-              <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="bg-gradient-to-br from-info to-info/60 text-white rounded-input px-5 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-              >
-                {generating
-                  ? '분석 중... (약 10초)'
-                  : latestReport
-                  ? '리포트 재생성'
-                  : '리포트 생성'}
-              </button>
-            </div>
+          {!loadingReport && !reportStats && (
+            <p className="text-[13px] text-content-muted mt-4">
+              {autoGenerating
+                ? 'AI가 리포트를 생성하고 있습니다...'
+                : '거래 데이터가 충분해지면 자동으로 리포트가 생성됩니다.'}
+            </p>
           )}
         </div>
 
@@ -393,6 +349,8 @@ export default function AIReportPage() {
         </h2>
         <AIReportSection userId={profile?.id} />
       </section>
+
+      <AutoReportToast isGenerating={autoGenerating} error={autoError} />
     </div>
   )
 }

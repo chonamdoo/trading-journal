@@ -481,28 +481,52 @@ ${emotionStatsStr || '감정 태그 없음'}
         }
       }
 
-      const { data: weeklyReport, error: weeklySaveError } = await supabase
+      // select+insert/update (weekly는 week NOT NULL이지만 일관성 위해 동일 패턴)
+      const { data: existingWeekly } = await supabase
         .from('monthly_reports')
-        .upsert(
-          {
-            user_id: user.id,
-            year,
-            month,
-            week: week ?? null,
-            period_type: 'weekly',
-            period_start: periodStart,
-            period_end: periodEnd,
-            trade_count: trades.length,
-            win_rate: Math.round(winRate * 100) / 100,
-            total_pnl: Math.round(totalPnl * 100) / 100,
-            report_markdown: weeklyMarkdown,
-            stats: weeklyStats,
-            model_used: 'gemini-2.5-flash-lite',
-          },
-          { onConflict: 'user_id,year,month,week,period_type' },
-        )
-        .select()
-        .single();
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('year', year)
+        .eq('month', month)
+        .eq('week', week!)
+        .eq('period_type', 'weekly')
+        .maybeSingle();
+
+      const weeklyPayload = {
+        user_id: user.id,
+        year,
+        month,
+        week: week!,
+        period_type: 'weekly' as const,
+        period_start: periodStart,
+        period_end: periodEnd,
+        trade_count: trades.length,
+        win_rate: Math.round(winRate * 100) / 100,
+        total_pnl: Math.round(totalPnl * 100) / 100,
+        report_markdown: weeklyMarkdown,
+        stats: weeklyStats,
+        model_used: 'gemini-2.5-flash-lite',
+      };
+
+      const { data: weeklyReport, error: weeklySaveError } = existingWeekly
+        ? await supabase
+            .from('monthly_reports')
+            .update({
+              trade_count: weeklyPayload.trade_count,
+              win_rate: weeklyPayload.win_rate,
+              total_pnl: weeklyPayload.total_pnl,
+              report_markdown: weeklyPayload.report_markdown,
+              stats: weeklyPayload.stats,
+              model_used: weeklyPayload.model_used,
+            })
+            .eq('id', existingWeekly.id)
+            .select()
+            .single()
+        : await supabase
+            .from('monthly_reports')
+            .insert(weeklyPayload)
+            .select()
+            .single();
 
       if (weeklySaveError) {
         return NextResponse.json({ error: weeklySaveError.message }, { status: 500 });
@@ -727,29 +751,52 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
       }
     }
 
-    // DB 저장 (upsert: 같은 월 재생성 시 덮어쓰기)
-    const { data: report, error: saveError } = await supabase
+    // DB 저장 — NULL week에서 upsert onConflict 불가하므로 select+insert/update
+    const { data: existingMonthly } = await supabase
       .from('monthly_reports')
-      .upsert(
-        {
-          user_id: user.id,
-          year,
-          month,
-          week: null,
-          period_type: 'monthly',
-          period_start: periodStart,
-          period_end: periodEnd,
-          trade_count: trades.length,
-          win_rate: Math.round(winRate * 100) / 100,
-          total_pnl: Math.round(totalPnl * 100) / 100,
-          report_markdown: reportMarkdown,
-          stats: statsJson,
-          model_used: 'gemini-2.5-flash-lite',
-        },
-        { onConflict: 'user_id,year,month,week,period_type' },
-      )
-      .select()
-      .single();
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('year', year)
+      .eq('month', month)
+      .eq('period_type', 'monthly')
+      .is('week', null)
+      .maybeSingle();
+
+    const reportPayload = {
+      user_id: user.id,
+      year,
+      month,
+      week: null as number | null,
+      period_type: 'monthly' as const,
+      period_start: periodStart,
+      period_end: periodEnd,
+      trade_count: trades.length,
+      win_rate: Math.round(winRate * 100) / 100,
+      total_pnl: Math.round(totalPnl * 100) / 100,
+      report_markdown: reportMarkdown,
+      stats: statsJson,
+      model_used: 'gemini-2.5-flash-lite',
+    };
+
+    const { data: report, error: saveError } = existingMonthly
+      ? await supabase
+          .from('monthly_reports')
+          .update({
+            trade_count: reportPayload.trade_count,
+            win_rate: reportPayload.win_rate,
+            total_pnl: reportPayload.total_pnl,
+            report_markdown: reportPayload.report_markdown,
+            stats: reportPayload.stats,
+            model_used: reportPayload.model_used,
+          })
+          .eq('id', existingMonthly.id)
+          .select()
+          .single()
+      : await supabase
+          .from('monthly_reports')
+          .insert(reportPayload)
+          .select()
+          .single();
 
     if (saveError) {
       return NextResponse.json({ error: saveError.message }, { status: 500 });
