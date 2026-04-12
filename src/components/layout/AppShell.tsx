@@ -55,7 +55,7 @@ export function AppShell({ children }: AppShellProps) {
                 <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5 hidden lg:block">
                   현재 자산
                 </div>
-                <div className="font-mono text-[22px] lg:text-[28px] font-bold tracking-[-1px] leading-none text-profit">
+                <div className="font-headline text-[22px] lg:text-[28px] font-bold tracking-[-1px] leading-none text-profit">
                   ${formatNumber(currentCapital)}
                 </div>
                 <div className={`font-mono text-[12px] lg:text-[13px] mt-0.5 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>

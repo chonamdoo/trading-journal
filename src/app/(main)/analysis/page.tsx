@@ -17,7 +17,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
 import { EMOTIONS } from '@/lib/constants'
@@ -232,7 +232,18 @@ export default function AnalysisPage() {
                       fontSize: 12,
                     }}
                   />
-                  <Bar dataKey="winRate" fill="var(--blue)" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                  <Bar dataKey="winRate" radius={[4, 4, 0, 0]} maxBarSize={48}>
+                    {emotionWinRateData.map((entry) => {
+                      const colorMap: Record<string, string> = {
+                        calm: 'var(--blue)',
+                        confident: 'var(--green)',
+                        fomo: 'var(--amber)',
+                        revenge: 'var(--red)',
+                        anxious: 'var(--text3)',
+                        __unset__: 'var(--text3)',
+                      }
+                      return <Cell key={entry.id} fill={colorMap[entry.id] ?? 'var(--text3)'} />
+                    })}
                     <LabelList
                       dataKey="total"
                       position="top"

@@ -15,8 +15,8 @@ const tierStyles: Record<KpiTier, string> = {
 }
 
 const valueStyles: Record<KpiTier, string> = {
-  primary: 'font-mono text-[28px] font-bold leading-none tracking-tight',
-  secondary: 'font-mono text-xl font-semibold leading-tight',
+  primary: 'font-headline text-[28px] font-bold leading-none tracking-tight',
+  secondary: 'font-headline text-xl font-semibold leading-tight',
   tertiary: 'font-mono text-base font-semibold',
 }
 
