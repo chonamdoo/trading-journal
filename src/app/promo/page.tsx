@@ -7,9 +7,7 @@ import {
   TrendingUp,
   ChevronRight,
   ChevronDown,
-  ClipboardList,
   Share2,
-  GitCompareArrows,
   Zap,
   HelpCircle,
   Meh,
@@ -19,7 +17,7 @@ import {
 export const metadata: Metadata = {
   title: '거래일지 | 암호화폐 선물 트레이더를 위한 AI 매매일지',
   description:
-    '30초 기록, AI 월간 리포트, Trading Score, 트레이딩 플랜, 복기 공유까지. 데이터 기반 트레이딩 성장을 도와드립니다.',
+    '30초 기록, AI 월간 리포트, Trading Score, 복기 공유까지. 데이터 기반 트레이딩 성장을 도와드립니다.',
   openGraph: {
     title: '거래일지 — 당신의 매매 패턴, 알고 계신가요?',
     description:
@@ -123,19 +121,18 @@ export default function PromoPage() {
               30초 안에 기록 완료
             </h2>
             <p className="text-sm text-content-muted max-w-sm mx-auto">
-              플랜이 있으면 자동 입력까지. 직접 쓸 건 거의 없어요.
+              코인 선택, 방향, 가격. 복잡한 양식 없이 바로 끝.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="max-w-lg mx-auto">
             <QuickCaptureFlow />
-            <PlanAutofillDemo />
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mt-10">
             <KpiStat value="28초" label="평균 거래 기록 시간" />
-            <KpiStat value="탭 3번" label="계획 세웠으면 기록 완료" color="accent" />
-            <KpiStat value="0" label="플랜→자동채움 시 직접 입력 수" color="profit" />
+            <KpiStat value="탭 3번" label="코인→방향→가격 끝" color="accent" />
+            <KpiStat value="0건" label="엑셀 작업 필요" color="profit" />
           </div>
         </div>
       </section>
@@ -153,7 +150,7 @@ export default function PromoPage() {
             reason="귀찮아서"
             desc="매번 기록하는 거 자체가 스트레스. 엑셀 열고, 양식 채우고, 저장하고… 3일 만에 포기."
             solution="30초 기록"
-            solutionDesc="탭 3번이면 끝. 플랜 있으면 자동 입력."
+            solutionDesc="탭 3번이면 끝. 엑셀도 노션도 필요 없음."
           />
           <ReasonCard
             icon={<HelpCircle className="w-5 h-5 text-content-muted" />}
@@ -166,8 +163,8 @@ export default function PromoPage() {
             icon={<Zap className="w-5 h-5 text-content-muted" />}
             reason="뭘 써야 할지 몰라서"
             desc="빈 노트 앞에서 멍때림. 진입 근거? 복기? 뭘 어떻게 써야 의미가 있는지 모름."
-            solution="플랜 템플릿"
-            solutionDesc="진입가, 손절가, R:R, 근거까지 양식이 다 있음."
+            solution="구조화된 입력 폼"
+            solutionDesc="코인, 방향, 가격, 근거 — 칸만 채우면 됨."
           />
         </div>
       </section>
@@ -288,75 +285,6 @@ export default function PromoPage() {
         </div>
       </section>
 
-      {/* ── 트레이딩 플랜 ── */}
-      <section className="max-w-4xl mx-auto px-4 py-16">
-        <SectionHeader
-          title="계획 없는 매매는 도박입니다"
-          desc="진입 전에 플랜을 세우고, 실제 거래와 비교하세요"
-        />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* 플랜 작성 */}
-          <div className="rounded-card border border-border bg-surface p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 rounded-full bg-accent" />
-              <span className="text-xs text-content-muted uppercase tracking-wider font-medium">
-                Trading Plan
-              </span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-profit/10 text-profit">LONG</span>
-                <span className="text-base font-bold">BTC</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-[13px]">
-                <div className="p-2 rounded-input bg-bg border border-border">
-                  <p className="text-[10px] text-content-muted mb-0.5">진입 예정가</p>
-                  <p className="font-mono font-semibold">$67,500</p>
-                </div>
-                <div className="p-2 rounded-input bg-bg border border-border">
-                  <p className="text-[10px] text-content-muted mb-0.5">손절가</p>
-                  <p className="font-mono font-semibold text-loss">$66,200</p>
-                </div>
-                <div className="p-2 rounded-input bg-bg border border-border">
-                  <p className="text-[10px] text-content-muted mb-0.5">목표가 TP1</p>
-                  <p className="font-mono font-semibold text-profit">$69,800</p>
-                </div>
-                <div className="p-2 rounded-input bg-bg border border-border">
-                  <p className="text-[10px] text-content-muted mb-0.5">R:R</p>
-                  <p className="font-mono font-semibold text-accent">1:1.77</p>
-                </div>
-              </div>
-              <p className="text-xs text-content-secondary leading-relaxed">
-                4H 지지선 반등 + RSI 과매도 구간 진입
-              </p>
-            </div>
-          </div>
-
-          {/* 플랜 vs 실제 비교 */}
-          <div className="rounded-card border border-border bg-surface p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 rounded-full bg-profit" />
-              <span className="text-xs text-content-muted uppercase tracking-wider font-medium">
-                Plan vs Actual
-              </span>
-            </div>
-            <div className="space-y-2.5 text-[13px]">
-              <CompareRow label="진입가" plan="$67,500" actual="$67,480" diff="-0.03%" good />
-              <CompareRow label="손절가" plan="$66,200" actual="$66,200" diff="0.00%" good />
-              <CompareRow label="목표가" plan="$69,800" actual="$68,900" diff="-1.29%" />
-              <CompareRow label="레버리지" plan="x10" actual="x10" diff="일치" good />
-              <CompareRow label="증거금" plan="$500" actual="$520" diff="+4.0%" />
-            </div>
-            <div className="mt-4 p-2.5 rounded-input bg-profit/5 border border-profit/20">
-              <p className="text-xs text-profit font-medium">
-                플랜 준수율 높음 — 진입/손절 오차 1% 미만
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── Trading Score ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
@@ -446,7 +374,7 @@ export default function PromoPage() {
             </div>
             <div>
               <p className="text-[11px] text-[#a0a09c] mb-1">복기 메모</p>
-              <p className="text-[12px] text-[#f0f0ee] leading-relaxed">플랜대로 진입, TP1에서 50% 익절. 나머지는 트레일링으로 수익 극대화.</p>
+              <p className="text-[12px] text-[#f0f0ee] leading-relaxed">지지선 반등 확인 후 진입, TP1에서 50% 익절. 나머지는 트레일링으로 수익 극대화.</p>
             </div>
 
             <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between">
@@ -461,7 +389,7 @@ export default function PromoPage() {
               <span>카톡 공유</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-input bg-surface border border-border text-sm text-content-muted">
-              <ClipboardList className="w-4 h-4" />
+              <Target className="w-4 h-4" />
               <span>클립보드 복사</span>
             </div>
           </div>
@@ -523,11 +451,9 @@ export default function PromoPage() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <FeatureChip icon={<BarChart3 className="w-4 h-4" />} label="매매 기록 & 분석" />
-          <FeatureChip icon={<ClipboardList className="w-4 h-4" />} label="트레이딩 플랜" isNew />
           <FeatureChip icon={<Brain className="w-4 h-4" />} label="AI 월간 리포트" />
           <FeatureChip icon={<Target className="w-4 h-4" />} label="Trading Score" />
           <FeatureChip icon={<Share2 className="w-4 h-4" />} label="복기 공유 카드" isNew />
-          <FeatureChip icon={<GitCompareArrows className="w-4 h-4" />} label="플랜 vs 실제 비교" isNew />
         </div>
       </section>
 
@@ -753,89 +679,6 @@ function QuickCaptureFlow() {
           ⏱ 평균 28초
         </span>
       </div>
-    </div>
-  )
-}
-
-function PlanAutofillDemo() {
-  return (
-    <div className="rounded-card border border-border bg-bg p-5">
-      <p className="text-[11px] uppercase tracking-wider text-content-muted mb-4">
-        플랜 있으면 입력 끝
-      </p>
-
-      <div className="bg-surface rounded-input border border-border px-3 py-2 mb-3">
-        <div className="flex items-center gap-1.5 mb-1">
-          <span className="text-sm font-semibold text-content">BTC</span>
-          <span className="border border-profit bg-profit-bg text-profit rounded-badge px-1.5 py-0.5 text-[11px] font-semibold">LONG</span>
-          <span className="font-mono text-xs text-content-muted">x10</span>
-        </div>
-        <p className="text-xs text-content-muted">진입 $67,500 · 손절 $66,200</p>
-      </div>
-
-      <div className="flex items-center justify-center gap-3 mb-3">
-        <ChevronDown className="w-4 h-4 text-content-muted" aria-hidden="true" />
-        <button
-          type="button"
-          className="bg-accent text-white rounded-input px-4 py-1.5 text-xs font-semibold"
-          tabIndex={-1}
-          aria-label="거래 입력에 자동 채움 (데모)"
-        >
-          거래 입력에 자동 채움
-        </button>
-      </div>
-
-      <div className="bg-surface rounded-input border border-border p-3">
-        <div className="grid grid-cols-2 gap-1.5">
-          <div>
-            <p className="text-[10px] text-content-muted">코인</p>
-            <p className="font-mono text-xs text-content-secondary">BTC</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-content-muted">방향</p>
-            <p className="font-mono text-xs text-content-secondary">LONG</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-content-muted">레버리지</p>
-            <p className="font-mono text-xs text-content-secondary">x10</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-content-muted">진입가</p>
-            <p className="font-mono text-xs text-content-secondary">$67,480</p>
-          </div>
-          <div className="col-span-2">
-            <p className="text-[10px] text-content-muted">손절가</p>
-            <p className="font-mono text-xs text-content-secondary">$66,200</p>
-          </div>
-        </div>
-        <p className="mt-2 text-[10px] text-profit font-medium">✓ 5개 필드 자동 입력됨</p>
-      </div>
-    </div>
-  )
-}
-
-function CompareRow({
-  label,
-  plan,
-  actual,
-  diff,
-  good,
-}: {
-  label: string
-  plan: string
-  actual: string
-  diff: string
-  good?: boolean
-}) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
-      <span className="text-xs text-content-muted w-16">{label}</span>
-      <span className="font-mono text-xs text-content-secondary">{plan}</span>
-      <span className="text-[10px] text-content-muted">→</span>
-      <span className="font-mono text-xs text-content font-semibold">{actual}</span>
-      <span className={`text-[11px] font-mono font-semibold ${good ? 'text-profit' : 'text-warning'}`}>
-        {diff}
-      </span>
     </div>
   )
 }
