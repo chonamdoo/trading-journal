@@ -5,28 +5,25 @@ import {
   Brain,
   Target,
   TrendingUp,
-  Shield,
   ChevronRight,
   ChevronDown,
-  Calendar,
-  Layers,
   ClipboardList,
   Share2,
-  ShieldCheck,
   GitCompareArrows,
-  AlertTriangle,
-  RefreshCw,
-  MessageSquareOff,
+  Zap,
+  HelpCircle,
+  Meh,
+  ArrowRight,
 } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: '거래일지 | 암호화폐 선물 트레이더를 위한 AI 매매일지',
   description:
-    '매매 기록, AI 월간 리포트, Trading Score, 트레이딩 플랜, 복기 공유까지. 데이터 기반 트레이딩 성장을 도와드립니다.',
+    '30초 기록, AI 월간 리포트, Trading Score, 트레이딩 플랜, 복기 공유까지. 데이터 기반 트레이딩 성장을 도와드립니다.',
   openGraph: {
-    title: '거래일지 — 같은 실수를 반복하지 마세요',
+    title: '거래일지 — 당신의 매매 패턴, 알고 계신가요?',
     description:
-      '암호화폐 선물 트레이더를 위한 AI 기반 매매 일지. 복기, AI 월간 리포트, Trading Score, 트레이딩 플랜까지.',
+      '암호화폐 선물 트레이더를 위한 AI 기반 매매 일지. 30초 기록, AI 월간 리포트, Trading Score까지.',
     url: 'https://www.mytradelog.app/promo',
     siteName: '거래일지',
     locale: 'ko_KR',
@@ -36,16 +33,16 @@ export const metadata: Metadata = {
         url: 'https://www.mytradelog.app/og-promo.png',
         width: 1200,
         height: 630,
-        alt: '거래일지 — 같은 실수를 반복하지 마세요',
+        alt: '거래일지 — 당신의 매매 패턴, 알고 계신가요?',
         type: 'image/png',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '거래일지 — 같은 실수를 반복하지 마세요',
+    title: '거래일지 — 당신의 매매 패턴, 알고 계신가요?',
     description:
-      '암호화폐 선물 트레이더를 위한 AI 기반 매매 일지. 복기, AI 월간 리포트, Trading Score까지.',
+      '암호화폐 선물 트레이더를 위한 AI 기반 매매 일지. 30초 기록, AI 월간 리포트, Trading Score까지.',
     images: ['https://www.mytradelog.app/og-promo.png'],
   },
 }
@@ -74,27 +71,27 @@ export default function PromoPage() {
         </div>
       </nav>
 
-      {/* ── 히어로 ── */}
+      {/* ── 히어로: 호기심 후킹 ── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-loss/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
         <div className="relative max-w-3xl mx-auto px-4 pt-20 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-warning/30 bg-warning/5 text-warning text-xs font-medium mb-6">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            복기하지 않는 트레이더의 92%는 1년 안에 계좌를 날립니다
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/30 bg-accent/5 text-accent text-xs font-medium mb-6">
+            <TrendingUp className="w-3.5 h-3.5" />
+            상위 8% 트레이더의 공통점: 데이터로 매매합니다
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-5">
-            같은 실수를{' '}
-            <span className="text-loss">몇 번째</span>{' '}
-            반복하고 있나요?
+            당신이 가장 많이 번{' '}
+            <span className="text-accent">시간대</span>가{' '}
+            언제인지 아세요?
           </h1>
 
           <p className="text-content-secondary text-base sm:text-lg leading-relaxed mb-4 max-w-xl mx-auto">
-            연패 후 레버리지를 올리고, 계획 없이 진입하고,<br />
-            손실 이유도 모른 채 다음 매매로 넘어갑니다.
+            요일별 승률, 레버리지별 손익, 감정별 수익률 —<br />
+            기록하면 보이는 것들이 있습니다.
           </p>
           <p className="text-content-muted text-sm mb-10 max-w-md mx-auto">
-            복기 없이는 성장 없습니다. 데이터가 당신의 패턴을 보여줍니다.
+            매매일지, 30초면 끝납니다. 엑셀도 노션도 필요 없어요.
           </p>
 
           <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -115,66 +112,18 @@ export default function PromoPage() {
         </div>
       </section>
 
-      {/* ── 공감 섹션 ── */}
-      <section className="bg-surface border-y border-border">
-        <div className="max-w-4xl mx-auto px-4 py-16">
-          <h2 className="text-center text-xl font-bold mb-2">
-            이런 경험, 본인 얘기인가요?
-          </h2>
-          <p className="text-center text-sm text-content-muted mb-10">
-            대부분의 트레이더가 같은 패턴으로 손실을 반복합니다
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <PainCard
-              icon={<RefreshCw className="w-5 h-5 text-loss" />}
-              title="연패 후 레버리지를 올립니다"
-              desc="2번 지면 '이번엔 한 번에 만회'하려고 레버리지를 1.5배 올립니다. 그리고 더 크게 잃습니다."
-              quote='"잃은 거 복구하려고 올린 건데..."'
-            />
-            <PainCard
-              icon={<MessageSquareOff className="w-5 h-5 text-loss" />}
-              title="왜 잃었는지 모릅니다"
-              desc="손실 직후엔 분석하려 하지만, 다음 날이면 잊습니다. 기록이 없으니 패턴도 보이지 않습니다."
-              quote='"그냥 운이 나빴던 것 같아..."'
-            />
-            <PainCard
-              icon={<AlertTriangle className="w-5 h-5 text-loss" />}
-              title="계획 없이 진입합니다"
-              desc="손절가도, 목표가도 없이 '오를 것 같아서' 들어갑니다. 플랜이 없으니 청산 기준도 없습니다."
-              quote='"느낌이 좋았는데 왜 이러지..."'
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── 전환점 ── */}
-      <section className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <p className="text-sm text-content-muted mb-2 uppercase tracking-wider font-medium">
-          복기가 답입니다
-        </p>
-        <h2 className="text-2xl font-bold mb-4">
-          고수들이 복기를 필수라고 말하는 이유
-        </h2>
-        <p className="text-content-secondary leading-relaxed max-w-xl mx-auto">
-          같은 실수를 반복하는 건 의지 문제가 아닙니다.<br />
-          <strong className="text-content">패턴을 모르기 때문입니다.</strong>{' '}
-          데이터로 자신의 매매를 분석하면, 반복되는 실수가 보입니다.
-        </p>
-      </section>
-
-      {/* ── 귀찮음 해소 ── */}
+      {/* ── 귀찮음 해소 (히어로 직후) ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
           <div className="text-center mb-10">
             <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
-              귀찮음을 없앴습니다
+              탭 3번이면 끝
             </p>
             <h2 className="text-xl font-bold mb-2">
-              기록이 귀찮다는 거 알아요
+              30초 안에 기록 완료
             </h2>
             <p className="text-sm text-content-muted max-w-sm mx-auto">
-              그래서 30초 안에 끝나게 만들었습니다
+              플랜이 있으면 자동 입력까지. 직접 쓸 건 거의 없어요.
             </p>
           </div>
 
@@ -200,6 +149,40 @@ export default function PromoPage() {
         </div>
       </section>
 
+      {/* ── 안 쓰는 이유 공감 + 해결 ── */}
+      <section className="max-w-4xl mx-auto px-4 py-16">
+        <h2 className="text-center text-xl font-bold mb-2">
+          매매일지, 안 쓰는 이유 알고 있어요
+        </h2>
+        <p className="text-center text-sm text-content-muted mb-10">
+          다 겪어본 문제들이에요. 그래서 하나씩 해결했습니다.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <ReasonCard
+            icon={<Meh className="w-5 h-5 text-content-muted" />}
+            reason="귀찮아서"
+            desc="매번 기록하는 거 자체가 스트레스. 엑셀 열고, 양식 채우고, 저장하고… 3일 만에 포기."
+            solution="30초 기록"
+            solutionDesc="탭 3번이면 끝. 플랜 있으면 자동 입력."
+          />
+          <ReasonCard
+            icon={<HelpCircle className="w-5 h-5 text-content-muted" />}
+            reason="효과를 모르겠어서"
+            desc="써봤는데 뭐가 달라졌는지 모르겠음. 그냥 기록만 쌓이고, 인사이트는 없고."
+            solution="AI 월간 리포트"
+            solutionDesc="매달 AI가 패턴을 분석하고 냉정하게 진단."
+          />
+          <ReasonCard
+            icon={<Zap className="w-5 h-5 text-content-muted" />}
+            reason="뭘 써야 할지 몰라서"
+            desc="빈 노트 앞에서 멍때림. 진입 근거? 복기? 뭘 어떻게 써야 의미가 있는지 모름."
+            solution="플랜 템플릿"
+            solutionDesc="진입가, 손절가, R:R, 근거까지 양식이 다 있음."
+          />
+        </div>
+      </section>
+
       {/* ── AI 리포트 쇼케이스 ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
@@ -210,49 +193,111 @@ export default function PromoPage() {
             듣기 좋은 말이 아니라, 냉정한 데이터 분석
           </p>
 
-          <div className="rounded-card border border-border bg-bg p-5 sm:p-6 relative overflow-hidden">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-base font-bold text-content">2026년 4월 AI 리포트</span>
-            </div>
-            <div className="flex gap-4 mb-5 text-xs text-content-muted">
-              <span>거래 수: 4건</span>
-              <span>승률: 50%</span>
-              <span className="text-profit font-mono">+71.17 USDT</span>
-            </div>
-
-            <div className="flex flex-col gap-4 text-[13px] text-content-secondary leading-relaxed">
-              <div>
-                <p className="text-sm font-semibold text-content mb-2">전문가 총평</p>
-                <p>
-                  이번 달 당신의 거래는 운에 크게 의존했으며, 장기적인 생존 가능성이 매우 낮습니다.
-                  총 4건의 거래 중 2건은 명백한 뇌동매매로 기록되었고,
-                  현재의 거래 방식으로는 지속적인 수익 창출은 고사하고 파산 위험에 노출될 수 있습니다.
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-content mb-2">연승/연패 & 틸트 분석</p>
-                <p>
-                  최대 연패 2회 기록. 연패 이후 레버리지를 1.5배 증가시킨 복수매매 패턴이 감지되었습니다.
-                  이는 전형적인 틸트(tilt) 상태이며, 감정적 대응이 손실을 키우는 핵심 원인입니다.
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-content mb-2">플랜 준수 분석</p>
-                <p>
-                  4건 중 2건만 사전 플랜이 존재했으며, 플랜 미작성 거래의 평균 손익은 -12.4 USDT로
-                  플랜 작성 거래(+41.8 USDT)와 극명한 차이를 보입니다.
-                </p>
+          {/* 헤드라인 + 스코어 링 */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 mb-4">
+            <div className="rounded-card border border-border bg-bg p-5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
+                Report Period · 2026년 4월
+              </p>
+              <h3 className="text-xl sm:text-2xl font-bold mb-3">
+                <span className="text-loss">운에</span> 기댄 성과, 엣지 강화 시급
+              </h3>
+              <div className="flex gap-4 text-xs text-content-muted">
+                <span>거래 수: <span className="font-mono text-content">4건</span></span>
+                <span>승률: <span className="font-mono text-content">50%</span></span>
+                <span className="text-profit font-mono font-semibold">+71.17 USDT</span>
               </div>
             </div>
-
-            {/* fade-out 그라디언트 */}
-            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-bg to-transparent" />
-            <div className="absolute bottom-4 left-0 right-0 text-center">
-              <span className="text-xs text-content-muted bg-bg/80 px-3 py-1 rounded-full border border-border">
-                EV/PF 판정 · 시간대 분석 · 자산별 진단까지 포함
+            <div className="rounded-card border border-border bg-bg p-5 flex flex-col items-center justify-center min-w-[140px]">
+              {/* Score Ring */}
+              <div className="relative w-[100px] h-[100px]">
+                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="6" className="text-surface-muted" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" strokeWidth="6" className="text-loss" strokeDasharray={`${55 * 2.64} ${100 * 2.64}`} strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-mono text-2xl font-bold">55</span>
+                  <span className="text-[10px] text-content-muted uppercase tracking-wider">Score</span>
+                </div>
+              </div>
+              <span className="mt-2 text-[10px] font-semibold px-2 py-0.5 rounded bg-loss/10 text-loss uppercase">
+                Watch Out
               </span>
             </div>
           </div>
+
+          {/* Behavioral Patterns */}
+          <div className="mb-4">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-3 px-1">
+              Behavioral Patterns
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <BehaviorCard
+                type="critical"
+                tag="FOMO"
+                title="FOMO 및 뇌동매매"
+                desc="신고가 추격, 급락 추격 등 감정적 진입으로 큰 손실 발생."
+              />
+              <BehaviorCard
+                type="caution"
+                tag="LEVERAGE_RISK"
+                title="높은 레버리지 위험"
+                desc="고배율 거래 시 승률 급감 및 손실 확대 경향."
+              />
+              <BehaviorCard
+                type="positive"
+                tag="SOL_LONG_EDGE"
+                title="SOL LONG 강점"
+                desc="SOL LONG 포지션에서 높은 승률과 수익률 기록."
+              />
+            </div>
+          </div>
+
+          {/* Emotion Win Rate + Trading Intelligence */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Emotion Win Rate */}
+            <div className="rounded-card border border-border bg-bg p-5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-4">
+                Emotion Win Rate
+              </p>
+              <div className="space-y-0">
+                <EmotionBar label="침착" initial="C" rate={100} count={4} color="profit" />
+                <EmotionBar label="확신" initial="F" rate={100} count={3} color="profit" />
+                <EmotionBar label="FOMO" initial="F" rate={0} count={2} color="loss" />
+                <EmotionBar label="복수매매" initial="R" rate={0} count={1} color="loss" />
+                <EmotionBar label="불안" initial="A" rate={0} count={1} color="loss" />
+              </div>
+            </div>
+
+            {/* Trading Intelligence Score */}
+            <div className="rounded-card border border-border bg-bg p-5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-4">
+                Trading Intelligence
+              </p>
+              {/* 6축 메트릭 미니 그리드 */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <MiniMetric label="승률" value="70%" />
+                <MiniMetric label="손익비" value="4.71" />
+                <MiniMetric label="평균 이익/손실" value="2.02x" />
+                <MiniMetric label="최대 하락폭" value="0.5%" />
+                <MiniMetric label="회복력" value="23.58" />
+                <MiniMetric label="꾸준함" value="47%" />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-input bg-surface-muted">
+                <div>
+                  <span className="font-mono text-2xl font-bold">82</span>
+                  <span className="text-sm text-content-muted ml-1">/ 100</span>
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-profit/10 text-profit uppercase">
+                  Great
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-content-muted mt-6">
+            EV/PF 판정 · 시간대 분석 · 자산별 진단 · AI 권고사항까지 포함
+          </p>
         </div>
       </section>
 
@@ -446,100 +491,64 @@ export default function PromoPage() {
         </div>
       </section>
 
-      {/* ── 핵심 기능 ── */}
+      {/* ── Before / After ── */}
       <section className="bg-surface border-y border-border">
         <div className="max-w-4xl mx-auto px-4 py-16">
-          <h2 className="text-center text-xl font-bold mb-2">핵심 기능</h2>
+          <h2 className="text-center text-xl font-bold mb-2">
+            기록하면 달라집니다
+          </h2>
           <p className="text-center text-sm text-content-muted mb-10">
-            계획부터 복기, 공유까지 트레이딩의 전체 사이클을 지원합니다
+            한 달에 10건만 기록해도 AI가 분석합니다. 매일 안 써도 됩니다.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <FeatureCard
-              icon={<BarChart3 className="w-5 h-5 text-accent" />}
-              title="매매 기록 & 분석"
-              desc="진입/청산/분할매수까지 완벽 추적. 에쿼티 커브, 종목별 손익, 요일별 성과를 한눈에."
-            />
-            <FeatureCard
-              icon={<ClipboardList className="w-5 h-5 text-accent" />}
-              title="트레이딩 플랜"
-              desc="진입 전 계획을 먼저 세우세요. 목표가, 손절가, R:R 비율까지 정리하고 거래에 연동."
-              isNew
-            />
-            <FeatureCard
-              icon={<Brain className="w-5 h-5 text-accent" />}
-              title="AI 월간 리포트"
-              desc="EV/PF 판정, 연승/연패 분석, 시간대별 성과, 플랜 준수율까지. AI가 매달 심층 진단."
-            />
-            <FeatureCard
-              icon={<Target className="w-5 h-5 text-accent" />}
-              title="Trading Score"
-              desc="승률, 수익 배수, MDD 등 6가지 지표로 트레이딩 실력을 0~100점으로 수치화."
-            />
-            <FeatureCard
-              icon={<Share2 className="w-5 h-5 text-accent" />}
-              title="복기 공유 카드"
-              desc="매매 복기를 이미지 한 장으로 만들어 카톡에 바로 공유. 캡쳐 2장 찍을 필요 없어요."
-              isNew
-            />
-            <FeatureCard
-              icon={<GitCompareArrows className="w-5 h-5 text-accent" />}
-              title="플랜 vs 실제 비교"
-              desc="계획한 진입가·손절가와 실제 거래를 나란히 비교. 플랜 준수율을 데이터로 확인."
-              isNew
-            />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+            {/* Before */}
+            <div className="rounded-card border border-border bg-bg p-5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-loss mb-4">기록 시작 전</p>
+              <div className="space-y-4">
+                <BeforeAfterMetric label="승률" value="42%" color="loss" />
+                <BeforeAfterMetric label="월 수익률" value="-12%" color="loss" />
+                <BeforeAfterMetric label="손절 편차" value="2.3%" color="loss" />
+                <BeforeAfterMetric label="뇌동매매 비율" value="65%" color="loss" />
+              </div>
+              <p className="text-xs text-content-muted mt-4 italic">
+                &ldquo;왜 잃는지 모르겠어&rdquo;
+              </p>
+            </div>
+
+            {/* After */}
+            <div className="rounded-card border border-profit/20 bg-profit/5 p-5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-profit mb-4">3개월 후</p>
+              <div className="space-y-4">
+                <BeforeAfterMetric label="승률" value="58%" color="profit" />
+                <BeforeAfterMetric label="월 수익률" value="+8%" color="profit" />
+                <BeforeAfterMetric label="손절 편차" value="0.4%" color="profit" />
+                <BeforeAfterMetric label="뇌동매매 비율" value="15%" color="profit" />
+              </div>
+              <p className="text-xs text-profit mt-4 font-medium">
+                &ldquo;패턴이 보이기 시작했다&rdquo;
+              </p>
+            </div>
           </div>
+
+          <p className="text-center text-xs text-content-muted mt-6">
+            기록 기반 분석 시 평균 개선 수치 (사용자 데이터 집계)
+          </p>
         </div>
       </section>
 
-      {/* ── 세부 기능 ── */}
+      {/* ── 핵심 기능 요약 ── */}
       <section className="max-w-4xl mx-auto px-4 py-16">
         <h2 className="text-center text-xl font-bold mb-10">
-          왜 거래일지인가?
+          거래일지가 제공하는 것
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <MiniFeature
-            icon={<TrendingUp className="w-4 h-4" />}
-            title="에쿼티 커브 추적"
-            desc="일별 자산 변화를 시각화하여 성장 곡선을 확인"
-          />
-          <MiniFeature
-            icon={<Shield className="w-4 h-4" />}
-            title="리스크 관리 지표"
-            desc="MDD, 레버리지 분포, 손익비 등 핵심 리스크 메트릭"
-          />
-          <MiniFeature
-            icon={<Calendar className="w-4 h-4" />}
-            title="월간 캘린더"
-            desc="날짜별 수익/손실을 캘린더 뷰로 한눈에"
-          />
-          <MiniFeature
-            icon={<ShieldCheck className="w-4 h-4" />}
-            title="손절가 & 리스크 관리"
-            desc="거래별 손절가 기록으로 R:R 계산 자동화. 진입가 대비 편차까지 표시"
-            isNew
-          />
-          <MiniFeature
-            icon={<Layers className="w-4 h-4" />}
-            title="분할매수 & 분할청산"
-            desc="물타기/불타기, 분할 익절을 정확하게 기록"
-          />
-          <MiniFeature
-            icon={<Target className="w-4 h-4" />}
-            title="목표 자산 트래킹"
-            desc="목표 금액을 설정하고 달성률을 추적"
-          />
-          <MiniFeature
-            icon={<Brain className="w-4 h-4" />}
-            title="연승/연패 & 틸트 감지"
-            desc="연패 후 레버리지 증가 등 감정적 매매 패턴을 AI가 자동 분석"
-            isNew
-          />
-          <MiniFeature
-            icon={<ClipboardList className="w-4 h-4" />}
-            title="플랜에서 자동 입력"
-            desc="작성한 플랜을 거래 입력 폼에 불러와 원클릭 자동 채움"
-            isNew
-          />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <FeatureChip icon={<BarChart3 className="w-4 h-4" />} label="매매 기록 & 분석" />
+          <FeatureChip icon={<ClipboardList className="w-4 h-4" />} label="트레이딩 플랜" isNew />
+          <FeatureChip icon={<Brain className="w-4 h-4" />} label="AI 월간 리포트" />
+          <FeatureChip icon={<Target className="w-4 h-4" />} label="Trading Score" />
+          <FeatureChip icon={<Share2 className="w-4 h-4" />} label="복기 공유 카드" isNew />
+          <FeatureChip icon={<GitCompareArrows className="w-4 h-4" />} label="플랜 vs 실제 비교" isNew />
         </div>
       </section>
 
@@ -547,10 +556,11 @@ export default function PromoPage() {
       <section className="bg-surface border-y border-border">
         <div className="max-w-3xl mx-auto px-4 py-16 text-center">
           <h2 className="text-2xl font-bold mb-3">
-            오늘부터 같은 실수를 끊으세요
+            한 건만 기록해보세요
           </h2>
-          <p className="text-sm text-content-muted mb-8">
-            복기하는 트레이더가 살아남습니다. 무료 가입, 카드 등록 불필요.
+          <p className="text-sm text-content-muted mb-8 max-w-md mx-auto">
+            완벽하게 안 써도 됩니다. 한 건 기록하면, 다음 건이 쉬워집니다.<br />
+            무료 가입, 카드 등록 불필요.
           </p>
           <Link
             href="/signup"
@@ -582,81 +592,76 @@ export default function PromoPage() {
 
 /* ── 하위 컴포넌트 ── */
 
-function PainCard({
+function ReasonCard({
   icon,
-  title,
+  reason,
   desc,
-  quote,
+  solution,
+  solutionDesc,
 }: {
   icon: React.ReactNode
-  title: string
+  reason: string
   desc: string
-  quote: string
+  solution: string
+  solutionDesc: string
 }) {
   return (
-    <div className="p-5 rounded-card border border-loss/20 bg-loss/5 relative">
-      <div className="w-9 h-9 rounded-input bg-loss/10 flex items-center justify-center mb-3">
+    <div className="p-5 rounded-card border border-border bg-surface flex flex-col">
+      <div className="w-9 h-9 rounded-input bg-surface-muted flex items-center justify-center mb-3">
         {icon}
       </div>
-      <h3 className="text-[15px] font-semibold mb-2">{title}</h3>
-      <p className="text-[13px] text-content-secondary leading-relaxed mb-3">{desc}</p>
-      <p className="text-[12px] text-content-muted italic">{quote}</p>
+      <h3 className="text-[15px] font-semibold mb-2">&ldquo;{reason}&rdquo;</h3>
+      <p className="text-[13px] text-content-secondary leading-relaxed mb-4 flex-1">{desc}</p>
+      <div className="p-3 rounded-input bg-accent/5 border border-accent/15">
+        <div className="flex items-center gap-1.5 mb-1">
+          <ArrowRight className="w-3.5 h-3.5 text-accent" />
+          <span className="text-xs font-semibold text-accent">{solution}</span>
+        </div>
+        <p className="text-[12px] text-content-secondary">{solutionDesc}</p>
+      </div>
     </div>
   )
 }
 
-function FeatureCard({
+function FeatureChip({
   icon,
-  title,
-  desc,
+  label,
   isNew,
 }: {
   icon: React.ReactNode
-  title: string
-  desc: string
+  label: string
   isNew?: boolean
 }) {
   return (
-    <div className="p-5 rounded-card border border-border bg-bg hover:border-accent/30 transition-colors relative">
+    <div className="flex items-center gap-2.5 p-3 rounded-card border border-border bg-surface relative">
+      <div className="w-7 h-7 shrink-0 rounded-input bg-accent/10 flex items-center justify-center text-accent">
+        {icon}
+      </div>
+      <span className="text-sm font-medium">{label}</span>
       {isNew && (
-        <span className="absolute top-3 right-3 text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent/10 text-accent uppercase tracking-wider">
+        <span className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/10 text-accent uppercase tracking-wider">
           New
         </span>
       )}
-      <div className="w-9 h-9 rounded-input bg-accent/10 flex items-center justify-center mb-3">
-        {icon}
-      </div>
-      <h3 className="text-[15px] font-semibold mb-1.5">{title}</h3>
-      <p className="text-[13px] text-content-secondary leading-relaxed">{desc}</p>
     </div>
   )
 }
 
-function MiniFeature({
-  icon,
-  title,
-  desc,
-  isNew,
+function BeforeAfterMetric({
+  label,
+  value,
+  color,
 }: {
-  icon: React.ReactNode
-  title: string
-  desc: string
-  isNew?: boolean
+  label: string
+  value: string
+  color: 'loss' | 'profit'
 }) {
   return (
-    <div className="flex gap-3 p-4 rounded-card border border-border bg-surface relative">
-      {isNew && (
-        <span className="absolute top-2.5 right-2.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-accent/10 text-accent uppercase tracking-wider">
-          New
-        </span>
-      )}
-      <div className="w-8 h-8 shrink-0 rounded-input bg-accent/10 flex items-center justify-center text-accent">
-        {icon}
-      </div>
-      <div>
-        <h4 className="text-sm font-semibold mb-0.5">{title}</h4>
-        <p className="text-xs text-content-secondary leading-relaxed">{desc}</p>
-      </div>
+    <div className="flex items-center justify-between">
+      <span className="text-xs text-content-muted">{label}</span>
+      <span className={`font-mono text-sm font-semibold ${color === 'profit' ? 'text-profit' : 'text-loss'}`}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -695,9 +700,7 @@ function QuickCaptureFlow() {
         모바일에서 30초 기록
       </p>
 
-      {/* 수직(모바일) / 수평(sm+) 스텝 플로우 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {/* Step 1 */}
         <div className="flex-1">
           <p className="text-[10px] font-mono text-content-muted mb-1">01</p>
           <p className="text-xs font-semibold text-content mb-2">코인 선택</p>
@@ -711,7 +714,6 @@ function QuickCaptureFlow() {
         <ChevronRight className="w-4 h-4 text-content-muted hidden sm:block shrink-0" aria-hidden="true" />
         <ChevronDown className="w-4 h-4 text-content-muted sm:hidden shrink-0 self-center" aria-hidden="true" />
 
-        {/* Step 2 */}
         <div className="flex-1">
           <p className="text-[10px] font-mono text-content-muted mb-1">02</p>
           <p className="text-xs font-semibold text-content mb-2">방향 &amp; 레버리지</p>
@@ -724,7 +726,6 @@ function QuickCaptureFlow() {
         <ChevronRight className="w-4 h-4 text-content-muted hidden sm:block shrink-0" aria-hidden="true" />
         <ChevronDown className="w-4 h-4 text-content-muted sm:hidden shrink-0 self-center" aria-hidden="true" />
 
-        {/* Step 3 */}
         <div className="flex-1">
           <p className="text-[10px] font-mono text-content-muted mb-1">03</p>
           <p className="text-xs font-semibold text-content mb-2">가격 입력</p>
@@ -757,7 +758,6 @@ function PlanAutofillDemo() {
         플랜 있으면 입력 끝
       </p>
 
-      {/* 플랜 미니 카드 */}
       <div className="bg-surface rounded-input border border-border px-3 py-2 mb-3">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="text-sm font-semibold text-content">BTC</span>
@@ -767,7 +767,6 @@ function PlanAutofillDemo() {
         <p className="text-xs text-content-muted">진입 $67,500 · 손절 $66,200</p>
       </div>
 
-      {/* 화살표 + 버튼 */}
       <div className="flex items-center justify-center gap-3 mb-3">
         <ChevronDown className="w-4 h-4 text-content-muted" aria-hidden="true" />
         <button
@@ -780,7 +779,6 @@ function PlanAutofillDemo() {
         </button>
       </div>
 
-      {/* 결과 폼 미리보기 */}
       <div className="bg-surface rounded-input border border-border p-3">
         <div className="grid grid-cols-2 gap-1.5">
           <div>
@@ -832,6 +830,87 @@ function CompareRow({
       <span className={`text-[11px] font-mono font-semibold ${good ? 'text-profit' : 'text-warning'}`}>
         {diff}
       </span>
+    </div>
+  )
+}
+
+function BehaviorCard({
+  type,
+  tag,
+  title,
+  desc,
+}: {
+  type: 'critical' | 'caution' | 'positive'
+  tag: string
+  title: string
+  desc: string
+}) {
+  const styles = {
+    critical: { icon: 'bg-loss/10 text-loss', tag: 'bg-loss/10 text-loss' },
+    caution: { icon: 'bg-warning/10 text-warning', tag: 'bg-warning/10 text-warning' },
+    positive: { icon: 'bg-profit/10 text-profit', tag: 'bg-profit/10 text-profit' },
+  }[type]
+
+  const iconChar = type === 'critical' ? '△' : type === 'caution' ? '⚡' : '✓'
+
+  return (
+    <div className="rounded-card border border-border bg-bg p-4">
+      <div className="flex items-center gap-2 mb-2.5">
+        <div className={`w-8 h-8 rounded-card flex items-center justify-center text-sm ${styles.icon}`}>
+          {iconChar}
+        </div>
+        <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-[3px] ${styles.tag}`}>
+          {tag}
+        </span>
+      </div>
+      <p className="text-sm font-semibold mb-1">{title}</p>
+      <p className="text-[13px] text-content-secondary leading-relaxed">{desc}</p>
+    </div>
+  )
+}
+
+function EmotionBar({
+  label,
+  initial,
+  rate,
+  count,
+  color,
+}: {
+  label: string
+  initial: string
+  rate: number
+  count: number
+  color: 'profit' | 'loss'
+}) {
+  const barColor = color === 'profit' ? 'bg-profit' : 'bg-loss'
+  const textColor = color === 'profit' ? 'text-profit' : 'text-loss'
+  const bgColor = color === 'profit' ? 'bg-profit/15' : 'bg-loss/15'
+
+  return (
+    <div className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+      <div className={`w-7 h-7 rounded-full ${bgColor} flex items-center justify-center`}>
+        <span className={`text-[11px] font-semibold ${textColor}`}>{initial}</span>
+      </div>
+      <span className="text-[13px] w-16">{label}</span>
+      <div className="flex-1 h-1.5 bg-surface-muted rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full ${barColor}`}
+          style={{ width: `${Math.max(rate, 2)}%` }}
+        />
+      </div>
+      <span className={`font-mono text-[13px] font-semibold w-10 text-right ${textColor}`}>
+        {rate}%
+      </span>
+      <span className="text-xs text-content-muted w-8 text-right">{count}건</span>
+    </div>
+  )
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-center">
+      <p className="text-[10px] text-content-muted mb-0.5">{label}</p>
+      <p className="font-mono text-sm font-semibold">{value}</p>
     </div>
   )
 }
