@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { Trade, TradeFilter, TradeClose, TradeScaleIn, TradeScreenshot } from '@/types'
@@ -19,6 +19,8 @@ import {
   formatDuration,
   pnlColorClass,
 } from '@/lib/format'
+
+const PAGE_SIZE = 10
 
 interface TradeTableProps {
   trades: Trade[]
@@ -56,6 +58,7 @@ export function TradeTable({
   const [loadingTradeId, setLoadingTradeId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [filter, setFilter] = useState<TradeFilter>({})
+  const [currentPage, setCurrentPage] = useState(1)
 
   // 필터 적용
   const filteredTrades = trades
@@ -68,6 +71,16 @@ export function TradeTable({
       return true
     })
     .sort((a, b) => b.date.localeCompare(a.date))
+
+  // 필터 변경 시 페이지 리셋
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filter])
+
+  // 페이지네이션
+  const totalPages = Math.ceil(filteredTrades.length / PAGE_SIZE)
+  const startIdx = (currentPage - 1) * PAGE_SIZE
+  const paginatedTrades = filteredTrades.slice(startIdx, startIdx + PAGE_SIZE)
 
   // 유니크 코인 목록
   const assets = [...new Set(trades.map((t) => t.asset))]
@@ -98,6 +111,49 @@ export function TradeTable({
       if (expandedTradeId === deleteId) setExpandedTradeId(null)
       setDeleteId(null)
     }
+  }
+
+  const handleExportCSV = () => {
+    const headers = ['날짜', '종목', '방향', '레버리지', '진입가', '청산가', '증거금', '손익', '수익률', '감정', '이유', '메모']
+    const rows = filteredTrades.map((t) => [
+      t.date,
+      t.asset,
+      t.direction,
+      t.leverage,
+      t.entry_price,
+      t.exit_price ?? '',
+      t.margin,
+      t.pnl ?? '',
+      t.pnl != null ? ((t.pnl / t.margin) * 100).toFixed(2) + '%' : '',
+      t.emotion ?? '',
+      t.reason ?? '',
+      t.notes ?? '',
+    ])
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `매매일지_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // 페이지네이션 버튼 범위 계산 (최대 5개, 앞뒤 ... 처리)
+  const getPageNumbers = (): (number | '...')[] => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
+    const pages: (number | '...')[] = []
+    if (currentPage <= 3) {
+      pages.push(1, 2, 3, '...', totalPages)
+    } else if (currentPage >= totalPages - 2) {
+      pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages)
+    } else {
+      pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+    }
+    return pages
   }
 
   return (
@@ -145,9 +201,14 @@ export function TradeTable({
           <option value="lose">손절</option>
           <option value="open">진행중</option>
         </select>
-        <span className="text-[12px] text-content-muted ml-auto font-mono">
-          {filteredTrades.length}건
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[12px] text-content-muted font-mono">
+            {filteredTrades.length}건
+          </span>
+          <Button variant="ghost" size="sm" onClick={handleExportCSV} aria-label="CSV 파일로 내보내기">
+            내보내기(.CSV)
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -194,7 +255,7 @@ export function TradeTable({
                 </tr>
               </thead>
               <tbody>
-                {filteredTrades.map((t) => {
+                {paginatedTrades.map((t) => {
                   const returnPct =
                     t.pnl != null && t.margin > 0
                       ? (t.pnl / t.margin) * 100
@@ -504,6 +565,59 @@ export function TradeTable({
           </div>
         )}
       </Card>
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between py-3 px-4" aria-label="페이지 탐색">
+          <span className="text-[13px] text-content-muted font-mono">
+            {filteredTrades.length}개 중{' '}
+            {startIdx + 1}-{Math.min(startIdx + PAGE_SIZE, filteredTrades.length)}개 표시 중
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              className="min-w-[32px] h-[32px] text-sm font-medium text-content-secondary hover:bg-surface-hover rounded-badge disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              onClick={() => setCurrentPage((p) => p - 1)}
+              disabled={currentPage === 1}
+              aria-label="이전 페이지"
+            >
+              &lt;
+            </button>
+            {getPageNumbers().map((page, idx) =>
+              page === '...' ? (
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="min-w-[32px] h-[32px] flex items-center justify-center text-sm text-content-muted"
+                  aria-hidden="true"
+                >
+                  …
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  className={`min-w-[32px] h-[32px] text-sm font-medium rounded-badge transition-colors ${
+                    currentPage === page
+                      ? 'bg-info text-white'
+                      : 'text-content-secondary hover:bg-surface-hover'
+                  }`}
+                  onClick={() => setCurrentPage(page)}
+                  aria-label={`${page}페이지`}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                >
+                  {page}
+                </button>
+              )
+            )}
+            <button
+              className="min-w-[32px] h-[32px] text-sm font-medium text-content-secondary hover:bg-surface-hover rounded-badge disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={currentPage === totalPages}
+              aria-label="다음 페이지"
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 하단 요약 바 */}
       <TradeSummaryBar trades={filteredTrades} />
