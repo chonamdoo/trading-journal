@@ -56,3 +56,10 @@ export interface RadarDataPoint {
   value: number
   fullMark: number
 }
+
+/** 주간 리포트 간소 데이터 */
+export interface WeeklyReportData {
+  headline: string
+  masterScore: number
+  kpis: Pick<AIReportKPIs, 'winRate' | 'profitFactor'>
+}

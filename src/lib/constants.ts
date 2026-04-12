@@ -80,7 +80,7 @@ export const EMOTIONS = [
   { id: 'confident', label: '확신', color: 'text-profit', bgColor: 'bg-profit-bg' },
   { id: 'fomo', label: 'FOMO', color: 'text-warning', bgColor: 'bg-warning-bg' },
   { id: 'revenge', label: '복수매매', color: 'text-loss', bgColor: 'bg-loss-bg' },
-  { id: 'anxious', label: '불안', color: 'text-content-muted', bgColor: 'bg-surface-muted' },
+  { id: 'anxious', label: '불안', color: 'text-anxious', bgColor: 'bg-anxious-bg' },
 ] as const
 
 // ── 목표 색상 팔레트 ──

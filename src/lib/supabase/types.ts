@@ -670,6 +670,8 @@ export type MonthlyReportRow = {
   stats: Json | null;
   model_used: string;
   created_at: string;
+  period_type: 'weekly' | 'monthly' | 'yearly';
+  week: number | null;
 }
 
 export type MonthlyReportInsert = {
@@ -685,6 +687,8 @@ export type MonthlyReportInsert = {
   report_markdown: string;
   stats?: Json | null;
   model_used?: string;
+  period_type?: 'weekly' | 'monthly' | 'yearly';
+  week?: number | null;
 }
 
 export type MonthlyReportUpdate = {
@@ -694,6 +698,8 @@ export type MonthlyReportUpdate = {
   report_markdown?: string;
   stats?: Json | null;
   model_used?: string;
+  period_type?: 'weekly' | 'monthly' | 'yearly';
+  week?: number | null;
 }
 
 // ────────────────────────────────────────────

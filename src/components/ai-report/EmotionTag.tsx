@@ -10,17 +10,21 @@ interface EmotionTagProps {
   disabled?: boolean
 }
 
-const POSITIVE_EMOTIONS = new Set(['calm', 'confident'])
-const NEGATIVE_EMOTIONS = new Set(['fomo', 'revenge'])
-
 function getActiveClass(emotionId: string): string {
-  if (POSITIVE_EMOTIONS.has(emotionId)) {
-    return 'bg-profit-bg text-profit border border-profit/20'
+  switch (emotionId) {
+    case 'calm':
+      return 'bg-info-soft text-info border border-info/20'
+    case 'confident':
+      return 'bg-profit-bg text-profit border border-profit/20'
+    case 'fomo':
+      return 'bg-warning-bg text-warning border border-warning/20'
+    case 'revenge':
+      return 'bg-loss-bg text-loss border border-loss/20'
+    case 'anxious':
+      return 'bg-anxious-bg text-anxious border border-anxious/20'
+    default:
+      return 'bg-surface-muted text-content-secondary border border-border'
   }
-  if (NEGATIVE_EMOTIONS.has(emotionId)) {
-    return 'bg-loss-bg text-loss border border-loss/20'
-  }
-  return 'bg-surface-muted text-content-secondary border border-border'
 }
 
 export const EmotionTag = memo(function EmotionTag({

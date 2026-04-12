@@ -8,19 +8,27 @@ import type { Database, MonthlyReportRow, ApiResult } from '../supabase/types';
 type Client = SupabaseClient<Database>;
 
 /**
- * 월간 리포트 목록을 조회한다 (최신순).
+ * 리포트 목록을 조회한다 (최신순).
+ * periodType 옵션으로 주간/월간 필터링 가능.
  */
 export async function getReports(
   supabase: Client,
   userId: string,
+  periodType?: 'weekly' | 'monthly' | 'yearly',
 ): Promise<ApiResult<MonthlyReportRow[]>> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('monthly_reports')
       .select('*')
       .eq('user_id', userId)
       .order('year', { ascending: false })
       .order('month', { ascending: false });
+
+    if (periodType) {
+      query = query.eq('period_type', periodType);
+    }
+
+    const { data, error } = await query;
 
     if (error) return { success: false, error: error.message };
     return { success: true, data: (data ?? []) as MonthlyReportRow[] };

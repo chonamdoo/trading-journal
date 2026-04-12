@@ -405,6 +405,11 @@ export function TradeForm({
           매매 감정
         </label>
         <EmotionTag value={emotion} onChange={setEmotion} />
+        {!emotion && (
+          <p className="text-[11px] text-content-muted mt-1.5 leading-relaxed">
+            감정을 기록하면 감정별 승률 분석을 받을 수 있어요
+          </p>
+        )}
       </div>
 
       {/* 레버리지 + 증거금 */}

@@ -18,17 +18,19 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts'
+import { useAutoWeeklyReport } from '@/hooks/useAutoWeeklyReport'
+import { AutoReportToast } from '@/components/ui/AutoReportToast'
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
 import { EMOTIONS } from '@/lib/constants'
+import { EmotionWinRateBar } from '@/components/ai-report/EmotionWinRateBar'
 
 const EMOTION_DISPLAY = [
   { id: 'calm', label: '침착', char: 'C', color: 'text-info', bgColor: 'bg-info-soft' },
   { id: 'confident', label: '확신', char: 'F', color: 'text-profit', bgColor: 'bg-profit-bg' },
   { id: 'fomo', label: 'FOMO', char: 'F', color: 'text-warning', bgColor: 'bg-warning-bg' },
   { id: 'revenge', label: '복수매매', char: 'R', color: 'text-loss', bgColor: 'bg-loss-bg' },
-  { id: 'anxious', label: '불안', char: 'A', color: 'text-content-muted', bgColor: 'bg-surface-muted' },
+  { id: 'anxious', label: '불안', char: 'A', color: 'text-anxious', bgColor: 'bg-anxious-bg' },
 ] as const
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
 import { DayOfWeekSlide } from '@/components/analysis/DayOfWeekSlide'
@@ -47,6 +49,7 @@ export default function AnalysisPage() {
   const { profile } = useTrades()
   const router = useRouter()
   const [slideIndex, setSlideIndex] = useState(0)
+  const { isGenerating: autoGenerating, error: autoError } = useAutoWeeklyReport()
 
   // useFullAnalytics에서 모든 계산이 useMemo로 캐싱되어 있다.
   // 슬라이드 인덱스가 바뀌어도 trades가 변경되지 않으면 재계산되지 않는다.
@@ -198,89 +201,49 @@ export default function AnalysisPage() {
       id: 'emotion-win-rate',
       title: '감정별 승률',
       content: (
-        <div className="flex flex-col gap-4">
-          {emotionWinRateData.every((d) => d.total === 0) ? (
-            <div className="flex items-center justify-center h-[220px] text-content-muted text-sm">
-              감정 태그가 기록된 거래가 없습니다.
+        <div className="flex flex-col gap-6">
+          <EmotionWinRateBar data={emotionWinRateData.map((d) => ({
+            emotion: d.id,
+            label: d.label,
+            winRate: d.winRate,
+            totalTrades: d.total,
+            avgPnl: d.avgPnl,
+          }))} />
+
+          {/* 감정별 매매 비율 */}
+          <div>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-content-muted mb-3">
+              감정별 매매 비율
+            </h3>
+            <div className="grid grid-cols-5 gap-2 max-md:grid-cols-3">
+              {emotionWinRateData.filter((d) => d.id !== '__unset__').map((d) => {
+                const closedTotal = trades.filter((t) => t.status === 'closed').length
+                const ratio = closedTotal > 0 ? Math.round((d.total / closedTotal) * 100) : 0
+                const display = EMOTION_DISPLAY.find((e) => e.id === d.id)
+                return (
+                  <div
+                    key={d.id}
+                    className="bg-surface-hover rounded-card px-3 py-3 flex flex-col items-center gap-1.5"
+                  >
+                    <span
+                      className={`w-7 h-7 rounded-badge flex items-center justify-center text-[11px] font-bold ${display?.bgColor ?? 'bg-surface-muted'} ${display?.color ?? 'text-content-muted'}`}
+                    >
+                      {display?.char ?? '?'}
+                    </span>
+                    <span className={`text-[11px] font-medium ${display?.color ?? 'text-content-secondary'}`}>
+                      {d.label}
+                    </span>
+                    <span className="font-mono text-sm font-bold text-content">
+                      {ratio}%
+                    </span>
+                    <span className="text-[10px] text-content-muted font-mono">
+                      {d.total}건
+                    </span>
+                  </div>
+                )
+              })}
             </div>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={emotionWinRateData} margin={{ top: 20, right: 8, left: -16, bottom: 0 }}>
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 12, fill: 'var(--content-secondary)' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{ fontSize: 11, fill: 'var(--content-muted)' }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v: number) => `${v}%`}
-                  />
-                  <Tooltip
-                    formatter={(value: number, _: string, entry: { payload?: { total?: number } }) => [
-                      `${value}% (${entry.payload?.total ?? 0}건)`,
-                      '승률',
-                    ]}
-                    contentStyle={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 7,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Bar dataKey="winRate" radius={[4, 4, 0, 0]} maxBarSize={48}>
-                    {emotionWinRateData.map((entry) => {
-                      const colorMap: Record<string, string> = {
-                        calm: 'var(--blue)',
-                        confident: 'var(--green)',
-                        fomo: 'var(--amber)',
-                        revenge: 'var(--red)',
-                        anxious: 'var(--text3)',
-                        __unset__: 'var(--text3)',
-                      }
-                      return <Cell key={entry.id} fill={colorMap[entry.id] ?? 'var(--text3)'} />
-                    })}
-                    <LabelList
-                      dataKey="total"
-                      position="top"
-                      formatter={(v: number) => (v > 0 ? `${v}건` : '')}
-                      style={{ fontSize: 11, fill: 'var(--content-muted)' }}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              {/* 감정 분포 요약 */}
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
-                  감정별 매매 비율
-                </p>
-                <div className="grid grid-cols-5 max-sm:grid-cols-2 gap-2">
-                  {EMOTION_DISPLAY.map((em) => {
-                    const d = emotionWinRateData.find((x) => x.id === em.id)
-                    const totalTagged = emotionWinRateData
-                      .filter((x) => x.id !== '__unset__')
-                      .reduce((s, x) => s + x.total, 0)
-                    const ratio = totalTagged > 0 && d ? Math.round((d.total / totalTagged) * 100) : 0
-                    return (
-                      <div
-                        key={em.id}
-                        className="text-center py-3 px-2 rounded-card bg-surface-hover border border-border flex flex-col items-center gap-1"
-                      >
-                        <span className={`w-8 h-8 rounded-badge flex items-center justify-center text-xs font-semibold ${em.bgColor} ${em.color}`} aria-label={em.label}>{em.char}</span>
-                        <span className={`text-[11px] font-medium ${em.color}`}>{em.label}</span>
-                        <span className="font-mono text-sm font-semibold text-content">{ratio}%</span>
-                        <span className="text-[10px] text-content-muted font-mono">{d?.total ?? 0}건</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </>
-          )}
+          </div>
         </div>
       ),
       takeaway: (() => {
@@ -377,6 +340,8 @@ export default function AnalysisPage() {
         currentIndex={slideIndex}
         onIndexChange={setSlideIndex}
       />
+
+      <AutoReportToast isGenerating={autoGenerating} error={autoError} />
     </div>
   )
 }

@@ -55,10 +55,19 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { year, month } = body as { year: number; month: number };
+  const { year, month, periodType = 'monthly', week } = body as {
+    year: number;
+    month: number;
+    periodType?: 'weekly' | 'monthly';
+    week?: number;
+  };
 
   if (!year || !month || month < 1 || month > 12) {
     return NextResponse.json({ error: '유효하지 않은 기간입니다.' }, { status: 400 });
+  }
+
+  if (periodType === 'weekly' && (week == null || week < 1 || week > 53)) {
+    return NextResponse.json({ error: '유효하지 않은 ISO 주차입니다.' }, { status: 400 });
   }
 
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -71,39 +80,61 @@ export async function POST(request: NextRequest) {
   const isAdmin = adminEmails.includes(user.email ?? '');
 
   if (!isAdmin) {
-    // 현재 월만 생성 허용 (4월이면 4월 리포트만 가능)
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-    if (year !== currentYear || month !== currentMonth) {
-      return NextResponse.json(
-        { error: `리포트는 해당 월에만 생성할 수 있습니다. 현재는 ${currentYear}년 ${currentMonth}월 리포트만 생성 가능합니다.` },
-        { status: 400 },
-      );
-    }
+    if (periodType === 'monthly') {
+      // 현재 월만 생성 허용 (4월이면 4월 리포트만 가능)
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      if (year !== currentYear || month !== currentMonth) {
+        return NextResponse.json(
+          { error: `리포트는 해당 월에만 생성할 수 있습니다. 현재는 ${currentYear}년 ${currentMonth}월 리포트만 생성 가능합니다.` },
+          { status: 400 },
+        );
+      }
 
-    // 월 1회 제한
-    const { data: existing } = await supabase
-      .from('monthly_reports')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('year', year)
-      .eq('month', month)
-      .maybeSingle();
+      // 월 1회 제한
+      const { data: existing } = await supabase
+        .from('monthly_reports')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('year', year)
+        .eq('month', month)
+        .eq('period_type', 'monthly')
+        .maybeSingle();
 
-    if (existing) {
-      return NextResponse.json(
-        { error: '이미 해당 월의 리포트가 생성되었습니다. 월 1회만 가능합니다.' },
-        { status: 429 },
-      );
+      if (existing) {
+        return NextResponse.json(
+          { error: '이미 해당 월의 리포트가 생성되었습니다. 월 1회만 가능합니다.' },
+          { status: 429 },
+        );
+      }
     }
+    // weekly는 upsert로 중복 방지 (UNIQUE 제약)
   }
 
   try {
-    // 해당 월의 기간 계산
-    const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const periodEnd = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+    // 기간 계산
+    let periodStart: string;
+    let periodEnd: string;
+
+    if (periodType === 'weekly' && week != null) {
+      // ISO week → 월요일~일요일 계산
+      // ISO week 1은 해당 연도의 첫 번째 목요일을 포함하는 주
+      const jan4 = new Date(year, 0, 4); // 1월 4일은 항상 week 1에 포함
+      const week1Monday = new Date(jan4);
+      week1Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+      const weekMonday = new Date(week1Monday);
+      weekMonday.setDate(week1Monday.getDate() + (week - 1) * 7);
+      const weekSunday = new Date(weekMonday);
+      weekSunday.setDate(weekMonday.getDate() + 6);
+      periodStart = weekMonday.toISOString().slice(0, 10);
+      periodEnd = weekSunday.toISOString().slice(0, 10);
+    } else {
+      // monthly
+      periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      periodEnd = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+    }
 
     // 해당 기간 거래 조회 (종료된 거래만)
     const { data: trades, error: tradesError } = await supabase
@@ -371,7 +402,116 @@ export async function POST(request: NextRequest) {
 - 플랜 없는 거래: ${unplannedTrades.length}건, 승률 ${unplannedWinRate ?? '-'}%, PnL ${unplannedPnl.toFixed(2)} USDT`
       : '';
 
-    // Gemini 프롬프트 구성
+    // 주간 리포트: 간소 프롬프트 + 1024 토큰
+    if (periodType === 'weekly') {
+      const weeklyPrompt = `너는 암호화폐 선물 트레이더의 주간 매매를 요약하는 분석가다.
+아래 데이터를 바탕으로 300자 이내의 마크다운 요약을 작성하고, 맨 끝에 JSON 블록을 추가하라.
+한국어로 작성하라.
+
+## 분석 기간
+${periodStart} ~ ${periodEnd} (ISO week ${week})
+
+## 기본 통계
+- 총 거래: ${trades.length}건 (승리 ${wins}건)
+- 승률: ${winRate.toFixed(1)}%
+- 총 손익: ${totalPnl.toFixed(2)} USDT
+- 손익비(Profit Factor): ${profitFactor.toFixed(2)}
+
+## 종목별 통계
+${assetStatsStr}
+
+## 감정별 통계
+${emotionStatsStr || '감정 태그 없음'}
+
+## 출력 형식
+### 이번 주 요약
+1~2문장의 핵심 평가 (강점 또는 주의점 위주)
+
+### 개선 포인트
+핵심 인사이트 1줄
+
+---
+
+\`\`\`json
+{
+  "headline": "이번 주 핵심 (12자 이내)",
+  "masterScore": 0~100 정수 (승률 50% + 손익비 50% 단순 환산),
+  "kpis": {
+    "winRate": ${winRate.toFixed(1)},
+    "profitFactor": ${profitFactor.toFixed(2)}
+  }
+}
+\`\`\``;
+
+      const weeklyGeminiBody = {
+        contents: [{ role: 'user' as const, parts: [{ text: weeklyPrompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
+      };
+
+      const weeklyRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(weeklyGeminiBody),
+        },
+      );
+
+      const weeklyData = await weeklyRes.json().catch(() => null);
+      if (!weeklyRes.ok) {
+        const errMsg = weeklyData?.error?.message || JSON.stringify(weeklyData).slice(0, 300);
+        return NextResponse.json({ error: `Gemini API 오류 (${weeklyRes.status}): ${errMsg}` }, { status: 422 });
+      }
+
+      const weeklyRawText: string = weeklyData?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      if (!weeklyRawText) {
+        const blockReason = weeklyData?.candidates?.[0]?.finishReason || 'unknown';
+        return NextResponse.json({ error: `Gemini 응답 없음 (reason: ${blockReason})` }, { status: 422 });
+      }
+
+      let weeklyStats: Json | null = null;
+      let weeklyMarkdown = weeklyRawText;
+      const weeklyJsonMatch = weeklyRawText.match(/```json\s*\n([\s\S]*?)\n```\s*$/);
+      if (weeklyJsonMatch) {
+        try {
+          weeklyStats = JSON.parse(weeklyJsonMatch[1]) as Json;
+          weeklyMarkdown = weeklyRawText.slice(0, weeklyJsonMatch.index).trimEnd();
+        } catch {
+          weeklyStats = null;
+        }
+      }
+
+      const { data: weeklyReport, error: weeklySaveError } = await supabase
+        .from('monthly_reports')
+        .upsert(
+          {
+            user_id: user.id,
+            year,
+            month,
+            week: week ?? null,
+            period_type: 'weekly',
+            period_start: periodStart,
+            period_end: periodEnd,
+            trade_count: trades.length,
+            win_rate: Math.round(winRate * 100) / 100,
+            total_pnl: Math.round(totalPnl * 100) / 100,
+            report_markdown: weeklyMarkdown,
+            stats: weeklyStats,
+            model_used: 'gemini-2.5-flash-lite',
+          },
+          { onConflict: 'user_id,year,month,week,period_type' },
+        )
+        .select()
+        .single();
+
+      if (weeklySaveError) {
+        return NextResponse.json({ error: weeklySaveError.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, report: weeklyReport });
+    }
+
+    // Gemini 프롬프트 구성 (monthly)
     const prompt = `## 페르소나 및 임무
 너는 월스트리트 출신의 '시니어 리스크 매니저'이자 '트레이딩 심리 분석가'다.
 사용자의 한 달치 매매 데이터를 분석하여, 단순 요약을 넘어 수익 구조의 허점을 찌르고 장기적 생존 전략을 제시하라.
@@ -595,6 +735,8 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
           user_id: user.id,
           year,
           month,
+          week: null,
+          period_type: 'monthly',
           period_start: periodStart,
           period_end: periodEnd,
           trade_count: trades.length,
@@ -604,7 +746,7 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
           stats: statsJson,
           model_used: 'gemini-2.5-flash-lite',
         },
-        { onConflict: 'user_id,year,month' },
+        { onConflict: 'user_id,year,month,week,period_type' },
       )
       .select()
       .single();

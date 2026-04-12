@@ -40,13 +40,14 @@ export async function getLatestReport(
 }
 
 /**
- * 특정 연/월 리포트를 조회한다.
+ * 특정 연/월 리포트를 조회한다 (period_type 필터 지원).
  */
 export async function getReportByMonth(
   supabase: Client,
   userId: string,
   year: number,
   month: number,
+  periodType: 'monthly' | 'weekly' | 'yearly' = 'monthly',
 ): Promise<ApiResult<MonthlyReportRow | null>> {
   try {
     const { data, error } = await supabase
@@ -55,6 +56,31 @@ export async function getReportByMonth(
       .eq('user_id', userId)
       .eq('year', year)
       .eq('month', month)
+      .eq('period_type', periodType)
+      .maybeSingle()
+
+    if (error) return { success: false, error: error.message }
+    return { success: true, data: (data ?? null) as MonthlyReportRow | null }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : '알 수 없는 오류' }
+  }
+}
+
+/**
+ * 가장 최근 주간 리포트를 조회한다.
+ */
+export async function getLatestWeeklyReport(
+  supabase: Client,
+  userId: string,
+): Promise<ApiResult<MonthlyReportRow | null>> {
+  try {
+    const { data, error } = await supabase
+      .from('monthly_reports')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('period_type', 'weekly')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     if (error) return { success: false, error: error.message }

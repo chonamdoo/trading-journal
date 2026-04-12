@@ -48,6 +48,10 @@ const config: Config = {
           DEFAULT: 'var(--amber)',
           bg: 'var(--amber-bg)',
         },
+        anxious: {
+          DEFAULT: 'var(--purple)',
+          bg: 'var(--purple-bg)',
+        },
         // 차트 전용
         chart: {
           green: 'var(--chart-green)',

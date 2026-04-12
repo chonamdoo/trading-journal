@@ -430,10 +430,38 @@ export async function fetchReports(): Promise<ApiResult<MonthlyReportRow[]>> {
   return { success: true, data: result.data.data };
 }
 
+export async function fetchReportsByType(
+  periodType: 'weekly' | 'monthly' | 'yearly',
+): Promise<ApiResult<MonthlyReportRow[]>> {
+  const params = new URLSearchParams({ periodType });
+  const result = await apiFetch<{ success: boolean; data: MonthlyReportRow[] }>(
+    `/api/reports?${params}`,
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 export async function fetchReportById(id: string): Promise<ApiResult<MonthlyReportRow>> {
   const result = await apiFetch<{ success: boolean; data: MonthlyReportRow }>(`/api/reports/${id}`);
   if (!result.success) return result;
   return { success: true, data: result.data.data };
+}
+
+export async function generateWeeklyReport(
+  year: number,
+  month: number,
+  week: number,
+): Promise<ApiResult<MonthlyReportRow>> {
+  const result = await apiFetch<{ success: boolean; report: MonthlyReportRow }>(
+    '/api/report/generate',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year, month, periodType: 'weekly', week }),
+    },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.report };
 }
 
 // ── Market Insight (공개 데이터 — 인증 불필요) ──

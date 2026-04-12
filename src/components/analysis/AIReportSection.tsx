@@ -6,6 +6,21 @@ import { Card } from '@/components/ui/Card'
 import { fetchReports } from '@/lib/api/client-api'
 import type { MonthlyReportRow } from '@/lib/supabase/types'
 
+function PeriodTypeBadge({ periodType }: { periodType: MonthlyReportRow['period_type'] }) {
+  if (periodType === 'weekly') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-semibold uppercase tracking-wide bg-info-soft text-info">
+        주간
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-semibold uppercase tracking-wide bg-surface-muted text-content-muted">
+      월간
+    </span>
+  )
+}
+
 function formatPnlColor(pnl: number | null) {
   if (pnl == null) return 'text-content-muted'
   return pnl >= 0 ? 'text-profit' : 'text-loss'
@@ -32,7 +47,13 @@ export function AIReportSection({ userId: _userId }: { userId?: string }) {
   const loadReports = useCallback(async () => {
     setLoading(true)
     const res = await fetchReports()
-    if (res.success) setReports(res.data)
+    if (res.success) {
+      // 최신순 정렬: created_at DESC
+      const sorted = [...res.data].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
+      setReports(sorted)
+    }
     setLoading(false)
   }, [])
 
@@ -167,12 +188,16 @@ export function AIReportSection({ userId: _userId }: { userId?: string }) {
               className="w-full text-left"
             >
               <Card className="hover:ring-1 hover:ring-accent/50 transition-all cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <PeriodTypeBadge periodType={report.period_type ?? 'monthly'} />
                     <span className="text-[15px] font-semibold text-content">
                       {report.year}년 {report.month}월
+                      {report.period_type === 'weekly' && report.week != null
+                        ? ` ${report.week}주차`
+                        : ''}
                     </span>
-                    <span className="ml-3 text-xs text-content-muted">
+                    <span className="text-xs text-content-muted">
                       {report.trade_count}건
                     </span>
                   </div>
