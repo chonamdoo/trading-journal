@@ -184,8 +184,7 @@ export default function AIReportPage() {
               </h1>
               {latestReport?.created_at && (
                 <p className="text-[12px] text-content-muted mt-4">
-                  생성: {new Date(latestReport.created_at).toLocaleDateString('ko-KR')} ·{' '}
-                  {latestReport.model_used}
+                  생성: {new Date(latestReport.created_at).toLocaleDateString('ko-KR')}
                 </p>
               )}
             </>
