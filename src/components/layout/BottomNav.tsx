@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   PlusCircle,
-  ClipboardList,
   List,
   BarChart3,
   Settings,
@@ -14,13 +13,12 @@ import {
 const BOTTOM_TABS = [
   { id: 'dashboard', label: '홈', href: '/', icon: LayoutDashboard },
   { id: 'entry', label: '입력', href: '/trades/new', icon: PlusCircle },
-  { id: 'plans', label: '플랜', href: '/plans', icon: ClipboardList },
   { id: 'history', label: '내역', href: '/trades', icon: List },
   { id: 'analysis', label: '분석', href: '/analysis', icon: BarChart3 },
   { id: 'settings', label: '설정', href: '/settings', icon: Settings },
 ] as const
 
-const CLIENT_TAB_HREFS = new Set(['/', '/trades/new', '/plans', '/trades', '/analysis', '/settings'])
+const CLIENT_TAB_HREFS = new Set(['/', '/trades/new', '/trades', '/analysis', '/settings'])
 
 export function BottomNav() {
   const pathname = usePathname()

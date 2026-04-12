@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import type { Direction, Emotion, TradeFormData, TradeScreenshot, TradingPlan } from '@/types'
+import type { Direction, Emotion, TradeFormData, TradeScreenshot } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { EmotionTag } from '@/components/ai-report/EmotionTag'
 import { Input } from '@/components/ui/Input'
@@ -19,7 +19,6 @@ import {
   pnlColorClass,
 } from '@/lib/format'
 import { ImageUploader } from './ImageUploader'
-import { PlanSelectDropdown } from './PlanSelectDropdown'
 
 interface TradeFormProps {
   /** 즐겨찾기 종목 */
@@ -44,12 +43,6 @@ interface TradeFormProps {
   onUploadScreenshots?: (tradeId: string, files: File[]) => Promise<void>
   /** 기존 스크린샷 삭제 콜백 */
   onDeleteScreenshot?: (id: string, storagePath: string) => void
-  /** C-2: 활성 플랜 목록 */
-  activePlans?: TradingPlan[]
-  /** C-2: 플랜 로딩 상태 */
-  plansLoading?: boolean
-  /** C-2: 플랜-거래 연결 콜백 */
-  onLinkPlan?: (planId: string, tradeId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 /**
@@ -70,9 +63,6 @@ export function TradeForm({
   existingScreenshots = [],
   onUploadScreenshots,
   onDeleteScreenshot,
-  activePlans = [],
-  plansLoading = false,
-  onLinkPlan,
 }: TradeFormProps) {
   // ── 폼 상태 (Critical Bug #2: direction을 상태로 관리) ──
   const [direction, setDirection] = useState<Direction>(
@@ -102,7 +92,6 @@ export function TradeForm({
   const [reason, setReason] = useState(initialData?.reason ?? '')
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [emotion, setEmotion] = useState<Emotion | null>(
     (initialData?.emotion as Emotion) ?? null
   )
@@ -219,24 +208,6 @@ export function TradeForm({
     return undefined
   })()
 
-  // ── 플랜 선택 핸들러 (C-2) ──
-  const handlePlanSelect = (plan: TradingPlan) => {
-    setSelectedPlanId(plan.id)
-    setAsset(plan.asset)
-    setDirection(plan.direction)
-    if (plan.stop_loss_price != null) setStopLossPrice(plan.stop_loss_price.toString())
-    if (plan.leverage_plan != null) setLeverageStr(plan.leverage_plan.toString())
-    if (plan.margin_plan != null) {
-      setMargin(plan.margin_plan.toString())
-      setInputMode('margin')
-    }
-  }
-
-  const handlePlanClear = () => {
-    setSelectedPlanId(null)
-    setStopLossPrice('')
-  }
-
   // ── 자산 선택 핸들러 ──
   const handleAssetChange = (value: string) => {
     setAsset(value)
@@ -258,7 +229,6 @@ export function TradeForm({
     setReason('')
     setNotes('')
     setPendingFiles([])
-    setSelectedPlanId(null)
     setEmotion(null)
   }, [allAssetsProp])
 
@@ -308,14 +278,6 @@ export function TradeForm({
         if (id && pendingFiles.length > 0 && onUploadScreenshots) {
           await onUploadScreenshots(id, pendingFiles)
         }
-        // 플랜 연결 (C-2)
-        const tradeResultId = isEdit ? tradeId : result.tradeId
-        if (selectedPlanId && tradeResultId && onLinkPlan) {
-          const linkResult = await onLinkPlan(selectedPlanId, tradeResultId)
-          if (!linkResult.success) {
-            showToast('error', '플랜 연결에 실패했습니다. 플랜 페이지에서 수동 연결해주세요.')
-          }
-        }
         showToast('success', isEdit ? '거래가 수정되었습니다.' : '거래가 저장되었습니다.')
         if (!isEdit) resetForm()
       } else {
@@ -333,17 +295,6 @@ export function TradeForm({
       <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-4">
         {isEdit ? '거래 수정' : '새 거래 입력'}
       </h2>
-
-      {/* C-2: 플랜에서 불러오기 (신규 입력 전용) */}
-      {!isEdit && (
-        <PlanSelectDropdown
-          plans={activePlans}
-          loading={plansLoading}
-          onSelect={handlePlanSelect}
-          onClear={handlePlanClear}
-          selectedPlanId={selectedPlanId}
-        />
-      )}
 
       {/* 코인 + 방향 */}
       <div className="grid grid-cols-2 gap-3 mb-4 max-sm:grid-cols-1">

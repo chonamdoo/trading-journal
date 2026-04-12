@@ -20,9 +20,6 @@ import type {
   ProfileUpdate,
   TargetRow,
   CustomAssetRow,
-  TradingPlanRow,
-  TradingPlanInsert,
-  TradingPlanUpdate,
   MonthlyReportRow,
   TradeCloseRow,
   TradeScaleInRow,
@@ -323,103 +320,6 @@ export async function fetchDeleteCustomAsset(id: string): Promise<ApiResult<void
   );
   if (!result.success) return result;
   return { success: true, data: undefined };
-}
-
-// ── Plans ──
-
-export async function fetchPlans(filters?: {
-  status?: string;
-  asset?: string;
-  page?: number;
-  pageSize?: number;
-}): Promise<ApiResult<{ plans: TradingPlanRow[]; total: number }>> {
-  const params = new URLSearchParams();
-  if (filters?.status) params.set('status', filters.status);
-  if (filters?.asset) params.set('asset', filters.asset);
-  if (filters?.page) params.set('page', String(filters.page));
-  if (filters?.pageSize) params.set('pageSize', String(filters.pageSize));
-  const qs = params.toString();
-  const result = await apiFetch<{ success: boolean; data: { plans: TradingPlanRow[]; total: number } }>(
-    `/api/plans${qs ? `?${qs}` : ''}`,
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchActivePlans(): Promise<ApiResult<TradingPlanRow[]>> {
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow[] }>('/api/plans/active');
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchPlanById(id: string): Promise<ApiResult<TradingPlanRow>> {
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow }>(`/api/plans/${id}`);
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchCreatePlan(
-  data: Omit<TradingPlanInsert, 'user_id'>,
-): Promise<ApiResult<TradingPlanRow>> {
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow }>(
-    '/api/plans',
-    { method: 'POST', body: JSON.stringify(data) },
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchUpdatePlan(
-  id: string,
-  data: TradingPlanUpdate,
-): Promise<ApiResult<TradingPlanRow>> {
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow }>(
-    `/api/plans/${id}`,
-    { method: 'PUT', body: JSON.stringify(data) },
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchDeletePlan(id: string): Promise<ApiResult<void>> {
-  const result = await apiFetch<{ success: boolean }>(
-    `/api/plans/${id}`,
-    { method: 'DELETE' },
-  );
-  if (!result.success) return result;
-  return { success: true, data: undefined };
-}
-
-export async function fetchLinkPlanToTrade(
-  planId: string,
-  tradeId: string,
-): Promise<ApiResult<TradingPlanRow>> {
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow }>(
-    `/api/plans/${planId}/link`,
-    { method: 'POST', body: JSON.stringify({ tradeId }) },
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchUnlinkPlan(planId: string): Promise<ApiResult<TradingPlanRow>> {
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow }>(
-    `/api/plans/${planId}/link`,
-    { method: 'DELETE' },
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchPlanByTradeId(
-  tradeId: string,
-): Promise<ApiResult<TradingPlanRow | null>> {
-  const params = new URLSearchParams({ linkedTradeId: tradeId });
-  const result = await apiFetch<{ success: boolean; data: TradingPlanRow | null }>(
-    `/api/plans?${params}`,
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
 }
 
 // ── Reports ──

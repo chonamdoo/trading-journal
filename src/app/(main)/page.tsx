@@ -6,7 +6,6 @@ import { TargetTracker } from '@/components/dashboard/TargetTracker'
 import { EquityCurve } from '@/components/charts/EquityChart'
 import { OpenPositions } from '@/components/dashboard/OpenPositions'
 import { RecentTrades } from '@/components/dashboard/RecentTrades'
-import { ActivePlans } from '@/components/dashboard/ActivePlans'
 import { useTradeStore } from '@/hooks/useTrades'
 import { useDashboardAnalytics } from '@/hooks/useAnalytics'
 
@@ -51,9 +50,6 @@ export default function DashboardPage() {
       <div className="mb-3">
         <EquityCurve data={equityData} />
       </div>
-
-      {/* 활성 플랜 */}
-      <ActivePlans onNavigateToPlans={() => router.push('/plans')} />
 
       {/* 오픈 포지션 */}
       <OpenPositions

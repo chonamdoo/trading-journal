@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import type { Trade, TradeClose, TradeScaleIn, TradeScreenshot, TradingPlan } from '@/types'
+import type { Trade, TradeClose, TradeScaleIn, TradeScreenshot } from '@/types'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import {
@@ -15,7 +15,6 @@ import {
   pnlColorClass,
 } from '@/lib/format'
 import { ShareCardModal } from './ShareCardModal'
-import { fetchPlanByTradeId } from '@/lib/api/client-api'
 
 interface TradeDetailModalProps {
   trade: Trade | null
@@ -53,7 +52,6 @@ export function TradeDetailModal({
 }: TradeDetailModalProps) {
   const [loading, setLoading] = useState(false)
   const [showShareCard, setShowShareCard] = useState(false)
-  const [linkedPlan, setLinkedPlan] = useState<TradingPlan | null>(null)
 
   // 모달 열릴 때 스크린샷 + 분할 청산 기록 로드
   useEffect(() => {
@@ -370,40 +368,7 @@ export function TradeDetailModal({
         <div className="flex gap-2 justify-end">
           <Button
             variant="ghost"
-            onClick={async () => {
-              if (trade) {
-                const res = await fetchPlanByTradeId(trade.id)
-                if (res.success && res.data) {
-                  const r = res.data
-                  setLinkedPlan({
-                    id: r.id,
-                    user_id: r.user_id,
-                    title: r.title,
-                    asset: r.asset,
-                    direction: r.direction as 'LONG' | 'SHORT',
-                    entry_conditions: r.entry_conditions,
-                    entry_price_min: r.entry_price_min ? Number(r.entry_price_min) : null,
-                    entry_price_max: r.entry_price_max ? Number(r.entry_price_max) : null,
-                    stop_loss_price: r.stop_loss_price ? Number(r.stop_loss_price) : null,
-                    target_prices: (r.target_prices ?? []) as unknown as TradingPlan['target_prices'],
-                    risk_reward_ratio: r.risk_reward_ratio ? Number(r.risk_reward_ratio) : null,
-                    leverage_plan: r.leverage_plan ? Number(r.leverage_plan) : null,
-                    margin_plan: r.margin_plan ? Number(r.margin_plan) : null,
-                    market_analysis: r.market_analysis,
-                    confidence_level: r.confidence_level,
-                    status: r.status as TradingPlan['status'],
-                    linked_trade_id: r.linked_trade_id,
-                    review_notes: r.review_notes,
-                    plan_adherence: r.plan_adherence,
-                    created_at: r.created_at,
-                    updated_at: r.updated_at,
-                  })
-                } else {
-                  setLinkedPlan(null)
-                }
-              }
-              setShowShareCard(true)
-            }}
+            onClick={() => setShowShareCard(true)}
           >
             복기 공유
           </Button>
@@ -437,7 +402,7 @@ export function TradeDetailModal({
         {showShareCard && (
           <ShareCardModal
             trade={trade}
-            plan={linkedPlan}
+            plan={null}
             screenshot={screenshots[0] ?? null}
             open={showShareCard}
             onClose={() => setShowShareCard(false)}

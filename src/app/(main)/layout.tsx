@@ -7,13 +7,12 @@ import { AppShell } from '@/components/layout/AppShell'
 // 메인 탭 페이지를 직접 임포트 (클라이언트 사이드 전환)
 import DashboardPage from './page'
 import NewTradePage from './trades/new/page'
-import PlansPage from './plans/page'
 import TradesPage from './trades/page'
 import AnalysisPage from './analysis/page'
 import SettingsPage from './settings/page'
 
 /** 클라이언트 사이드로 전환할 메인 탭 경로 */
-const MAIN_TAB_ROUTES = ['/', '/trades/new', '/plans', '/trades', '/analysis', '/settings'] as const
+const MAIN_TAB_ROUTES = ['/', '/trades/new', '/trades', '/analysis', '/settings'] as const
 
 /**
  * (main) 라우트 그룹 레이아웃
@@ -40,7 +39,6 @@ export default function MainLayout({
         <>
           {pathname === '/' && <DashboardPage />}
           {pathname === '/trades/new' && <NewTradePage />}
-          {pathname === '/plans' && <PlansPage />}
           {pathname === '/trades' && <TradesPage />}
           {pathname === '/analysis' && <AnalysisPage />}
           {pathname === '/settings' && <SettingsPage />}

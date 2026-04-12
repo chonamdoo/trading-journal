@@ -68,7 +68,6 @@ export const LEVERAGE_DEFAULT = 10
 export const NAV_TABS = [
   { id: 'dashboard', label: '대시보드', href: '/' },
   { id: 'entry', label: '거래 입력', href: '/trades/new' },
-  { id: 'plans', label: '플랜', href: '/plans' },
   { id: 'history', label: '거래 내역', href: '/trades' },
   { id: 'analysis', label: '분석', href: '/analysis' },
   { id: 'settings', label: '설정', href: '/settings' },
