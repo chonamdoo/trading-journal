@@ -268,11 +268,11 @@ export default function AnalysisPage() {
                     return (
                       <div
                         key={em.id}
-                        className={`text-center py-3 px-2 rounded-card ${em.bgColor} flex flex-col items-center gap-1`}
+                        className="text-center py-3 px-2 rounded-card bg-surface-hover border border-border flex flex-col items-center gap-1"
                       >
-                        <span className="text-2xl" role="img" aria-label={em.label}>{em.emoji}</span>
+                        <span className="text-3xl" role="img" aria-label={em.label}>{em.emoji}</span>
                         <span className={`text-[11px] font-medium ${em.color}`}>{em.label}</span>
-                        <span className={`font-mono text-sm font-semibold ${em.color}`}>{ratio}%</span>
+                        <span className="font-mono text-sm font-semibold text-content">{ratio}%</span>
                         <span className="text-[10px] text-content-muted font-mono">{d?.total ?? 0}건</span>
                       </div>
                     )
