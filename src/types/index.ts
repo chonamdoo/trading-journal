@@ -144,6 +144,7 @@ export interface TradeFilter {
   direction?: Direction | ''
   /** FE UI 표시용 필터값 (win/lose/open) */
   result?: 'win' | 'lose' | 'open' | ''
+  hasNotes?: boolean
 }
 
 /**

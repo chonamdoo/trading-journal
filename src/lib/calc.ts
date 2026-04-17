@@ -326,6 +326,11 @@ export function winLossCount(trades: Trade[]): { wins: number; losses: number } 
   return { wins, losses }
 }
 
+/** 총 거래 수 (종료 + 진행중) */
+export function totalTradeCount(trades: Trade[]): number {
+  return trades.length
+}
+
 // ══════════════════════════════════════════════
 // Phase 3A - 고급 분석 계산 함수
 // ══════════════════════════════════════════════

@@ -68,6 +68,7 @@ export function TradeTable({
       if (filter.result === 'win' && !(t.pnl && t.pnl > 0)) return false
       if (filter.result === 'lose' && !(t.pnl != null && t.pnl <= 0)) return false
       if (filter.result === 'open' && t.status !== 'open') return false
+      if (filter.hasNotes && !t.notes?.trim()) return false
       return true
     })
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -201,6 +202,18 @@ export function TradeTable({
           <option value="lose">손절</option>
           <option value="open">진행중</option>
         </select>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, hasNotes: f.hasNotes ? undefined : true }))}
+          aria-pressed={!!filter.hasNotes}
+          className={`px-[11px] py-[8px] rounded-input text-[13px] border transition-colors ${
+            filter.hasNotes
+              ? 'bg-info-soft border-info text-info'
+              : 'bg-surface border-border-input text-content-secondary'
+          }`}
+        >
+          메모 있음
+        </button>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[12px] text-content-muted font-mono">
             {filteredTrades.length}건
@@ -339,7 +352,7 @@ export function TradeTable({
                       {isExpanded && (
                         <tr key={`${t.id}-detail`}>
                           <td colSpan={11} className="border-b border-border p-0">
-                            <div className="bg-bg-secondary p-sp-8">
+                            <div className="bg-surface-hover/40 px-sp-8 py-sp-6 inset-shadow-sm shadow-inner overflow-hidden">
                               {isLoading && (
                                 <div className="text-center py-4 text-content-muted text-[13px]">
                                   데이터 로딩 중...
