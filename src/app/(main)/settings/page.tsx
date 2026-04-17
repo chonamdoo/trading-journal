@@ -258,7 +258,7 @@ export default function SettingsPage() {
               return (
                 <div
                   key={tgt.id}
-                  className="flex justify-between items-center px-3 py-2 bg-surface-hover rounded-input"
+                  className="flex justify-between items-center py-2 border-b border-border last:border-0 group"
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -275,6 +275,7 @@ export default function SettingsPage() {
                   <Button
                     variant="danger"
                     size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => deleteTarget(tgt.id)}
                   >
                     삭제
@@ -329,7 +330,7 @@ export default function SettingsPage() {
               .map((dep) => (
                 <div
                   key={dep.id}
-                  className="flex justify-between items-center px-3 py-2 bg-surface-hover rounded-input"
+                  className="flex justify-between items-center py-2 border-b border-border last:border-0 group"
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-[12px] text-content-muted">
@@ -347,6 +348,7 @@ export default function SettingsPage() {
                   <Button
                     variant="danger"
                     size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => deleteDeposit(dep.id)}
                   >
                     삭제

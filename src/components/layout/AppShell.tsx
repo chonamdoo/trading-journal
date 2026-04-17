@@ -52,15 +52,18 @@ export function AppShell({ children }: AppShellProps) {
             </div>
             <div className="flex items-center gap-4 ml-auto">
               <div className="text-right">
-                <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.4px] mb-0.5 hidden lg:block">
+                <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.5px] mb-1 hidden lg:block">
                   현재 자산
                 </div>
-                <div className="font-headline text-[22px] lg:text-[28px] font-bold tracking-[-1px] leading-none text-profit">
-                  ${formatNumber(currentCapital)}
+                <div className="flex items-baseline justify-end gap-1 font-headline">
+                  <span className="text-[16px] text-profit/80 font-medium mb-[1px]">$</span>
+                  <span className="text-[24px] lg:text-[32px] font-bold tracking-[-1.5px] leading-none text-profit">
+                    {formatNumber(currentCapital)}
+                  </span>
                 </div>
-                <div className={`font-mono text-[12px] lg:text-[13px] mt-0.5 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
+                <div className={`font-mono text-[12px] lg:text-[13px] mt-1 ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                   {formatPnl(totalPnl)}{' '}
-                  <span className="opacity-55">{formatPercent(returnPct)}</span>
+                  <span className="opacity-60">{formatPercent(returnPct)}</span>
                 </div>
               </div>
               <ThemeToggle />

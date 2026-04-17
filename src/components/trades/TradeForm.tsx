@@ -459,16 +459,16 @@ export function TradeForm({
       </div>
 
       {/* 진입 섹션 */}
-      <div className="border border-border rounded-input overflow-hidden mb-sp-6">
-        <div className="px-sp-6 py-sp-4 bg-surface-hover border-b border-border flex justify-between items-center">
-          <span className="text-[11px] font-semibold text-content-secondary uppercase tracking-[0.5px]">
+      <div className="border-t border-border pt-sp-6 mb-sp-6">
+        <div className="flex justify-between items-baseline mb-4">
+          <h3 className="text-[14px] font-bold text-content uppercase tracking-[0.5px]">
             진입 (ENTRY)
-          </span>
+          </h3>
           <span className="text-[11px] text-content-muted font-normal">
             현재 시각 자동 입력
           </span>
         </div>
-        <div className="p-sp-6">
+        <div>
           <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
             <Input
               label="진입 일시"
@@ -499,16 +499,16 @@ export function TradeForm({
       </div>
 
       {/* 청산 섹션 */}
-      <div className="border border-border rounded-input overflow-hidden mb-sp-6">
-        <div className="px-sp-6 py-sp-4 bg-surface-hover border-b border-border flex justify-between items-center">
-          <span className="text-[11px] font-semibold text-content-secondary uppercase tracking-[0.5px]">
+      <div className="border-t border-border pt-sp-6 mb-sp-6">
+        <div className="flex justify-between items-baseline mb-4">
+          <h3 className="text-[14px] font-bold text-content uppercase tracking-[0.5px]">
             청산 (EXIT)
-          </span>
+          </h3>
           <span className="text-[11px] text-content-muted font-normal">
             미입력 시 오픈 포지션으로 저장
           </span>
         </div>
-        <div className="p-sp-6">
+        <div>
           <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
             <Input
               label="청산 일시"
@@ -529,7 +529,7 @@ export function TradeForm({
 
       {/* P&L 미리보기 패널 */}
       {hasEntry && hasExit && hasMargin && pnlPreview !== null && (
-        <div className="bg-surface-hover rounded-input p-[18px_20px] mb-4 border border-border">
+        <div className="bg-surface-hover rounded-input p-sp-6 mb-4">
           <div className="text-[11px] font-semibold text-content-muted uppercase tracking-[0.5px] mb-sp-4">
             손익 결과
           </div>

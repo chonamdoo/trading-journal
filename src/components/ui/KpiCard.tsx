@@ -10,8 +10,8 @@ interface KpiCardProps {
 
 const tierStyles: Record<KpiTier, string> = {
   primary: 'bg-surface shadow p-6 col-span-2',
-  secondary: 'bg-surface shadow-sm px-[18px] py-4',
-  tertiary: 'bg-surface-hover border border-border px-sp-6 py-sp-5',
+  secondary: 'bg-surface shadow-sm px-sp-8 py-sp-7',
+  tertiary: 'bg-surface-hover px-sp-6 py-sp-5 rounded-input',
 }
 
 const valueStyles: Record<KpiTier, string> = {

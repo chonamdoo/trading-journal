@@ -13,6 +13,8 @@ import {
   avgPnl,
   worstTrade,
   totalReturnPct,
+  totalTradeCount,
+  winLossCount,
 } from '@/lib/calc'
 import { formatNumber, formatPnl, formatPercent, pnlColorClass } from '@/lib/format'
 
@@ -33,6 +35,8 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
   const wr = winRate(trades)
   const closed = closedCount(trades)
   const opens = openCount(trades)
+  const total = totalTradeCount(trades)
+  const { wins, losses } = winLossCount(trades)
   const avg = avgPnl(trades)
   const worst = worstTrade(trades)
   const tdep = totalDeposits(deposits)
@@ -64,7 +68,7 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
           tier="secondary"
           label="승률"
           value={`${wr.toFixed(1)}%`}
-          sub={`${closed}회 종료`}
+          sub={`${wins}승 ${losses}패`}
         />
         <KpiCard
           tier="secondary"
@@ -74,8 +78,14 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
         />
       </div>
 
-      {/* Tertiary: 추가 입금, 초기 자산, 거래당 평균, 최대 손실 */}
-      <div className="grid grid-cols-4 gap-sp-4 max-md:grid-cols-2">
+      {/* Tertiary: 총 거래 횟수, 추가 입금, 초기 자산, 거래당 평균, 최대 손실 */}
+      <div className="grid grid-cols-5 gap-sp-4 max-md:grid-cols-3 max-sm:grid-cols-2">
+        <KpiCard
+          tier="tertiary"
+          label="총 거래 횟수"
+          value={`${total}회`}
+          sub={`종료 ${closed} / 진행 ${opens}`}
+        />
         <KpiCard
           tier="tertiary"
           label="추가 입금"

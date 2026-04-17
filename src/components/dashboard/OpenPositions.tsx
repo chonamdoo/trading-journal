@@ -243,10 +243,10 @@ export function OpenPositions({
   return (
     <>
       <Card className="mb-3">
-        <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-4">
-          진행중 포지션
-        </h2>
-        <div className="flex flex-col gap-2">
+          <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-2 px-1">
+            진행중 포지션
+          </h2>
+          <div className="flex flex-col">
           {openTrades.map((trade) => {
             const closes = tradeCloses[trade.id] || []
             const scaleIns = tradeScaleIns[trade.id] || []
@@ -260,9 +260,9 @@ export function OpenPositions({
             const hasScaleIns = scaleIns.length > 0
 
             return (
-              <div key={trade.id} className="bg-surface-hover rounded-input border border-border overflow-hidden">
+              <div key={trade.id} className="border-b border-border last:border-b-0 overflow-hidden transition-colors hover:bg-surface-none">
                 {/* 메인 행 */}
-                <div className="flex flex-wrap justify-between items-center gap-2 px-sp-6 py-3">
+                <div className="flex flex-wrap justify-between items-center gap-2 px-1 py-4 group hover:bg-surface-hover transition-colors rounded-input">
                   <div className="flex items-center gap-sp-4 min-w-0">
                     <DirectionBadge direction={trade.direction} />
                     <div className="min-w-0">
@@ -335,7 +335,7 @@ export function OpenPositions({
                 {/* 분할 청산 / 추가진입 요약 바 */}
                 {hasHistory && (
                   <div
-                    className="px-sp-6 py-2 border-t border-border bg-surface cursor-pointer flex items-center justify-between"
+                    className="px-1 py-2 mt-1 cursor-pointer flex items-center justify-between hover:bg-surface-hover transition-colors rounded-input"
                     onClick={() => setExpandedId(isExpanded ? null : trade.id)}
                   >
                     <div className="flex items-center gap-sp-4 text-[11px] flex-wrap">
@@ -367,7 +367,7 @@ export function OpenPositions({
 
                 {/* 상세 기록 (추가진입 + 분할 청산) */}
                 {isExpanded && hasHistory && (
-                  <div className="px-sp-6 py-2 border-t border-border bg-surface">
+                  <div className="px-1 py-3 border-t border-border bg-transparent mt-1">
                     <div className="space-y-1.5">
                       {/* 추가진입 기록 */}
                       {scaleIns.length > 0 && (
