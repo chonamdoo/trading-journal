@@ -16,7 +16,7 @@ export default function NewTradePage() {
   const uploadScreenshots = useTradeStore((s) => s.uploadScreenshots)
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
-  const { allAssets, favorites, recentAssets } = useAssets(profile?.id)
+  const { allAssets, favorites, recentAssets, toggleFavorite } = useAssets(profile?.id)
 
   return (
     <div className="lg:flex lg:gap-8 lg:items-start">
@@ -24,6 +24,7 @@ export default function NewTradePage() {
         <TradeForm
           currentCapital={capital}
           favorites={favorites}
+          onToggleFavorite={(sym) => { void toggleFavorite(sym) }}
           recentAssets={recentAssets}
           allAssets={allAssets}
           onSave={addTrade}

@@ -1,19 +1,22 @@
 'use client'
 
-import { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import { DEFAULT_ASSETS } from '@/lib/constants'
-import { fetchAddCustomAsset, fetchDeleteCustomAsset } from '@/lib/api/client-api'
 import { useTradeStore } from './useTrades'
 
 /**
  * 종목 데이터를 관리하는 훅
  *
- * TradeStore에서 초기 로드된 customAssets를 읽고,
- * recentAssets는 trades 데이터에서 파생한다 (추가 API 호출 없음).
+ * - `favorites`: `favorites` 테이블 기반 (기본/커스텀 무관, 토글 방식)
+ * - `customAssets`: `custom_assets` 테이블 (거래 가능한 심볼 확장)
+ * - `allAssets`: DEFAULT_ASSETS + customAssets (거래 입력 드롭다운용)
+ * - `recentAssets`: trades에서 파생한 최근 거래 5종
  */
 export function useAssets(_userId?: string) {
   const trades = useTradeStore((s) => s.trades)
   const customAssets = useTradeStore((s) => s.customAssets)
+  const favorites = useTradeStore((s) => s.favorites)
+  const toggleFavorite = useTradeStore((s) => s.toggleFavorite)
   const isLoaded = useTradeStore((s) => s.isLoaded)
 
   // DEFAULT_ASSETS + 커스텀 종목 합산
@@ -23,8 +26,6 @@ export function useAssets(_userId?: string) {
       .filter((s) => !(DEFAULT_ASSETS as readonly string[]).includes(s))
     return [...DEFAULT_ASSETS, ...extras]
   }, [customAssets])
-
-  const favorites = useMemo(() => customAssets.map((r) => r.symbol), [customAssets])
 
   // trades에서 최근 거래 종목 파생 (API 호출 없음)
   const recentAssets = useMemo(() => {
@@ -45,34 +46,11 @@ export function useAssets(_userId?: string) {
     return recent
   }, [trades])
 
-  const addFavorite = useCallback(async (symbol: string) => {
-    const res = await fetchAddCustomAsset(symbol)
-    if (res.success) {
-      useTradeStore.setState((s) => ({
-        customAssets: [...s.customAssets, { id: res.data.id, symbol: res.data.symbol }],
-      }))
-    }
-    return res
-  }, [])
-
-  const removeFavorite = useCallback(async (symbol: string) => {
-    const row = customAssets.find((r) => r.symbol === symbol)
-    if (!row) return
-    const res = await fetchDeleteCustomAsset(row.id)
-    if (res.success) {
-      useTradeStore.setState((s) => ({
-        customAssets: s.customAssets.filter((r) => r.symbol !== symbol),
-      }))
-    }
-    return res
-  }, [customAssets])
-
   return {
     allAssets,
     favorites,
     recentAssets,
     loaded: isLoaded,
-    addFavorite,
-    removeFavorite,
+    toggleFavorite,
   }
 }

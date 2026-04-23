@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { AssetCombobox } from '@/components/ui/AssetCombobox'
 import { showToast } from '@/components/ui/Toast'
 import { useTrades } from '@/hooks/useTrades'
 import { useAssets } from '@/hooks/useAssets'
@@ -32,8 +33,7 @@ export default function SettingsPage() {
     setInitialCapital,
   } = useTrades()
   const { theme, toggleTheme } = useTheme()
-  const { favorites, allAssets, addFavorite, removeFavorite } = useAssets(profile?.id)
-  const [favInput, setFavInput] = useState('')
+  const { favorites, allAssets, toggleFavorite } = useAssets(profile?.id)
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
   const tdep = totalDeposits(deposits)
@@ -99,6 +99,15 @@ export default function SettingsPage() {
     setDepositAmount('')
     setDepositMemo('')
     showToast('success', '입금이 추가되었습니다.')
+  }
+
+  // 칩의 × 버튼 → 해제. AssetCombobox(picker 모드)는 자체적으로 toggleFavorite 호출
+  const handleRemoveFavorite = async (symbol: string) => {
+    if (!favorites.includes(symbol)) return
+    const res = await toggleFavorite(symbol)
+    if (res.success && !res.favorited) {
+      showToast('success', `${symbol} 즐겨찾기 해제`)
+    }
   }
 
   const handleAddTarget = async () => {
@@ -195,7 +204,7 @@ export default function SettingsPage() {
                 {symbol}
                 <button
                   type="button"
-                  onClick={() => removeFavorite(symbol)}
+                  onClick={() => handleRemoveFavorite(symbol)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-content-muted hover:text-red-400 ml-0.5"
                   title="즐겨찾기 제거"
                 >
@@ -211,35 +220,15 @@ export default function SettingsPage() {
             즐겨찾기가 없습니다. 자주 거래하는 종목을 추가하세요.
           </p>
         )}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="종목 심볼 (예: DOGE)"
-            maxLength={20}
-            className="flex-1 px-3 py-1.5 bg-surface border border-border-input rounded-input text-[12px] font-mono uppercase outline-none focus:border-accent-primary"
-            value={favInput}
-            onChange={(e) => setFavInput(e.target.value.toUpperCase())}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && favInput.trim()) {
-                addFavorite(favInput.trim())
-                setFavInput('')
-              }
-            }}
-          />
-          <Button
-            size="sm"
-            onClick={() => {
-              if (favInput.trim()) {
-                addFavorite(favInput.trim())
-                setFavInput('')
-              }
-            }}
-          >
-            추가
-          </Button>
-        </div>
+        <AssetCombobox
+          pickerMode
+          favorites={favorites}
+          allAssets={allAssets}
+          onToggleFavorite={(sym) => { void toggleFavorite(sym) }}
+          placeholder="종목 검색 또는 직접 입력 (예: DOGE)"
+        />
         <p className="text-[11px] text-content-muted mt-2">
-          거래 입력 시 즐겨찾기 종목이 상단에 표시됩니다. 전체 {allAssets.length}개 종목 검색 가능.
+          검색해서 ★ 아이콘 또는 항목을 클릭하면 즐겨찾기에 추가/해제됩니다. 목록에 없는 심볼은 입력 후 Enter로 직접 추가 가능 (전체 {allAssets.length}개).
         </p>
       </Card>
 

@@ -322,6 +322,29 @@ export async function fetchDeleteCustomAsset(id: string): Promise<ApiResult<void
   return { success: true, data: undefined };
 }
 
+// ── Favorites ──
+
+export async function fetchFavorites(): Promise<ApiResult<string[]>> {
+  const result = await apiFetch<{ success: boolean; data: string[] }>('/api/favorites');
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSetFavorite(
+  symbol: string,
+  favorited: boolean,
+): Promise<ApiResult<{ favorited: boolean }>> {
+  const result = await apiFetch<{
+    success: boolean;
+    data: { favorited: boolean };
+  }>('/api/favorites/set', {
+    method: 'POST',
+    body: JSON.stringify({ symbol, favorited }),
+  });
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 // ── Reports ──
 
 export async function fetchReports(): Promise<ApiResult<MonthlyReportRow[]>> {
