@@ -5,13 +5,32 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 interface AssetComboboxProps {
   value: string
   onChange: (value: string) => void
-  /** 즐겨찾기 (custom_assets) */
+  /** 즐겨찾기된 심볼 목록 */
   favorites: string[]
   /** 최근 거래 종목 */
   recent: string[]
-  /** 전체 종목 (supported_assets) */
+  /** 전체 종목 (DEFAULT_ASSETS + custom_assets) */
   allAssets: string[]
+  /** 즐겨찾기 토글 — 선택 이벤트와 분리 */
+  onToggleFavorite?: (symbol: string) => void
   placeholder?: string
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+    </svg>
+  )
 }
 
 /**
@@ -24,12 +43,20 @@ export function AssetCombobox({
   favorites,
   recent,
   allAssets,
+  onToggleFavorite,
   placeholder = '종목 검색...',
 }: AssetComboboxProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const favoriteSet = useMemo(() => new Set(favorites), [favorites])
+
+  const handleToggleFavorite = (symbol: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onToggleFavorite?.(symbol)
+  }
 
   // 외부 클릭 시 닫기
   useEffect(() => {
@@ -123,18 +150,34 @@ export function AssetCombobox({
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {favorites.map((a) => (
-                  <button
+                  <div
                     key={a}
-                    type="button"
-                    onClick={() => handleSelect(a)}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold border transition-colors ${
+                    className={`group flex items-center rounded-full text-[11px] font-mono font-semibold border transition-colors ${
                       value === a
                         ? 'bg-accent-primary/15 border-accent-primary/30 text-accent-primary'
                         : 'bg-surface-hover border-border text-content-secondary hover:border-accent-primary/30'
                     }`}
                   >
-                    {a}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(a)}
+                      className="pl-2.5 pr-1.5 py-1"
+                    >
+                      {a}
+                    </button>
+                    {onToggleFavorite && (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => handleToggleFavorite(a, e)}
+                        className="pr-2 py-1 text-amber-400 hover:text-amber-500"
+                        aria-label={`${a} 즐겨찾기 해제`}
+                        title="즐겨찾기 해제"
+                      >
+                        <StarIcon filled={true} />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -146,16 +189,39 @@ export function AssetCombobox({
               <div className="text-[10px] font-semibold text-content-muted uppercase tracking-wider mb-1.5">
                 최근 거래
               </div>
-              {recentFiltered.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => handleSelect(a)}
-                  className="w-full text-left px-2 py-1.5 rounded text-[12px] font-mono hover:bg-surface-hover transition-colors text-content-secondary"
-                >
-                  {a}
-                </button>
-              ))}
+              {recentFiltered.map((a) => {
+                const isFav = favoriteSet.has(a)
+                return (
+                  <div
+                    key={a}
+                    className="group flex items-center gap-1 rounded hover:bg-surface-hover transition-colors"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(a)}
+                      className="flex-1 text-left px-2 py-1.5 text-[12px] font-mono text-content-secondary"
+                    >
+                      {a}
+                    </button>
+                    {onToggleFavorite && (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => handleToggleFavorite(a, e)}
+                        className={`px-2 py-1.5 transition-colors ${
+                          isFav
+                            ? 'text-amber-400'
+                            : 'text-content-muted opacity-0 group-hover:opacity-100 hover:text-amber-400'
+                        }`}
+                        aria-label={isFav ? `${a} 즐겨찾기 해제` : `${a} 즐겨찾기`}
+                        title={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
+                      >
+                        <StarIcon filled={isFav} />
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
 
@@ -177,20 +243,46 @@ export function AssetCombobox({
               </div>
             )}
             <div className="max-h-[40vh] overflow-y-auto">
-              {filtered.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => handleSelect(a)}
-                  className={`w-full text-left px-2 py-1.5 rounded text-[12px] font-mono transition-colors ${
-                    value === a
-                      ? 'bg-accent-primary/10 text-accent-primary font-semibold'
-                      : 'hover:bg-surface-hover text-content-secondary'
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
+              {filtered.map((a) => {
+                const isFav = favoriteSet.has(a)
+                const selected = value === a
+                return (
+                  <div
+                    key={a}
+                    className={`group flex items-center gap-1 rounded transition-colors ${
+                      selected
+                        ? 'bg-accent-primary/10 text-accent-primary'
+                        : 'hover:bg-surface-hover text-content-secondary'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(a)}
+                      className={`flex-1 text-left px-2 py-1.5 text-[12px] font-mono ${
+                        selected ? 'font-semibold' : ''
+                      }`}
+                    >
+                      {a}
+                    </button>
+                    {onToggleFavorite && (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => handleToggleFavorite(a, e)}
+                        className={`px-2 py-1.5 transition-colors ${
+                          isFav
+                            ? 'text-amber-400'
+                            : 'text-content-muted opacity-0 group-hover:opacity-100 hover:text-amber-400'
+                        }`}
+                        aria-label={isFav ? `${a} 즐겨찾기 해제` : `${a} 즐겨찾기`}
+                        title={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
+                      >
+                        <StarIcon filled={isFav} />
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
               {filtered.length === 0 && search && (
                 <button
                   type="button"

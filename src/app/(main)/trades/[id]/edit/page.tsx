@@ -21,7 +21,7 @@ export default function EditTradePage() {
   const screenshots = useTradeStore((s) => s.screenshots)
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
-  const { allAssets, favorites, recentAssets } = useAssets(profile?.id)
+  const { allAssets, favorites, recentAssets, toggleFavorite } = useAssets(profile?.id)
 
   const tradeId = params.id as string
   const trade = trades.find((t) => t.id === tradeId)
@@ -53,6 +53,7 @@ export default function EditTradePage() {
     <TradeForm
       currentCapital={capital}
       favorites={favorites}
+      onToggleFavorite={(sym) => { void toggleFavorite(sym) }}
       recentAssets={recentAssets}
       allAssets={allAssets}
       onSave={handleSave}

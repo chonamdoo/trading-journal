@@ -149,6 +149,20 @@ export type Database = {
           }
         ];
       };
+      favorites: {
+        Row: FavoriteRow;
+        Insert: FavoriteInsert;
+        Update: FavoriteUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'favorites_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       monthly_reports: {
         Row: MonthlyReportRow;
         Insert: MonthlyReportInsert;
@@ -542,6 +556,27 @@ export type CustomAssetInsert = {
 }
 
 export type CustomAssetUpdate = {
+  symbol?: string;
+}
+
+// ────────────────────────────────────────────
+// favorites 테이블 (코인 즐겨찾기 토글)
+// ────────────────────────────────────────────
+
+export type FavoriteRow = {
+  id: string;
+  user_id: string;
+  symbol: string;
+  created_at: string;
+}
+
+export type FavoriteInsert = {
+  id?: string;
+  user_id: string;
+  symbol: string;
+}
+
+export type FavoriteUpdate = {
   symbol?: string;
 }
 

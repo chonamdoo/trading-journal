@@ -23,6 +23,8 @@ import { ImageUploader } from './ImageUploader'
 interface TradeFormProps {
   /** 즐겨찾기 종목 */
   favorites?: string[]
+  /** 즐겨찾기 토글 — AssetCombobox의 ★ 클릭 시 호출 */
+  onToggleFavorite?: (symbol: string) => void
   /** 최근 거래 종목 */
   recentAssets?: string[]
   /** 전체 종목 (supported_assets + 기본) */
@@ -53,6 +55,7 @@ interface TradeFormProps {
  */
 export function TradeForm({
   favorites = [],
+  onToggleFavorite,
   recentAssets = [],
   allAssets: allAssetsProp = [],
   currentCapital = 0,
@@ -309,6 +312,7 @@ export function TradeForm({
             favorites={favorites}
             recent={recentAssets}
             allAssets={allAssetsProp}
+            onToggleFavorite={onToggleFavorite}
           />
         </div>
 

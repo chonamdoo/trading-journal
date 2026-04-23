@@ -32,6 +32,8 @@ import {
   fetchProfile,
   fetchUpdateProfile,
   fetchCustomAssets,
+  fetchFavorites,
+  fetchSetFavorite,
   fetchTradeById,
 } from '@/lib/api/client-api'
 
@@ -135,8 +137,12 @@ interface TradeStore {
   isLoaded: boolean
   /** 캐시된 userId (loadData 시 세팅, CRUD마다 auth.getUser() 재호출 방지) */
   userId: string | null
-  /** 사용자 커스텀 에셋 (즐겨찾기) */
+  /** 사용자 커스텀 에셋 (거래 가능한 심볼 확장) */
   customAssets: { id: string; symbol: string }[]
+  /** 즐겨찾기 심볼 목록 (기본/커스텀 무관) */
+  favorites: string[]
+  /** 즐겨찾기 토글 — 있으면 해제, 없으면 등록 */
+  toggleFavorite: (symbol: string) => Promise<{ success: boolean; favorited?: boolean; error?: string }>
   // 데이터 로드
   loadData: () => Promise<void>
   /** 강제 새로고침 (isLoaded를 무시하고 다시 로드) */
@@ -199,6 +205,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   isLoaded: false,
   userId: null,
   customAssets: [],
+  favorites: [],
   tradeCloses: {},
   tradeScaleIns: {},
   screenshots: {},
@@ -209,13 +216,14 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     if (get().isLoaded) return
     set({ loading: true, error: null })
     try {
-      // 병렬로 데이터 로드 (커스텀 에셋도 함께)
-      const [tradesRes, depositsRes, targetsRes, profileRes, customAssetsRes] = await Promise.all([
+      // 병렬로 데이터 로드 (커스텀 에셋 + 즐겨찾기 포함)
+      const [tradesRes, depositsRes, targetsRes, profileRes, customAssetsRes, favoritesRes] = await Promise.all([
         fetchTrades({ pageSize: 1000 }),
         fetchDeposits(),
         fetchTargets(),
         fetchProfile(),
         fetchCustomAssets(),
+        fetchFavorites(),
       ])
 
       // 401 등 인증 실패 시 trades 응답으로 판단
@@ -239,14 +247,16 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const customAssets = customAssetsRes.success
         ? customAssetsRes.data.map((r) => ({ id: r.id, symbol: r.symbol }))
         : []
+      const favorites = favoritesRes.success ? favoritesRes.data : []
 
-      set({ trades, deposits, targets, profile, customAssets, loading: false, isLoaded: true })
+      set({ trades, deposits, targets, profile, customAssets, favorites, loading: false, isLoaded: true })
 
       // 에러가 있으면 토스트로 알림
       if (!tradesRes.success) showToast('error', `거래 로드 실패: ${tradesRes.error}`)
       if (!depositsRes.success) showToast('error', `입금 로드 실패: ${depositsRes.error}`)
       if (!targetsRes.success) showToast('error', `목표 로드 실패: ${targetsRes.error}`)
       if (!profileRes.success) showToast('error', `프로필 로드 실패: ${profileRes.error}`)
+      if (!favoritesRes.success) showToast('error', `즐겨찾기 로드 실패: ${favoritesRes.error}`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : '데이터 로드 중 오류 발생'
       set({ loading: false, error: msg })
@@ -532,6 +542,45 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     } catch (err) {
       const msg = err instanceof Error ? err.message : '초기 자산 설정 중 오류 발생'
       showToast('error', msg)
+    }
+  },
+
+  // ── 즐겨찾기 토글 (옵티미스틱 + 심볼 단위 롤백) ──
+  // 현재 상태를 읽어 목표 상태를 계산하고 멱등 API(setFavorite)를 호출한다.
+  // 실패 시 해당 심볼만 원상 복구하여, 다른 심볼의 동시 변경을 훼손하지 않는다.
+  toggleFavorite: async (rawSymbol: string) => {
+    const symbol = rawSymbol.trim().toUpperCase()
+    if (!symbol) return { success: false, error: '심볼을 입력해주세요.' }
+
+    const wasFavorited = get().favorites.includes(symbol)
+    const desired = !wasFavorited
+
+    // 옵티미스틱: 해당 심볼만 반영 (다른 심볼 상태는 유지)
+    const applyDesired = (value: boolean) =>
+      set((state) => {
+        const has = state.favorites.includes(symbol)
+        if (value && !has) return { favorites: [...state.favorites, symbol] }
+        if (!value && has) return { favorites: state.favorites.filter((s) => s !== symbol) }
+        return {}
+      })
+
+    applyDesired(desired)
+
+    try {
+      const res = await fetchSetFavorite(symbol, desired)
+      if (!res.success) {
+        applyDesired(wasFavorited)
+        showToast('error', res.error)
+        return { success: false, error: res.error }
+      }
+      // 서버가 확정한 최종 상태로 맞춤 (stale 응답 대비 — 심볼 단위만)
+      applyDesired(res.data.favorited)
+      return { success: true, favorited: res.data.favorited }
+    } catch (err) {
+      applyDesired(wasFavorited)
+      const msg = err instanceof Error ? err.message : '즐겨찾기 처리 중 오류 발생'
+      showToast('error', msg)
+      return { success: false, error: msg }
     }
   },
 

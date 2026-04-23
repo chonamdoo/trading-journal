@@ -32,7 +32,7 @@ export default function SettingsPage() {
     setInitialCapital,
   } = useTrades()
   const { theme, toggleTheme } = useTheme()
-  const { favorites, allAssets, addFavorite, removeFavorite } = useAssets(profile?.id)
+  const { favorites, allAssets, toggleFavorite } = useAssets(profile?.id)
   const [favInput, setFavInput] = useState('')
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
@@ -99,6 +99,32 @@ export default function SettingsPage() {
     setDepositAmount('')
     setDepositMemo('')
     showToast('success', '입금이 추가되었습니다.')
+  }
+
+  // "추가" 버튼은 의미상 add-only. 이미 있는 심볼은 no-op + info 토스트로 안내
+  // (해제는 칩의 × 버튼이 담당 — handleRemoveFavorite).
+  const handleSubmitFavorite = async () => {
+    const symbol = favInput.trim().toUpperCase()
+    if (!symbol) return
+    if (favorites.includes(symbol)) {
+      showToast('info', `${symbol}은(는) 이미 즐겨찾기에 있습니다.`)
+      setFavInput('')
+      return
+    }
+    const res = await toggleFavorite(symbol)
+    if (res.success && res.favorited) {
+      setFavInput('')
+      showToast('success', `${symbol} 즐겨찾기 추가`)
+    }
+    // 실패 시 토스트는 store에서 이미 표시
+  }
+
+  const handleRemoveFavorite = async (symbol: string) => {
+    if (!favorites.includes(symbol)) return
+    const res = await toggleFavorite(symbol)
+    if (res.success && !res.favorited) {
+      showToast('success', `${symbol} 즐겨찾기 해제`)
+    }
   }
 
   const handleAddTarget = async () => {
@@ -195,7 +221,7 @@ export default function SettingsPage() {
                 {symbol}
                 <button
                   type="button"
-                  onClick={() => removeFavorite(symbol)}
+                  onClick={() => handleRemoveFavorite(symbol)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-content-muted hover:text-red-400 ml-0.5"
                   title="즐겨찾기 제거"
                 >
@@ -221,18 +247,15 @@ export default function SettingsPage() {
             onChange={(e) => setFavInput(e.target.value.toUpperCase())}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && favInput.trim()) {
-                addFavorite(favInput.trim())
-                setFavInput('')
+                e.preventDefault()
+                void handleSubmitFavorite()
               }
             }}
           />
           <Button
             size="sm"
             onClick={() => {
-              if (favInput.trim()) {
-                addFavorite(favInput.trim())
-                setFavInput('')
-              }
+              void handleSubmitFavorite()
             }}
           >
             추가
