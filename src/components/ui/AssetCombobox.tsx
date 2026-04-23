@@ -3,17 +3,25 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 
 interface AssetComboboxProps {
-  value: string
-  onChange: (value: string) => void
+  /** 현재 선택값 (select 모드에서만 의미 있음) */
+  value?: string
+  /** 선택 핸들러 (select 모드에서만 호출) */
+  onChange?: (value: string) => void
   /** 즐겨찾기된 심볼 목록 */
   favorites: string[]
-  /** 최근 거래 종목 */
-  recent: string[]
+  /** 최근 거래 종목 (picker 모드에서는 무시) */
+  recent?: string[]
   /** 전체 종목 (DEFAULT_ASSETS + custom_assets) */
   allAssets: string[]
-  /** 즐겨찾기 토글 — 선택 이벤트와 분리 */
+  /** 즐겨찾기 토글 핸들러 (picker 모드 필수) */
   onToggleFavorite?: (symbol: string) => void
   placeholder?: string
+  /**
+   * picker 모드: 항목 클릭 = 즐겨찾기 토글 (select 아님).
+   * 드롭다운이 자동으로 닫히지 않아 여러 개 연속 토글 가능.
+   * 설정 페이지 등 "즐겨찾기 관리 전용" 용도.
+   */
+  pickerMode?: boolean
 }
 
 function StarIcon({ filled }: { filled: boolean }) {
@@ -38,13 +46,14 @@ function StarIcon({ filled }: { filled: boolean }) {
  * 즐겨찾기(칩) → 최근 거래 → 전체 검색 3단 구조
  */
 export function AssetCombobox({
-  value,
+  value = '',
   onChange,
   favorites,
-  recent,
+  recent = [],
   allAssets,
   onToggleFavorite,
   placeholder = '종목 검색...',
+  pickerMode = false,
 }: AssetComboboxProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -84,7 +93,14 @@ export function AssetCombobox({
   }, [recent, favorites])
 
   const handleSelect = (asset: string) => {
-    onChange(asset)
+    if (pickerMode) {
+      // picker 모드: 선택 = 즐겨찾기 토글. 드롭다운 유지, 검색어만 초기화
+      onToggleFavorite?.(asset)
+      setSearch('')
+      inputRef.current?.focus()
+      return
+    }
+    onChange?.(asset)
     setOpen(false)
     setSearch('')
   }
@@ -117,7 +133,7 @@ export function AssetCombobox({
           inputRef.current?.focus()
         }}
       >
-        {value && !open && (
+        {!pickerMode && value && !open && (
           <span className="font-mono font-semibold text-content">{value}</span>
         )}
         <input
@@ -127,7 +143,7 @@ export function AssetCombobox({
           onChange={handleInputChange}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder={value && !open ? '' : placeholder}
+          placeholder={!pickerMode && value && !open ? '' : placeholder}
           className="flex-1 bg-transparent outline-none font-mono text-[13px] placeholder:text-content-muted min-w-0"
         />
         <svg
@@ -183,8 +199,8 @@ export function AssetCombobox({
             </div>
           )}
 
-          {/* 최근 거래 */}
-          {recentFiltered.length > 0 && !search && (
+          {/* 최근 거래 (picker 모드에서는 숨김) */}
+          {!pickerMode && recentFiltered.length > 0 && !search && (
             <div className="px-3 pt-2 pb-1">
               <div className="text-[10px] font-semibold text-content-muted uppercase tracking-wider mb-1.5">
                 최근 거래
@@ -226,7 +242,7 @@ export function AssetCombobox({
           )}
 
           {/* 구분선 */}
-          {(favorites.length > 0 || recentFiltered.length > 0) && !search && (
+          {(favorites.length > 0 || (!pickerMode && recentFiltered.length > 0)) && !search && (
             <div className="h-px bg-border mx-3 my-1" />
           )}
 
@@ -245,7 +261,7 @@ export function AssetCombobox({
             <div className="max-h-[40vh] overflow-y-auto">
               {filtered.map((a) => {
                 const isFav = favoriteSet.has(a)
-                const selected = value === a
+                const selected = !pickerMode && value === a
                 return (
                   <div
                     key={a}
