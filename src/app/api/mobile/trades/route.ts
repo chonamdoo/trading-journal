@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     if (searchParams.get('dateTo')) filters.dateTo = searchParams.get('dateTo')!;
     if (searchParams.get('page')) filters.page = Number(searchParams.get('page'));
     if (searchParams.get('pageSize')) filters.pageSize = Number(searchParams.get('pageSize'));
+    if (searchParams.get('includeExpiredDrafts') === 'true') filters.includeExpiredDrafts = true;
 
     const result = await getTrades(supabase, userId, filters);
     if (!result.success) {

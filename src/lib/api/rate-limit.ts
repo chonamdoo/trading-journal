@@ -29,7 +29,7 @@ function gc() {
   }
 }
 
-interface RateLimitConfig {
+export interface RateLimitConfig {
   /** 윈도우 크기 (ms) */
   windowMs: number;
   /** 윈도우 내 최대 요청 수 */
@@ -91,4 +91,6 @@ export const RATE_LIMITS = {
   write: { windowMs: 60_000, maxRequests: 30 },
   /** AI 생성 엔드포인트: 시간당 5회 (비용 보호) */
   ai: { windowMs: 3_600_000, maxRequests: 5 },
+  /** 거래소 연결/동기화: 10분당 20회 */
+  exchange: { windowMs: 600_000, maxRequests: 20 },
 } as const;

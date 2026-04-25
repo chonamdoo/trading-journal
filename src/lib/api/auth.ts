@@ -3,10 +3,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createMobileClient } from '../supabase/mobile-server';
 import { createClient as createServerClient } from '../supabase/server';
 import type { Database } from '../supabase/types';
-import { checkRateLimit, RATE_LIMITS, type RateLimitResult } from './rate-limit';
+import { checkRateLimit, RATE_LIMITS, type RateLimitConfig, type RateLimitResult } from './rate-limit';
 
 function getClientIp(req: NextRequest): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return req.headers.get('cf-connecting-ip')
+    ?? req.headers.get('true-client-ip')
+    ?? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? req.headers.get('x-real-ip')
     ?? 'unknown';
 }
@@ -33,7 +35,7 @@ function rateLimitResponse(result: RateLimitResult): NextResponse {
 export async function withAuth(
   req: NextRequest,
   handler: (supabase: SupabaseClient<Database>, userId: string) => Promise<NextResponse>,
-  rateLimit = RATE_LIMITS.api,
+  rateLimit: RateLimitConfig = RATE_LIMITS.api,
 ): Promise<NextResponse> {
   // 1. IP Rate Limit (인증 전)
   const ip = getClientIp(req);

@@ -85,7 +85,7 @@ export default function PromoPage() {
           </h1>
 
           <p className="text-content-secondary text-base sm:text-lg leading-relaxed mb-4 max-w-xl mx-auto">
-            요일별 승률, 레버리지별 손익, 감정별 수익률 —<br />
+            요일별 승률, 레버리지별 손익, 복기 태그별 수익률 —<br />
             기록하면 보이는 것들이 있습니다.
           </p>
           <p className="text-content-muted text-sm mb-10 max-w-md mx-auto">
@@ -220,7 +220,7 @@ export default function PromoPage() {
                 type="critical"
                 tag="FOMO"
                 title="FOMO 및 뇌동매매"
-                desc="신고가 추격, 급락 추격 등 감정적 진입으로 큰 손실 발생."
+                desc="신고가 추격, 급락 추격 등 계획 없는 진입으로 큰 손실 발생."
               />
               <BehaviorCard
                 type="caution"
@@ -237,19 +237,19 @@ export default function PromoPage() {
             </div>
           </div>
 
-          {/* Emotion Win Rate + Trading Intelligence */}
+          {/* Review Tag Win Rate + Trading Intelligence */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Emotion Win Rate */}
+            {/* Review Tag Win Rate */}
             <div className="rounded-card border border-border bg-bg p-5">
               <p className="text-[11px] font-medium uppercase tracking-wider text-content-muted mb-4">
-                Emotion Win Rate
+                Review Tag Win Rate
               </p>
               <div className="space-y-0">
-                <EmotionBar label="침착" initial="C" rate={100} count={4} color="profit" />
-                <EmotionBar label="확신" initial="F" rate={100} count={3} color="profit" />
-                <EmotionBar label="FOMO" initial="F" rate={0} count={2} color="loss" />
-                <EmotionBar label="복수매매" initial="R" rate={0} count={1} color="loss" />
-                <EmotionBar label="불안" initial="A" rate={0} count={1} color="loss" />
+                <ReviewTagBar label="계획준수" rate={100} count={4} color="profit" />
+                <ReviewTagBar label="근거명확" rate={100} count={3} color="profit" />
+                <ReviewTagBar label="FOMO" rate={0} count={2} color="loss" />
+                <ReviewTagBar label="복수매매" rate={0} count={1} color="loss" />
+                <ReviewTagBar label="뇌동매매" rate={0} count={1} color="loss" />
               </div>
             </div>
 
@@ -718,29 +718,23 @@ function BehaviorCard({
   )
 }
 
-function EmotionBar({
+function ReviewTagBar({
   label,
-  initial,
   rate,
   count,
   color,
 }: {
   label: string
-  initial: string
   rate: number
   count: number
   color: 'profit' | 'loss'
 }) {
   const barColor = color === 'profit' ? 'bg-profit' : 'bg-loss'
   const textColor = color === 'profit' ? 'text-profit' : 'text-loss'
-  const bgColor = color === 'profit' ? 'bg-profit/15' : 'bg-loss/15'
 
   return (
     <div className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
-      <div className={`w-7 h-7 rounded-full ${bgColor} flex items-center justify-center`}>
-        <span className={`text-[11px] font-semibold ${textColor}`}>{initial}</span>
-      </div>
-      <span className="text-[13px] w-16">{label}</span>
+      <span className="text-[13px] w-20 truncate">{label}</span>
       <div className="flex-1 h-1.5 bg-surface-muted rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full ${barColor}`}

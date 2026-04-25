@@ -11,7 +11,7 @@ import type {
   EmotionWinRate,
   TimeHeatmapCell,
 } from '@/types/ai-report'
-import { EMOTIONS } from '@/lib/constants'
+import { REVIEW_TAGS } from '@/lib/constants'
 
 type Client = SupabaseClient<Database>
 
@@ -91,27 +91,30 @@ export async function getLatestWeeklyReport(
 }
 
 /**
- * 거래 배열에서 감정별 승률 데이터를 계산한다.
+ * 거래 배열에서 복기 태그별 승률 데이터를 계산한다.
  */
 export function calcEmotionWinRates(trades: Trade[]): EmotionWinRate[] {
   const closed = trades.filter((t) => t.status === 'closed')
   const groups: Record<string, { wins: number; total: number; pnlSum: number }> = {}
 
   for (const t of closed) {
-    const key = t.emotion ?? '__unset__'
-    if (!groups[key]) groups[key] = { wins: 0, total: 0, pnlSum: 0 }
-    groups[key].total += 1
-    groups[key].pnlSum += t.pnl ?? 0
-    if ((t.pnl ?? 0) > 0) groups[key].wins += 1
+    const tags = t.tags?.length ? t.tags : ['__unset__']
+    for (const key of tags) {
+      if (!groups[key]) groups[key] = { wins: 0, total: 0, pnlSum: 0 }
+      groups[key].total += 1
+      groups[key].pnlSum += t.pnl ?? 0
+      if ((t.pnl ?? 0) > 0) groups[key].wins += 1
+    }
   }
 
-  const allKeys = [...EMOTIONS.map((e) => e.id), '__unset__']
+  const usedKeys = Object.keys(groups).filter((key) => key !== '__unset__')
+  const allKeys = [...usedKeys, ...REVIEW_TAGS.map((e) => e.id).filter((key) => !usedKeys.includes(key)), '__unset__']
   return allKeys.map((key) => {
     const group = groups[key] ?? { wins: 0, total: 0, pnlSum: 0 }
-    const em = EMOTIONS.find((e) => e.id === key)
+    const tag = REVIEW_TAGS.find((e) => e.id === key)
     return {
       emotion: key,
-      label: em ? em.label : '미설정',
+      label: tag ? tag.label : '미설정',
       winRate: group.total > 0 ? Math.round((group.wins / group.total) * 100) : 0,
       totalTrades: group.total,
       avgPnl: group.total > 0 ? group.pnlSum / group.total : 0,

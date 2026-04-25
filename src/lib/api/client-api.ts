@@ -27,6 +27,72 @@ import type {
   ScaleInTypeDb,
 } from '../supabase/types';
 
+export interface ExchangeConnectionPublic {
+  id: string;
+  exchange: 'binance' | 'bybit' | 'okx' | 'bitget' | 'flipster';
+  label: string | null;
+  permissions_verified: boolean;
+  is_active: boolean;
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BinanceConnectionResponse extends ExchangeConnectionPublic {
+  permissions?: {
+    canRead: boolean;
+    futuresEnabled: boolean;
+    ipRestricted: boolean;
+  };
+}
+
+export interface BybitConnectionResponse extends ExchangeConnectionPublic {
+  permissions?: {
+    canRead: boolean;
+    derivativesEnabled: boolean;
+    ipRestricted: boolean;
+    unifiedTradingAccount: boolean;
+  };
+}
+
+export interface FlipsterConnectionResponse extends ExchangeConnectionPublic {
+  permissions?: {
+    canRead: boolean;
+    totalMarginBalance: string;
+    availableBalance: string;
+  };
+}
+
+export interface OkxConnectionResponse extends ExchangeConnectionPublic {
+  permissions?: {
+    canRead: boolean;
+    accountLevel: string | null;
+    positionMode: string | null;
+  };
+}
+
+export interface BitgetConnectionResponse extends ExchangeConnectionPublic {
+  permissions?: {
+    canRead: boolean;
+    futuresReadEnabled: boolean;
+    ipRestricted: boolean;
+  };
+}
+
+export interface BybitSyncResponse {
+  from: string;
+  to: string;
+  found: number;
+  imported: number;
+  skipped: number;
+}
+
+export interface BinanceSyncResponse extends BybitSyncResponse {
+  symbols: string[];
+}
+
+export type GenericExchangeSyncResponse = BybitSyncResponse;
+
 // ── Trades ──
 
 export async function fetchTrades(
@@ -41,6 +107,7 @@ export async function fetchTrades(
   if (filters?.result) params.set('result', filters.result);
   if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
   if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+  if (filters?.includeExpiredDrafts) params.set('includeExpiredDrafts', 'true');
   const qs = params.toString();
   const result = await apiFetch<{ success: boolean; data: { trades: TradeRow[]; total: number } }>(
     `/api/trades${qs ? `?${qs}` : ''}`,
@@ -96,6 +163,196 @@ export async function fetchCloseTrade(
 
 export async function fetchTradeById(id: string): Promise<ApiResult<TradeRow>> {
   const result = await apiFetch<{ success: boolean; data: TradeRow }>(`/api/trades/${id}`);
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+// ── Exchange Connections ──
+
+export async function fetchBinanceConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {
+  const result = await apiFetch<{ success: boolean; data: ExchangeConnectionPublic | null }>(
+    '/api/exchange/binance/connection',
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSaveBinanceConnection(params: {
+  apiKey: string;
+  apiSecret: string;
+  label?: string;
+}): Promise<ApiResult<BinanceConnectionResponse>> {
+  const result = await apiFetch<{ success: boolean; data: BinanceConnectionResponse }>(
+    '/api/exchange/binance/connection',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchDeleteBinanceConnection(): Promise<ApiResult<void>> {
+  const result = await apiFetch<{ success: boolean }>(
+    '/api/exchange/binance/connection',
+    { method: 'DELETE' },
+  );
+  if (!result.success) return result;
+  return { success: true, data: undefined };
+}
+
+export async function fetchOkxConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {
+  const result = await apiFetch<{ success: boolean; data: ExchangeConnectionPublic | null }>(
+    '/api/exchange/okx/connection',
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSaveOkxConnection(params: {
+  apiKey: string;
+  apiSecret: string;
+  passphrase: string;
+  label?: string;
+}): Promise<ApiResult<OkxConnectionResponse>> {
+  const result = await apiFetch<{ success: boolean; data: OkxConnectionResponse }>(
+    '/api/exchange/okx/connection',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchDeleteOkxConnection(): Promise<ApiResult<void>> {
+  const result = await apiFetch<{ success: boolean }>(
+    '/api/exchange/okx/connection',
+    { method: 'DELETE' },
+  );
+  if (!result.success) return result;
+  return { success: true, data: undefined };
+}
+
+export async function fetchSyncOkxTrades(params: { days?: number; from?: string; to?: string } = {}): Promise<ApiResult<GenericExchangeSyncResponse>> {
+  const result = await apiFetch<{ success: boolean; data: GenericExchangeSyncResponse }>(
+    '/api/exchange/okx/sync',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchBitgetConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {
+  const result = await apiFetch<{ success: boolean; data: ExchangeConnectionPublic | null }>(
+    '/api/exchange/bitget/connection',
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSaveBitgetConnection(params: {
+  apiKey: string;
+  apiSecret: string;
+  passphrase: string;
+  label?: string;
+}): Promise<ApiResult<BitgetConnectionResponse>> {
+  const result = await apiFetch<{ success: boolean; data: BitgetConnectionResponse }>(
+    '/api/exchange/bitget/connection',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchDeleteBitgetConnection(): Promise<ApiResult<void>> {
+  const result = await apiFetch<{ success: boolean }>(
+    '/api/exchange/bitget/connection',
+    { method: 'DELETE' },
+  );
+  if (!result.success) return result;
+  return { success: true, data: undefined };
+}
+
+export async function fetchSyncBitgetTrades(params: { days?: number; from?: string; to?: string } = {}): Promise<ApiResult<GenericExchangeSyncResponse>> {
+  const result = await apiFetch<{ success: boolean; data: GenericExchangeSyncResponse }>(
+    '/api/exchange/bitget/sync',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSyncBinanceTrades(params: { days?: number; from?: string; to?: string } = {}): Promise<ApiResult<BinanceSyncResponse>> {
+  const result = await apiFetch<{ success: boolean; data: BinanceSyncResponse }>(
+    '/api/exchange/binance/sync',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchFlipsterConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {
+  const result = await apiFetch<{ success: boolean; data: ExchangeConnectionPublic | null }>(
+    '/api/exchange/flipster/connection',
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSaveFlipsterConnection(params: {
+  apiKey: string;
+  apiSecret: string;
+  label?: string;
+}): Promise<ApiResult<FlipsterConnectionResponse>> {
+  const result = await apiFetch<{ success: boolean; data: FlipsterConnectionResponse }>(
+    '/api/exchange/flipster/connection',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchDeleteFlipsterConnection(): Promise<ApiResult<void>> {
+  const result = await apiFetch<{ success: boolean }>(
+    '/api/exchange/flipster/connection',
+    { method: 'DELETE' },
+  );
+  if (!result.success) return result;
+  return { success: true, data: undefined };
+}
+
+export async function fetchBybitConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {
+  const result = await apiFetch<{ success: boolean; data: ExchangeConnectionPublic | null }>(
+    '/api/exchange/bybit/connection',
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchSaveBybitConnection(params: {
+  apiKey: string;
+  apiSecret: string;
+  label?: string;
+}): Promise<ApiResult<BybitConnectionResponse>> {
+  const result = await apiFetch<{ success: boolean; data: BybitConnectionResponse }>(
+    '/api/exchange/bybit/connection',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchDeleteBybitConnection(): Promise<ApiResult<void>> {
+  const result = await apiFetch<{ success: boolean }>(
+    '/api/exchange/bybit/connection',
+    { method: 'DELETE' },
+  );
+  if (!result.success) return result;
+  return { success: true, data: undefined };
+}
+
+export async function fetchSyncBybitTrades(params: { days?: number; from?: string; to?: string } = {}): Promise<ApiResult<BybitSyncResponse>> {
+  const result = await apiFetch<{ success: boolean; data: BybitSyncResponse }>(
+    '/api/exchange/bybit/sync',
+    { method: 'POST', body: JSON.stringify(params) },
+  );
   if (!result.success) return result;
   return { success: true, data: result.data.data };
 }

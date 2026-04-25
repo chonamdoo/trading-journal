@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,9 +12,74 @@ import { useTrades } from '@/hooks/useTrades'
 import { useAssets } from '@/hooks/useAssets'
 import { useTheme } from '@/hooks/useTheme'
 import { createClient } from '@/lib/supabase/client'
+import {
+  fetchBinanceConnection,
+  fetchBitgetConnection,
+  fetchBybitConnection,
+  fetchDeleteBinanceConnection,
+  fetchDeleteBitgetConnection,
+  fetchDeleteBybitConnection,
+  fetchDeleteFlipsterConnection,
+  fetchDeleteOkxConnection,
+  fetchFlipsterConnection,
+  fetchOkxConnection,
+  fetchSaveBinanceConnection,
+  fetchSaveBitgetConnection,
+  fetchSaveBybitConnection,
+  fetchSaveFlipsterConnection,
+  fetchSaveOkxConnection,
+  fetchSyncBinanceTrades,
+  fetchSyncBitgetTrades,
+  fetchSyncBybitTrades,
+  fetchSyncOkxTrades,
+  type ExchangeConnectionPublic,
+} from '@/lib/api/client-api'
 import { curCapital, totalPnL, totalReturnPct, totalDeposits } from '@/lib/calc'
 import { formatNumber, formatPnl, toKrw, today, genId } from '@/lib/format'
 import { TARGET_COLORS } from '@/lib/constants'
+
+type ExchangeFormValue = 'bybit' | 'binance' | 'okx' | 'bitget' | 'flipster'
+
+const EXCHANGE_FORM_OPTIONS: Record<ExchangeFormValue, {
+  label: string
+  defaultName: string
+  apiPlaceholder: string
+  secretPlaceholder: string
+  passphrasePlaceholder?: string
+}> = {
+  bybit: {
+    label: 'Bybit Derivatives',
+    defaultName: 'Bybit Derivatives',
+    apiPlaceholder: 'Bybit API Key',
+    secretPlaceholder: 'Bybit Secret Key',
+  },
+  binance: {
+    label: 'Binance USD-M Futures',
+    defaultName: 'Binance USD-M Futures',
+    apiPlaceholder: 'Binance API Key',
+    secretPlaceholder: 'Binance Secret Key',
+  },
+  okx: {
+    label: 'OKX SWAP',
+    defaultName: 'OKX SWAP',
+    apiPlaceholder: 'OKX API Key',
+    secretPlaceholder: 'OKX Secret Key',
+    passphrasePlaceholder: 'OKX Passphrase',
+  },
+  bitget: {
+    label: 'Bitget USDT-Futures',
+    defaultName: 'Bitget USDT-Futures',
+    apiPlaceholder: 'Bitget API Key',
+    secretPlaceholder: 'Bitget Secret Key',
+    passphrasePlaceholder: 'Bitget Passphrase',
+  },
+  flipster: {
+    label: 'Flipster',
+    defaultName: 'Flipster',
+    apiPlaceholder: 'Flipster API Key',
+    secretPlaceholder: 'Flipster Secret Key',
+  },
+}
 
 /**
  * 설정 페이지
@@ -31,6 +96,7 @@ export default function SettingsPage() {
     addDeposit, deleteDeposit,
     addTarget, deleteTarget,
     setInitialCapital,
+    reloadData,
   } = useTrades()
   const { theme, toggleTheme } = useTheme()
   const { favorites, allAssets, toggleFavorite } = useAssets(profile?.id)
@@ -57,6 +123,163 @@ export default function SettingsPage() {
 
   // 초기화 모달
   const [resetModal, setResetModal] = useState(false)
+
+  // 거래소 연결 상태
+  const [bybitConnection, setBybitConnection] = useState<ExchangeConnectionPublic | null>(null)
+  const [binanceConnection, setBinanceConnection] = useState<ExchangeConnectionPublic | null>(null)
+  const [okxConnection, setOkxConnection] = useState<ExchangeConnectionPublic | null>(null)
+  const [bitgetConnection, setBitgetConnection] = useState<ExchangeConnectionPublic | null>(null)
+  const [flipsterConnection, setFlipsterConnection] = useState<ExchangeConnectionPublic | null>(null)
+  const [bybitLoading, setBybitLoading] = useState(true)
+  const [binanceLoading, setBinanceLoading] = useState(true)
+  const [okxLoading, setOkxLoading] = useState(true)
+  const [bitgetLoading, setBitgetLoading] = useState(true)
+  const [flipsterLoading, setFlipsterLoading] = useState(true)
+  const [bybitSaving, setBybitSaving] = useState(false)
+  const [binanceSaving, setBinanceSaving] = useState(false)
+  const [flipsterSaving, setFlipsterSaving] = useState(false)
+  const [bybitDeleting, setBybitDeleting] = useState(false)
+  const [binanceDeleting, setBinanceDeleting] = useState(false)
+  const [okxDeleting, setOkxDeleting] = useState(false)
+  const [bitgetDeleting, setBitgetDeleting] = useState(false)
+  const [flipsterDeleting, setFlipsterDeleting] = useState(false)
+  const [bybitSyncing, setBybitSyncing] = useState(false)
+  const [binanceSyncing, setBinanceSyncing] = useState(false)
+  const [okxSyncing, setOkxSyncing] = useState(false)
+  const [bitgetSyncing, setBitgetSyncing] = useState(false)
+  const [selectedExchange, setSelectedExchange] = useState<ExchangeFormValue>('bybit')
+  const [exchangeApiKey, setExchangeApiKey] = useState('')
+  const [exchangeApiSecret, setExchangeApiSecret] = useState('')
+  const [exchangePassphrase, setExchangePassphrase] = useState('')
+  const [exchangeLabel, setExchangeLabel] = useState(EXCHANGE_FORM_OPTIONS.bybit.defaultName)
+  const [exchangeSaving, setExchangeSaving] = useState(false)
+  const [bybitLabel, setBybitLabel] = useState('Bybit Derivatives')
+  const [bybitApiKey, setBybitApiKey] = useState('')
+  const [bybitApiSecret, setBybitApiSecret] = useState('')
+  const [bybitSyncFrom, setBybitSyncFrom] = useState(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - 6)
+    return date.toISOString().slice(0, 10)
+  })
+  const [bybitSyncTo, setBybitSyncTo] = useState(today())
+  const [binanceLabel, setBinanceLabel] = useState('Binance USD-M Futures')
+  const [binanceApiKey, setBinanceApiKey] = useState('')
+  const [binanceApiSecret, setBinanceApiSecret] = useState('')
+  const [binanceSyncFrom, setBinanceSyncFrom] = useState(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - 6)
+    return date.toISOString().slice(0, 10)
+  })
+  const [binanceSyncTo, setBinanceSyncTo] = useState(today())
+  const [okxSyncFrom, setOkxSyncFrom] = useState(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - 29)
+    return date.toISOString().slice(0, 10)
+  })
+  const [okxSyncTo, setOkxSyncTo] = useState(today())
+  const [bitgetSyncFrom, setBitgetSyncFrom] = useState(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - 29)
+    return date.toISOString().slice(0, 10)
+  })
+  const [bitgetSyncTo, setBitgetSyncTo] = useState(today())
+  const [flipsterLabel, setFlipsterLabel] = useState('Flipster')
+  const [flipsterApiKey, setFlipsterApiKey] = useState('')
+  const [flipsterApiSecret, setFlipsterApiSecret] = useState('')
+
+  const selectedExchangeConfig = EXCHANGE_FORM_OPTIONS[selectedExchange]
+  const selectedExchangeConnection =
+    selectedExchange === 'bybit'
+      ? bybitConnection
+      : selectedExchange === 'binance'
+        ? binanceConnection
+        : selectedExchange === 'okx'
+          ? okxConnection
+          : selectedExchange === 'bitget'
+            ? bitgetConnection
+            : flipsterConnection
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadExchangeConnections() {
+      const [bybitResult, binanceResult, okxResult, bitgetResult, flipsterResult] = await Promise.all([
+        fetchBybitConnection(),
+        fetchBinanceConnection(),
+        fetchOkxConnection(),
+        fetchBitgetConnection(),
+        fetchFlipsterConnection(),
+      ])
+      if (!mounted) return
+
+      if (bybitResult.success) {
+        setBybitConnection(bybitResult.data)
+        if (bybitResult.data?.label) setBybitLabel(bybitResult.data.label)
+        if (bybitResult.data?.label && selectedExchange === 'bybit') setExchangeLabel(bybitResult.data.label)
+      } else {
+        showToast('error', bybitResult.error)
+      }
+
+      if (binanceResult.success) {
+        setBinanceConnection(binanceResult.data)
+        if (binanceResult.data?.label) setBinanceLabel(binanceResult.data.label)
+        if (binanceResult.data?.label && selectedExchange === 'binance') setExchangeLabel(binanceResult.data.label)
+      } else {
+        showToast('error', binanceResult.error)
+      }
+
+      if (okxResult.success) {
+        setOkxConnection(okxResult.data)
+        if (okxResult.data?.label && selectedExchange === 'okx') setExchangeLabel(okxResult.data.label)
+      } else {
+        showToast('error', okxResult.error)
+      }
+
+      if (bitgetResult.success) {
+        setBitgetConnection(bitgetResult.data)
+        if (bitgetResult.data?.label && selectedExchange === 'bitget') setExchangeLabel(bitgetResult.data.label)
+      } else {
+        showToast('error', bitgetResult.error)
+      }
+
+      if (flipsterResult.success) {
+        setFlipsterConnection(flipsterResult.data)
+        if (flipsterResult.data?.label) setFlipsterLabel(flipsterResult.data.label)
+        if (flipsterResult.data?.label && selectedExchange === 'flipster') setExchangeLabel(flipsterResult.data.label)
+      } else {
+        showToast('error', flipsterResult.error)
+      }
+
+      setBybitLoading(false)
+      setBinanceLoading(false)
+      setOkxLoading(false)
+      setBitgetLoading(false)
+      setFlipsterLoading(false)
+    }
+
+    loadExchangeConnections()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const handleSelectExchange = (value: ExchangeFormValue) => {
+    setSelectedExchange(value)
+    const connection =
+      value === 'bybit'
+        ? bybitConnection
+        : value === 'binance'
+          ? binanceConnection
+          : value === 'okx'
+            ? okxConnection
+            : value === 'bitget'
+              ? bitgetConnection
+              : flipsterConnection
+    setExchangeLabel(connection?.label ?? EXCHANGE_FORM_OPTIONS[value].defaultName)
+    setExchangeApiKey('')
+    setExchangeApiSecret('')
+    setExchangePassphrase('')
+  }
 
   // ── 핸들러 ──
 
@@ -126,6 +349,325 @@ export default function SettingsPage() {
     showToast('success', '목표가 추가되었습니다.')
   }
 
+  const handleSaveSelectedExchangeConnection = async () => {
+    if (!exchangeApiKey.trim() || !exchangeApiSecret.trim()) {
+      showToast('error', 'API Key와 Secret Key를 입력해주세요.')
+      return
+    }
+    if (selectedExchangeConfig.passphrasePlaceholder && !exchangePassphrase.trim()) {
+      showToast('error', 'Passphrase를 입력해주세요.')
+      return
+    }
+
+    setExchangeSaving(true)
+    const params = {
+      apiKey: exchangeApiKey.trim(),
+      apiSecret: exchangeApiSecret.trim(),
+      label: exchangeLabel.trim() || undefined,
+    }
+    const result =
+      selectedExchange === 'bybit'
+        ? await fetchSaveBybitConnection(params)
+        : selectedExchange === 'binance'
+          ? await fetchSaveBinanceConnection(params)
+          : selectedExchange === 'okx'
+            ? await fetchSaveOkxConnection({ ...params, passphrase: exchangePassphrase.trim() })
+            : selectedExchange === 'bitget'
+              ? await fetchSaveBitgetConnection({ ...params, passphrase: exchangePassphrase.trim() })
+              : await fetchSaveFlipsterConnection(params)
+    setExchangeSaving(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    if (selectedExchange === 'bybit') {
+      setBybitConnection(result.data)
+      if (result.data.label) setBybitLabel(result.data.label)
+    } else if (selectedExchange === 'binance') {
+      setBinanceConnection(result.data)
+      if (result.data.label) setBinanceLabel(result.data.label)
+    } else if (selectedExchange === 'okx') {
+      setOkxConnection(result.data)
+    } else if (selectedExchange === 'bitget') {
+      setBitgetConnection(result.data)
+    } else {
+      setFlipsterConnection(result.data)
+      if (result.data.label) setFlipsterLabel(result.data.label)
+    }
+
+    setExchangeApiKey('')
+    setExchangeApiSecret('')
+    setExchangePassphrase('')
+    showToast('success', `${selectedExchangeConfig.label} 연결이 저장되었습니다.`)
+  }
+
+  const handleSaveBybitConnection = async () => {
+    if (!bybitApiKey.trim() || !bybitApiSecret.trim()) {
+      showToast('error', 'Bybit API Key와 Secret을 입력해주세요.')
+      return
+    }
+
+    setBybitSaving(true)
+    const result = await fetchSaveBybitConnection({
+      apiKey: bybitApiKey.trim(),
+      apiSecret: bybitApiSecret.trim(),
+      label: bybitLabel.trim() || undefined,
+    })
+    setBybitSaving(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBybitConnection(result.data)
+    setBybitApiKey('')
+    setBybitApiSecret('')
+    showToast('success', 'Bybit 연결이 저장되었습니다.')
+  }
+
+  const handleSaveBinanceConnection = async () => {
+    if (!binanceApiKey.trim() || !binanceApiSecret.trim()) {
+      showToast('error', 'Binance API Key와 Secret을 입력해주세요.')
+      return
+    }
+
+    setBinanceSaving(true)
+    const result = await fetchSaveBinanceConnection({
+      apiKey: binanceApiKey.trim(),
+      apiSecret: binanceApiSecret.trim(),
+      label: binanceLabel.trim() || undefined,
+    })
+    setBinanceSaving(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBinanceConnection(result.data)
+    setBinanceApiKey('')
+    setBinanceApiSecret('')
+    showToast('success', 'Binance 연결이 저장되었습니다.')
+  }
+
+  const handleSaveFlipsterConnection = async () => {
+    if (!flipsterApiKey.trim() || !flipsterApiSecret.trim()) {
+      showToast('error', 'Flipster API Key와 Secret을 입력해주세요.')
+      return
+    }
+
+    setFlipsterSaving(true)
+    const result = await fetchSaveFlipsterConnection({
+      apiKey: flipsterApiKey.trim(),
+      apiSecret: flipsterApiSecret.trim(),
+      label: flipsterLabel.trim() || undefined,
+    })
+    setFlipsterSaving(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setFlipsterConnection(result.data)
+    setFlipsterApiKey('')
+    setFlipsterApiSecret('')
+    showToast('success', 'Flipster 연결이 저장되었습니다.')
+  }
+
+  const handleDeleteBybitConnection = async () => {
+    setBybitDeleting(true)
+    const result = await fetchDeleteBybitConnection()
+    setBybitDeleting(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBybitConnection(null)
+    setBybitApiKey('')
+    setBybitApiSecret('')
+    showToast('success', 'Bybit 연결이 삭제되었습니다.')
+  }
+
+  const handleDeleteBinanceConnection = async () => {
+    setBinanceDeleting(true)
+    const result = await fetchDeleteBinanceConnection()
+    setBinanceDeleting(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBinanceConnection(null)
+    setBinanceApiKey('')
+    setBinanceApiSecret('')
+    showToast('success', 'Binance 연결이 삭제되었습니다.')
+  }
+
+  const handleDeleteOkxConnection = async () => {
+    setOkxDeleting(true)
+    const result = await fetchDeleteOkxConnection()
+    setOkxDeleting(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setOkxConnection(null)
+    showToast('success', 'OKX 연결이 삭제되었습니다.')
+  }
+
+  const handleDeleteBitgetConnection = async () => {
+    setBitgetDeleting(true)
+    const result = await fetchDeleteBitgetConnection()
+    setBitgetDeleting(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBitgetConnection(null)
+    showToast('success', 'Bitget 연결이 삭제되었습니다.')
+  }
+
+  const handleDeleteFlipsterConnection = async () => {
+    setFlipsterDeleting(true)
+    const result = await fetchDeleteFlipsterConnection()
+    setFlipsterDeleting(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setFlipsterConnection(null)
+    setFlipsterApiKey('')
+    setFlipsterApiSecret('')
+    showToast('success', 'Flipster 연결이 삭제되었습니다.')
+  }
+
+  const handleSyncBybitTrades = async () => {
+    setBybitSyncing(true)
+    const result = await fetchSyncBybitTrades({ from: bybitSyncFrom, to: bybitSyncTo })
+    setBybitSyncing(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBybitConnection((current) => current
+      ? { ...current, last_synced_at: new Date().toISOString() }
+      : current)
+    await reloadData()
+    showToast(
+      'success',
+      `Bybit 동기화 완료: ${result.data.imported}건 추가, ${result.data.skipped}건 겹침/중복으로 건너뜀`
+    )
+  }
+
+  const handleSyncBybitPreset = async (days: 30 | 90) => {
+    setBybitSyncing(true)
+    const result = await fetchSyncBybitTrades({ days })
+    setBybitSyncing(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBybitConnection((current) => current
+      ? { ...current, last_synced_at: new Date().toISOString() }
+      : current)
+    await reloadData()
+    showToast('success', `Bybit ${days}일 동기화 완료: ${result.data.imported}건 추가, ${result.data.skipped}건 건너뜀`)
+  }
+
+  const handleSyncBinanceTrades = async () => {
+    setBinanceSyncing(true)
+    const result = await fetchSyncBinanceTrades({ from: binanceSyncFrom, to: binanceSyncTo })
+    setBinanceSyncing(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBinanceConnection((current) => current
+      ? { ...current, last_synced_at: new Date().toISOString() }
+      : current)
+    await reloadData()
+    showToast(
+      'success',
+      `Binance 동기화 완료: ${result.data.imported}건 추가, ${result.data.skipped}건 겹침/중복으로 건너뜀`
+    )
+  }
+
+  const handleSyncBinancePreset = async (days: 30 | 90) => {
+    setBinanceSyncing(true)
+    const result = await fetchSyncBinanceTrades({ days })
+    setBinanceSyncing(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBinanceConnection((current) => current
+      ? { ...current, last_synced_at: new Date().toISOString() }
+      : current)
+    await reloadData()
+    showToast('success', `Binance ${days}일 동기화 완료: ${result.data.imported}건 추가, ${result.data.skipped}건 건너뜀`)
+  }
+
+  const handleSyncOkxTrades = async (days?: 30 | 90) => {
+    setOkxSyncing(true)
+    const result = await fetchSyncOkxTrades(days ? { days } : { from: okxSyncFrom, to: okxSyncTo })
+    setOkxSyncing(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setOkxConnection((current) => current
+      ? { ...current, last_synced_at: new Date().toISOString() }
+      : current)
+    await reloadData()
+    showToast(
+      'success',
+      `OKX 동기화 완료: ${result.data.imported}건 추가, ${result.data.skipped}건 겹침/중복으로 건너뜀`
+    )
+  }
+
+  const handleSyncBitgetTrades = async (days?: 30 | 90) => {
+    setBitgetSyncing(true)
+    const result = await fetchSyncBitgetTrades(days ? { days } : { from: bitgetSyncFrom, to: bitgetSyncTo })
+    setBitgetSyncing(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setBitgetConnection((current) => current
+      ? { ...current, last_synced_at: new Date().toISOString() }
+      : current)
+    await reloadData()
+    showToast(
+      'success',
+      `Bitget 동기화 완료: ${result.data.imported}건 추가, ${result.data.skipped}건 겹침/중복으로 건너뜀`
+    )
+  }
+
   return (
     <>
       {/* 프로필/테마 */}
@@ -186,6 +728,381 @@ export default function SettingsPage() {
               변경
             </Button>
           )}
+        </div>
+      </Card>
+
+      {/* 거래소 연결 */}
+      <Card className="mb-3">
+        <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-4">
+          거래소 연결
+        </h2>
+
+        <div className="mb-6 rounded-input border border-border bg-surface px-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_1fr_1fr_auto] gap-2 items-end">
+            <label className="block">
+              <span className="block text-[12px] font-medium text-content-muted mb-1.5">
+                거래소
+              </span>
+              <select
+                className="w-full px-3 py-[9px] bg-surface border border-border-input rounded-input text-content text-[13px] outline-none cursor-pointer focus:border-accent-primary"
+                value={selectedExchange}
+                onChange={(e) => handleSelectExchange(e.target.value as ExchangeFormValue)}
+              >
+                {Object.entries(EXCHANGE_FORM_OPTIONS).map(([value, option]) => (
+                  <option key={value} value={value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Input
+              label="API Key"
+              type="password"
+              autoComplete="off"
+              placeholder={selectedExchangeConfig.apiPlaceholder}
+              value={exchangeApiKey}
+              onChange={(e) => setExchangeApiKey(e.target.value)}
+            />
+            <Input
+              label="Secret Key"
+              type="password"
+              autoComplete="off"
+              placeholder={selectedExchangeConfig.secretPlaceholder}
+              value={exchangeApiSecret}
+              onChange={(e) => setExchangeApiSecret(e.target.value)}
+            />
+            {selectedExchangeConfig.passphrasePlaceholder ? (
+              <Input
+                label="Passphrase"
+                type="password"
+                autoComplete="off"
+                placeholder={selectedExchangeConfig.passphrasePlaceholder}
+                value={exchangePassphrase}
+                onChange={(e) => setExchangePassphrase(e.target.value)}
+              />
+            ) : (
+              <div className="hidden md:block" />
+            )}
+            <Button
+              size="sm"
+              onClick={handleSaveSelectedExchangeConnection}
+              disabled={
+                exchangeSaving
+                || !exchangeApiKey.trim()
+                || !exchangeApiSecret.trim()
+                || Boolean(selectedExchangeConfig.passphrasePlaceholder && !exchangePassphrase.trim())
+              }
+            >
+              {exchangeSaving ? '검증 중...' : selectedExchangeConnection ? '다시 연결' : '연결'}
+            </Button>
+          </div>
+          <div className="mt-3">
+            <Input
+              label="표시 이름"
+              placeholder={selectedExchangeConfig.defaultName}
+              value={exchangeLabel}
+              onChange={(e) => setExchangeLabel(e.target.value)}
+            />
+          </div>
+          <p className="text-[11px] text-content-muted mt-3">
+            선택한 거래소의 Read-only 키만 저장합니다. OKX/Bitget은 공식 API 인증 기준에 맞춰 Passphrase도 필요합니다. 키 원문은 서버에서 검증 후 암호화되어 저장되며 다시 표시되지 않습니다.
+          </p>
+        </div>
+
+        <div className="flex justify-between items-start gap-4 mb-4 pb-4 border-b border-border">
+          <div>
+            <div className="text-sm font-medium">Bybit Derivatives</div>
+            <div className="text-[12px] text-content-muted">
+              {bybitLoading
+                ? '연결 상태 확인 중...'
+                : bybitConnection
+                  ? `연결됨 · ${bybitConnection.permissions_verified ? '권한 검증 완료' : '권한 미검증'}`
+                  : '연결되지 않음'}
+            </div>
+            {bybitConnection?.last_synced_at && (
+              <div className="text-[11px] text-content-muted font-mono mt-1">
+                마지막 동기화: {new Date(bybitConnection.last_synced_at).toLocaleString()}
+              </div>
+            )}
+          </div>
+          {bybitConnection && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDeleteBybitConnection}
+              disabled={bybitDeleting || bybitSyncing}
+            >
+              {bybitDeleting ? '삭제 중...' : '연결 삭제'}
+            </Button>
+          )}
+        </div>
+
+        {bybitConnection && (
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-[160px_160px_auto_auto_auto_1fr] gap-2 items-end">
+            <Input
+              label="가져오기 시작일"
+              type="date"
+              value={bybitSyncFrom}
+              onChange={(e) => setBybitSyncFrom(e.target.value)}
+            />
+            <Input
+              label="가져오기 종료일"
+              type="date"
+              value={bybitSyncTo}
+              onChange={(e) => setBybitSyncTo(e.target.value)}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSyncBybitTrades}
+              disabled={bybitSyncing}
+            >
+              {bybitSyncing ? '가져오는 중...' : '선택 기간 가져오기'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleSyncBybitPreset(30)} disabled={bybitSyncing}>
+              30일
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => handleSyncBybitPreset(90)} disabled={bybitSyncing}>
+              90일
+            </Button>
+            <div className="text-[11px] text-content-muted pb-2">
+              30/90일은 내부적으로 7일 단위로 나누어 가져오며, 같은 주문은 다시 저장하지 않고 건너뜁니다.
+            </div>
+          </div>
+        )}
+
+        <p className="text-[11px] text-content-muted mt-3">
+          Bybit는 Read-only 및 Futures 읽기 권한이 있는 키만 저장됩니다.
+        </p>
+
+        <div className="mt-6 pt-5 border-t border-border">
+          <div className="flex justify-between items-start gap-4 mb-4">
+            <div>
+              <div className="text-sm font-medium">Binance USD-M Futures</div>
+              <div className="text-[12px] text-content-muted">
+                {binanceLoading
+                  ? '연결 상태 확인 중...'
+                  : binanceConnection
+                    ? `연결됨 · ${binanceConnection.permissions_verified ? '권한 검증 완료' : '권한 미검증'}`
+                    : '연결되지 않음'}
+              </div>
+              {binanceConnection?.last_synced_at && (
+                <div className="text-[11px] text-content-muted font-mono mt-1">
+                  마지막 동기화: {new Date(binanceConnection.last_synced_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+            {binanceConnection && (
+              <div className="flex gap-2">
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleDeleteBinanceConnection}
+                  disabled={binanceDeleting || binanceSyncing}
+                >
+                  {binanceDeleting ? '삭제 중...' : '연결 삭제'}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {binanceConnection && (
+            <div className="mb-4 grid grid-cols-1 md:grid-cols-[160px_160px_auto_auto_auto_1fr] gap-2 items-end">
+              <Input
+                label="가져오기 시작일"
+                type="date"
+                value={binanceSyncFrom}
+                onChange={(e) => setBinanceSyncFrom(e.target.value)}
+              />
+              <Input
+                label="가져오기 종료일"
+                type="date"
+                value={binanceSyncTo}
+                onChange={(e) => setBinanceSyncTo(e.target.value)}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSyncBinanceTrades}
+                disabled={binanceSyncing}
+              >
+                {binanceSyncing ? '가져오는 중...' : '선택 기간 가져오기'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleSyncBinancePreset(30)} disabled={binanceSyncing}>
+                30일
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleSyncBinancePreset(90)} disabled={binanceSyncing}>
+                90일
+              </Button>
+              <div className="text-[11px] text-content-muted pb-2">
+                30/90일은 내부적으로 7일 단위로 나누어 가져오며, 중복 체결은 건너뜁니다.
+              </div>
+            </div>
+          )}
+
+          <p className="text-[11px] text-content-muted mt-3">
+            Binance는 Read-only, Futures 읽기 권한, 출금/거래/전송 권한 비활성 키만 허용합니다. 공식 userTrades 응답에는 과거 레버리지가 없어 초안은 x1 기준으로 들어갑니다.
+          </p>
+        </div>
+
+        <div className="mt-6 pt-5 border-t border-border">
+          <div className="flex justify-between items-start gap-4 mb-4">
+            <div>
+              <div className="text-sm font-medium">OKX SWAP</div>
+              <div className="text-[12px] text-content-muted">
+                {okxLoading
+                  ? '연결 상태 확인 중...'
+                  : okxConnection
+                    ? `연결됨 · ${okxConnection.permissions_verified ? '권한 검증 완료' : '권한 미검증'}`
+                    : '연결되지 않음'}
+              </div>
+              {okxConnection?.last_synced_at && (
+                <div className="text-[11px] text-content-muted font-mono mt-1">
+                  마지막 동기화: {new Date(okxConnection.last_synced_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+            {okxConnection && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteOkxConnection}
+                disabled={okxDeleting || okxSyncing}
+              >
+                {okxDeleting ? '삭제 중...' : '연결 삭제'}
+              </Button>
+            )}
+          </div>
+
+          {okxConnection && (
+            <div className="mb-4 grid grid-cols-1 md:grid-cols-[160px_160px_auto_auto_auto_1fr] gap-2 items-end">
+              <Input
+                label="가져오기 시작일"
+                type="date"
+                value={okxSyncFrom}
+                onChange={(e) => setOkxSyncFrom(e.target.value)}
+              />
+              <Input
+                label="가져오기 종료일"
+                type="date"
+                value={okxSyncTo}
+                onChange={(e) => setOkxSyncTo(e.target.value)}
+              />
+              <Button variant="ghost" size="sm" onClick={() => handleSyncOkxTrades()} disabled={okxSyncing}>
+                {okxSyncing ? '가져오는 중...' : '선택 기간'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleSyncOkxTrades(30)} disabled={okxSyncing}>
+                30일
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleSyncOkxTrades(90)} disabled={okxSyncing}>
+                90일
+              </Button>
+              <div className="text-[11px] text-content-muted pb-2">
+                내부적으로 7일 단위로 나누어 OKX 공식 fills-history를 가져옵니다.
+              </div>
+            </div>
+          )}
+
+          <p className="text-[11px] text-content-muted mt-3">
+            OKX는 API v5 Read 권한과 Passphrase가 필요합니다. 가져온 체결은 초안으로 저장됩니다.
+          </p>
+        </div>
+
+        <div className="mt-6 pt-5 border-t border-border">
+          <div className="flex justify-between items-start gap-4 mb-4">
+            <div>
+              <div className="text-sm font-medium">Bitget USDT-Futures</div>
+              <div className="text-[12px] text-content-muted">
+                {bitgetLoading
+                  ? '연결 상태 확인 중...'
+                  : bitgetConnection
+                    ? `연결됨 · ${bitgetConnection.permissions_verified ? '권한 검증 완료' : '권한 미검증'}`
+                    : '연결되지 않음'}
+              </div>
+              {bitgetConnection?.last_synced_at && (
+                <div className="text-[11px] text-content-muted font-mono mt-1">
+                  마지막 동기화: {new Date(bitgetConnection.last_synced_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+            {bitgetConnection && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteBitgetConnection}
+                disabled={bitgetDeleting || bitgetSyncing}
+              >
+                {bitgetDeleting ? '삭제 중...' : '연결 삭제'}
+              </Button>
+            )}
+          </div>
+
+          {bitgetConnection && (
+            <div className="mb-4 grid grid-cols-1 md:grid-cols-[160px_160px_auto_auto_auto_1fr] gap-2 items-end">
+              <Input
+                label="가져오기 시작일"
+                type="date"
+                value={bitgetSyncFrom}
+                onChange={(e) => setBitgetSyncFrom(e.target.value)}
+              />
+              <Input
+                label="가져오기 종료일"
+                type="date"
+                value={bitgetSyncTo}
+                onChange={(e) => setBitgetSyncTo(e.target.value)}
+              />
+              <Button variant="ghost" size="sm" onClick={() => handleSyncBitgetTrades()} disabled={bitgetSyncing}>
+                {bitgetSyncing ? '가져오는 중...' : '선택 기간'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleSyncBitgetTrades(30)} disabled={bitgetSyncing}>
+                30일
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleSyncBitgetTrades(90)} disabled={bitgetSyncing}>
+                90일
+              </Button>
+              <div className="text-[11px] text-content-muted pb-2">
+                내부적으로 7일 단위로 나누어 Bitget 공식 order fills를 가져옵니다.
+              </div>
+            </div>
+          )}
+
+          <p className="text-[11px] text-content-muted mt-3">
+            Bitget은 Read-only Futures 권한과 Passphrase가 필요합니다. 가져온 체결은 초안으로 저장됩니다.
+          </p>
+        </div>
+
+        <div className="mt-6 pt-5 border-t border-border">
+          <div className="flex justify-between items-start gap-4 mb-4">
+            <div>
+              <div className="text-sm font-medium">Flipster</div>
+              <div className="text-[12px] text-content-muted">
+                {flipsterLoading
+                  ? '연결 상태 확인 중...'
+                  : flipsterConnection
+                    ? `연결됨 · ${flipsterConnection.permissions_verified ? '권한 검증 완료' : '권한 미검증'}`
+                    : '연결되지 않음'}
+              </div>
+              {flipsterConnection?.last_synced_at && (
+                <div className="text-[11px] text-content-muted font-mono mt-1">
+                  마지막 동기화: {new Date(flipsterConnection.last_synced_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+            {flipsterConnection && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteFlipsterConnection}
+                disabled={flipsterDeleting}
+              >
+                {flipsterDeleting ? '삭제 중...' : '연결 삭제'}
+              </Button>
+            )}
+          </div>
+
+          <p className="text-[11px] text-content-muted mt-3">
+            Flipster 공식 API는 private launch 상태입니다. 현재는 공식 Account API로 Read 권한 연결 검증과 암호화 저장까지만 지원합니다.
+          </p>
         </div>
       </Card>
 

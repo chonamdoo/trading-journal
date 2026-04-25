@@ -70,6 +70,11 @@ function rowToTrade(row: Record<string, unknown>): Trade {
     notes: row.notes as string | null,
     tags: row.tags as string[] | null,
     emotion: (row.emotion as Trade['emotion']) ?? null,
+    exchange: row.exchange as string | null,
+    external_id: row.external_id as string | null,
+    source: row.source as Trade['source'],
+    import_status: row.import_status as Trade['import_status'],
+    raw_exchange_payload: row.raw_exchange_payload as Record<string, unknown> | null,
     created_at: row.created_at as string | undefined,
     updated_at: row.updated_at as string | undefined,
   }
@@ -374,6 +379,12 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         const merged = { ...currentTrade, ...updates }
         if (merged.exit_price && merged.status === 'closed') {
           updates.pnl = calcPnL(merged as Trade)
+        }
+        const hasReviewInput =
+          (typeof merged.reason === 'string' && merged.reason.trim())
+          || (Array.isArray(merged.tags) && merged.tags.length > 0)
+        if (currentTrade.import_status === 'draft' && hasReviewInput) {
+          updates.import_status = 'confirmed'
         }
       }
 

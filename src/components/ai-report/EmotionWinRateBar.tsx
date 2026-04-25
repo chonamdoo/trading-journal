@@ -7,15 +7,6 @@ interface EmotionWinRateBarProps {
   data: EmotionWinRate[]
 }
 
-const EMOTION_INDICATOR: Record<string, { char: string; colorClass: string }> = {
-  calm: { char: 'C', colorClass: 'bg-info-soft text-info' },
-  confident: { char: 'F', colorClass: 'bg-profit-bg text-profit' },
-  fomo: { char: 'F', colorClass: 'bg-warning-bg text-warning' },
-  revenge: { char: 'R', colorClass: 'bg-loss-bg text-loss' },
-  anxious: { char: 'A', colorClass: 'bg-anxious-bg text-anxious' },
-  __unset__: { char: '—', colorClass: 'bg-surface-muted text-content-muted' },
-}
-
 function getBarBgClass(winRate: number): string {
   if (winRate >= 60) return 'bg-profit'
   if (winRate >= 40) return 'bg-info'
@@ -35,23 +26,13 @@ function WinRateRow({
   item: EmotionWinRate
   isFirst: boolean
 }) {
-  const indicator = EMOTION_INDICATOR[item.emotion] ?? EMOTION_INDICATOR.__unset__
   const hasData = item.totalTrades > 0
 
   return (
     <div
       className={`flex items-center gap-3 py-3 ${!isFirst ? 'border-t border-border' : ''}`}
     >
-      <span
-        className={`w-7 h-7 rounded-badge flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${
-          hasData ? indicator.colorClass : 'bg-surface-muted text-content-muted'
-        }`}
-        aria-hidden="true"
-      >
-        {indicator.char}
-      </span>
-
-      <span className={`text-[13px] w-16 flex-shrink-0 truncate ${
+      <span className={`text-[13px] w-24 flex-shrink-0 truncate ${
         hasData ? 'text-content-secondary' : 'text-content-muted'
       }`}>
         {item.label}
@@ -99,7 +80,7 @@ export const EmotionWinRateBar = memo(function EmotionWinRateBar({
     return (
       <div className="flex items-center justify-center h-[120px]">
         <p className="text-sm text-content-muted text-center leading-relaxed">
-          감정 태그를 기록하면<br />감정별 승률을 분석할 수 있어요
+          복기 태그를 기록하면<br />행동별 승률을 분석할 수 있어요
         </p>
       </div>
     )

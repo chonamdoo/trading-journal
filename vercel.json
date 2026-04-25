@@ -1,0 +1,32 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "src/app/api/exchange/binance/connection/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/binance/sync/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/bybit/connection/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/bybit/sync/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/okx/connection/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/okx/sync/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/bitget/connection/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/bitget/sync/route.ts": {
+      "regions": ["sin1"]
+    },
+    "src/app/api/exchange/flipster/connection/route.ts": {
+      "regions": ["sin1"]
+    }
+  }
+}

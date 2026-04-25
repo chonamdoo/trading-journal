@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import type { Direction, Emotion, TradeFormData, TradeScreenshot } from '@/types'
+import type { Direction, TradeFormData, TradeScreenshot } from '@/types'
 import { Button } from '@/components/ui/Button'
-import { EmotionTag } from '@/components/ai-report/EmotionTag'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Card } from '@/components/ui/Card'
 import { showToast } from '@/components/ui/Toast'
 import { AssetCombobox } from '@/components/ui/AssetCombobox'
+import { REVIEW_CHOICES, REVIEW_TAGS } from '@/lib/constants'
 import {
   formatNumber,
   formatPnl,
@@ -94,10 +94,8 @@ export function TradeForm({
   )
   const [reason, setReason] = useState(initialData?.reason ?? '')
   const [notes, setNotes] = useState(initialData?.notes ?? '')
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.tags ?? [])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [emotion, setEmotion] = useState<Emotion | null>(
-    (initialData?.emotion as Emotion) ?? null
-  )
 
   // ── P&L 미리보기 계산 ──
   const entNum = parseFloat(entryPrice)
@@ -231,9 +229,24 @@ export function TradeForm({
     setStopLossPrice('')
     setReason('')
     setNotes('')
+    setSelectedTags([])
     setPendingFiles([])
-    setEmotion(null)
   }, [allAssetsProp])
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags((current) => current.includes(tagId)
+      ? current.filter((id) => id !== tagId)
+      : [...current, tagId])
+  }
+
+  const applyReviewChoice = (choiceId: string) => {
+    const choice = REVIEW_CHOICES.find((item) => item.id === choiceId)
+    if (!choice) return
+
+    setSelectedTags((current) => [...new Set([...current, ...choice.tags])])
+    if (!reason.trim()) setReason(choice.reason)
+    if (!notes.trim()) setNotes(choice.notes)
+  }
 
   // 저장 중 상태
   const [saving, setSaving] = useState(false)
@@ -269,7 +282,8 @@ export function TradeForm({
       exit_datetime: hasExit ? exitDatetime : null,
       reason: reason.trim() || undefined,
       notes: notes.trim() || undefined,
-      emotion: emotion ?? null,
+      tags: selectedTags.length > 0 ? selectedTags : null,
+      emotion: null,
     }
 
     setSaving(true)
@@ -354,17 +368,68 @@ export function TradeForm({
         </div>
       </div>
 
-      {/* 감정 태그 */}
-      <div className="mb-4">
+      {/* 복기 질문 + 태그 */}
+      <div className="mb-4 rounded-input border border-border bg-surface px-4 py-4">
         <label className="block text-[11px] font-medium uppercase tracking-wider text-content-muted mb-2">
-          매매 감정
+          복기 질문
         </label>
-        <EmotionTag value={emotion} onChange={setEmotion} />
-        {!emotion && (
-          <p className="text-[11px] text-content-muted mt-1.5 leading-relaxed">
-            감정을 기록하면 감정별 승률 분석을 받을 수 있어요
-          </p>
-        )}
+        <div className="text-[13px] font-semibold text-content mb-3">
+          이 거래는 어떤 매매였나요?
+        </div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {REVIEW_CHOICES.map((choice) => (
+            <button
+              key={choice.id}
+              type="button"
+              onClick={() => applyReviewChoice(choice.id)}
+              className="px-3 py-1.5 rounded-badge border border-border-input bg-surface-muted text-[12px] font-medium text-content-secondary hover:bg-surface-hover hover:text-content transition-colors"
+            >
+              {choice.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {[
+            { key: 'good', title: '좋은 패턴' },
+            { key: 'risk', title: '위험 행동' },
+            { key: 'setup', title: '진입 근거' },
+          ].map((group) => (
+            <div key={group.key}>
+              <div className="text-[11px] text-content-muted font-medium mb-2">
+                {group.title}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {REVIEW_TAGS.filter((tag) => tag.group === group.key).map((tag) => {
+                  const active = selectedTags.includes(tag.id)
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleTag(tag.id)}
+                      className={`px-2.5 py-1 rounded-[4px] border text-[11px] font-semibold transition-colors ${
+                        active
+                          ? tag.group === 'good'
+                            ? 'border-profit/30 bg-profit-bg text-profit'
+                            : tag.group === 'risk'
+                              ? 'border-loss/30 bg-loss-bg text-loss'
+                              : 'border-info/30 bg-info-soft text-info'
+                          : 'border-border bg-surface text-content-muted hover:text-content'
+                      }`}
+                    >
+                      {tag.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-[11px] text-content-muted mt-3 leading-relaxed">
+          버튼을 누르면 태그와 메모 초안이 자동으로 채워집니다. 전체 태그를 매번 고를 필요 없이 맞는 것만 조정하세요.
+        </p>
       </div>
 
       {/* 레버리지 + 증거금 */}
