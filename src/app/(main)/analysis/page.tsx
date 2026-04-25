@@ -22,16 +22,8 @@ import { useAutoWeeklyReport } from '@/hooks/useAutoWeeklyReport'
 import { AutoReportToast } from '@/components/ui/AutoReportToast'
 import { SlideCarousel } from '@/components/analysis/SlideCarousel'
 import type { SlideItem } from '@/components/analysis/SlideCarousel'
-import { EMOTIONS } from '@/lib/constants'
+import { REVIEW_TAGS } from '@/lib/constants'
 import { EmotionWinRateBar } from '@/components/ai-report/EmotionWinRateBar'
-
-const EMOTION_DISPLAY = [
-  { id: 'calm', label: '침착', char: 'C', color: 'text-info', bgColor: 'bg-info-soft' },
-  { id: 'confident', label: '확신', char: 'F', color: 'text-profit', bgColor: 'bg-profit-bg' },
-  { id: 'fomo', label: 'FOMO', char: 'F', color: 'text-warning', bgColor: 'bg-warning-bg' },
-  { id: 'revenge', label: '복수매매', char: 'R', color: 'text-loss', bgColor: 'bg-loss-bg' },
-  { id: 'anxious', label: '불안', char: 'A', color: 'text-anxious', bgColor: 'bg-anxious-bg' },
-] as const
 import { TradingScoreSlide } from '@/components/analysis/TradingScoreSlide'
 import { DayOfWeekSlide } from '@/components/analysis/DayOfWeekSlide'
 import { MonthlyCalendarSlide } from '@/components/analysis/MonthlyCalendarSlide'
@@ -60,28 +52,34 @@ export default function AnalysisPage() {
     trades,
   } = analytics
 
-  // ── 감정별 승률 데이터 ──
-  const emotionWinRateData = useMemo(() => {
+  // ── 복기 태그별 승률 데이터 ──
+  const reviewTagWinRateData = useMemo(() => {
     const closedTrades = trades.filter((t) => t.status === 'closed')
     const groups: Record<string, { wins: number; total: number; pnlSum: number }> = {}
 
     for (const t of closedTrades) {
-      const key = t.emotion ?? '__unset__'
-      if (!groups[key]) groups[key] = { wins: 0, total: 0, pnlSum: 0 }
-      groups[key].total += 1
-      groups[key].pnlSum += t.pnl ?? 0
-      if (t.pnl != null && t.pnl > 0) groups[key].wins += 1
+      const keys = t.tags?.length ? t.tags : ['__unset__']
+      for (const key of keys) {
+        if (!groups[key]) groups[key] = { wins: 0, total: 0, pnlSum: 0 }
+        groups[key].total += 1
+        groups[key].pnlSum += t.pnl ?? 0
+        if (t.pnl != null && t.pnl > 0) groups[key].wins += 1
+      }
     }
 
-    const allKeys = [...EMOTIONS.map((e) => e.id), '__unset__']
+    const usedKeys = Object.keys(groups).filter((key) => key !== '__unset__')
+    const allKeys = [
+      ...usedKeys,
+      ...REVIEW_TAGS.map((tag) => tag.id).filter((key) => !usedKeys.includes(key)),
+      '__unset__',
+    ]
     return allKeys.map((key) => {
       const group = groups[key] ?? { wins: 0, total: 0, pnlSum: 0 }
-      const em = EMOTIONS.find((e) => e.id === key)
+      const tag = REVIEW_TAGS.find((item) => item.id === key)
       return {
         id: key,
-        label: em ? em.label : '미설정',
-        color: em?.color ?? 'text-content-secondary',
-        bgColor: em?.bgColor ?? 'bg-surface-muted',
+        label: tag ? tag.label : '미설정',
+        group: tag?.group ?? 'unset',
         winRate: group.total > 0 ? Math.round((group.wins / group.total) * 100) : 0,
         total: group.total,
         avgPnl: group.total > 0 ? group.pnlSum / group.total : 0,
@@ -89,38 +87,35 @@ export default function AnalysisPage() {
     })
   }, [trades])
 
-  // ── 감정 인사이트 배너 계산 ──
-  const emotionInsight = useMemo(() => {
+  // ── 복기 태그 인사이트 배너 계산 ──
+  const reviewTagInsight = useMemo(() => {
     const closedTrades = trades.filter((t) => t.status === 'closed')
-    const hasAnyEmotion = closedTrades.some((t) => t.emotion != null)
-    if (!hasAnyEmotion) return null
+    const hasAnyTag = closedTrades.some((t) => t.tags?.length)
+    if (!hasAnyTag) return null
 
-    const tagged = emotionWinRateData.filter((d) => d.id !== '__unset__' && d.total >= 3)
+    const tagged = reviewTagWinRateData.filter((d) => d.id !== '__unset__' && d.total >= 3)
     if (tagged.length === 0) return null
 
-    // 가장 손실이 큰 감정 (avgPnl이 가장 낮은 것)
-    const worstEmotion = [...tagged].sort((a, b) => a.avgPnl - b.avgPnl)[0]
-    if (worstEmotion.avgPnl < 0) {
-      // 전체 P&L 대비 해당 감정의 총 손실이 미치는 비율
+    const worstTag = [...tagged].sort((a, b) => a.avgPnl - b.avgPnl)[0]
+    if (worstTag.avgPnl < 0) {
       const allClosedPnl = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0)
-      const emotionTotalPnl = worstEmotion.avgPnl * worstEmotion.total
-      const impactPct = allClosedPnl !== 0 ? Math.abs(emotionTotalPnl / allClosedPnl) * 100 : 0
+      const tagTotalPnl = worstTag.avgPnl * worstTag.total
+      const impactPct = allClosedPnl !== 0 ? Math.abs(tagTotalPnl / allClosedPnl) * 100 : 0
       return {
         type: 'loss' as const,
-        label: worstEmotion.label,
-        avgPnl: worstEmotion.avgPnl,
+        label: worstTag.label,
+        avgPnl: worstTag.avgPnl,
         impactPct: Math.round(impactPct),
       }
     }
 
-    // 모두 수익이면 가장 승률 높은 감정 표시
-    const bestEmotion = [...tagged].sort((a, b) => b.winRate - a.winRate)[0]
+    const bestTag = [...tagged].sort((a, b) => b.winRate - a.winRate)[0]
     return {
       type: 'profit' as const,
-      label: bestEmotion.label,
-      winRate: bestEmotion.winRate,
+      label: bestTag.label,
+      winRate: bestTag.winRate,
     }
-  }, [trades, emotionWinRateData])
+  }, [trades, reviewTagWinRateData])
 
   // ── 슬라이드 정의 ──
   const slides: SlideItem[] = [
@@ -196,13 +191,13 @@ export default function AnalysisPage() {
         ? `${pnlBarData[0]?.label}에서 가장 높은 수익을 기록했습니다.`
         : undefined,
     },
-    // 6. 감정별 승률
+    // 6. 복기 태그별 승률
     {
-      id: 'emotion-win-rate',
-      title: '감정별 승률',
+      id: 'review-tag-win-rate',
+      title: '복기 태그별 승률',
       content: (
         <div className="flex flex-col gap-6">
-          <EmotionWinRateBar data={emotionWinRateData.map((d) => ({
+          <EmotionWinRateBar data={reviewTagWinRateData.map((d) => ({
             emotion: d.id,
             label: d.label,
             winRate: d.winRate,
@@ -210,27 +205,21 @@ export default function AnalysisPage() {
             avgPnl: d.avgPnl,
           }))} />
 
-          {/* 감정별 매매 비율 */}
+          {/* 복기 태그별 매매 비율 */}
           <div>
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-content-muted mb-3">
-              감정별 매매 비율
+              복기 태그별 매매 비율
             </h3>
-            <div className="grid grid-cols-5 gap-2 max-md:grid-cols-3">
-              {emotionWinRateData.filter((d) => d.id !== '__unset__').map((d) => {
+            <div className="grid grid-cols-4 gap-2 max-md:grid-cols-2">
+              {reviewTagWinRateData.filter((d) => d.id !== '__unset__').map((d) => {
                 const closedTotal = trades.filter((t) => t.status === 'closed').length
                 const ratio = closedTotal > 0 ? Math.round((d.total / closedTotal) * 100) : 0
-                const display = EMOTION_DISPLAY.find((e) => e.id === d.id)
                 return (
                   <div
                     key={d.id}
-                    className="bg-surface-hover rounded-card px-3 py-3 flex flex-col items-center gap-1.5"
+                    className="bg-surface-hover rounded-card px-3 py-3 flex flex-col gap-1.5"
                   >
-                    <span
-                      className={`w-7 h-7 rounded-badge flex items-center justify-center text-[11px] font-bold ${display?.bgColor ?? 'bg-surface-muted'} ${display?.color ?? 'text-content-muted'}`}
-                    >
-                      {display?.char ?? '?'}
-                    </span>
-                    <span className={`text-[11px] font-medium ${display?.color ?? 'text-content-secondary'}`}>
+                    <span className="text-[11px] font-semibold text-content-secondary truncate">
                       {d.label}
                     </span>
                     <span className="font-mono text-sm font-bold text-content">
@@ -247,9 +236,9 @@ export default function AnalysisPage() {
         </div>
       ),
       takeaway: (() => {
-        const best = [...emotionWinRateData].filter((d) => d.total > 0).sort((a, b) => b.winRate - a.winRate)[0]
-        if (!best) return '거래에 감정 태그를 기록하면 감정별 승률을 분석할 수 있습니다.'
-        return `${best.label} 상태에서 승률이 ${best.winRate}%로 가장 높습니다.`
+        const best = [...reviewTagWinRateData].filter((d) => d.total > 0).sort((a, b) => b.winRate - a.winRate)[0]
+        if (!best) return '거래에 복기 태그를 기록하면 행동별 승률을 분석할 수 있습니다.'
+        return `${best.label} 태그에서 승률이 ${best.winRate}%로 가장 높습니다.`
       })(),
     },
     // 7. 승률 & 통계
@@ -298,38 +287,38 @@ export default function AnalysisPage() {
         </button>
       </div>
 
-      {/* 감정 인사이트 배너 */}
-      {emotionInsight && (
+      {/* 복기 태그 인사이트 배너 */}
+      {reviewTagInsight && (
         <div
           className={`rounded-card p-sp-8 ${
-            emotionInsight.type === 'loss' ? 'bg-loss-bg' : 'bg-profit-bg'
+            reviewTagInsight.type === 'loss' ? 'bg-loss-bg' : 'bg-profit-bg'
           }`}
           role="note"
-          aria-label="감정 인사이트"
+          aria-label="복기 태그 인사이트"
         >
           <p
             className={`text-sm font-medium leading-relaxed ${
-              emotionInsight.type === 'loss' ? 'text-loss' : 'text-profit'
+              reviewTagInsight.type === 'loss' ? 'text-loss' : 'text-profit'
             }`}
           >
-            {emotionInsight.type === 'loss' ? (
+            {reviewTagInsight.type === 'loss' ? (
               <>
-                <strong>{emotionInsight.label}</strong> 매매 시 평균{' '}
-                <strong>{formatPnl(emotionInsight.avgPnl)}</strong>을 잃고 있습니다
+                <strong>{reviewTagInsight.label}</strong> 태그 매매에서 평균{' '}
+                <strong>{formatPnl(reviewTagInsight.avgPnl)}</strong>을 잃고 있습니다
               </>
             ) : (
               <>
-                <strong>{emotionInsight.label}</strong> 매매 시 가장 높은 승률{' '}
-                <strong className="font-mono">{emotionInsight.winRate}%</strong>를 기록하고 있습니다
+                <strong>{reviewTagInsight.label}</strong> 태그 매매에서 가장 높은 승률{' '}
+                <strong className="font-mono">{reviewTagInsight.winRate}%</strong>를 기록하고 있습니다
               </>
             )}
           </p>
-          {emotionInsight.type === 'loss' && (
+          {reviewTagInsight.type === 'loss' && (
             <p
               className="text-xs text-loss mt-1 opacity-75"
             >
-              감정적 결정의 손실이 전체 수익률에{' '}
-              <span className="font-mono font-semibold">{emotionInsight.impactPct}%p</span> 영향을 미치고 있습니다.
+              이 행동 패턴의 손실이 전체 수익률에{' '}
+              <span className="font-mono font-semibold">{reviewTagInsight.impactPct}%p</span> 영향을 미치고 있습니다.
             </p>
           )}
         </div>

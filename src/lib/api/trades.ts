@@ -20,6 +20,11 @@ type Client = SupabaseClient<Database>;
 
 /** 기본 페이지 크기 */
 const DEFAULT_PAGE_SIZE = 50;
+const DRAFT_VISIBLE_HOURS = 24;
+
+function activeDraftCutoffIso(): string {
+  return new Date(Date.now() - DRAFT_VISIBLE_HOURS * 60 * 60 * 1000).toISOString();
+}
 
 /**
  * 거래 목록을 필터 조건에 따라 조회한다.
@@ -41,6 +46,10 @@ export async function getTrades(
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
+
+    if (!filters?.includeExpiredDrafts) {
+      query = query.or(`import_status.is.null,import_status.neq.draft,created_at.gte.${activeDraftCutoffIso()}`);
+    }
 
     // 필터 적용
     if (filters?.asset) {

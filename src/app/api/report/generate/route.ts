@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createMobileClient } from '@/lib/supabase/mobile-server';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit';
 import type { Json } from '@/lib/supabase/types';
+import { REVIEW_TAGS } from '@/lib/constants';
 
 /**
  * AI 월간 트레이딩 리포트 생성 API
@@ -18,7 +20,10 @@ interface GeminiContent {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
+  const authHeader = request.headers.get('authorization');
+  const supabase = authHeader?.startsWith('Bearer ')
+    ? createMobileClient(authHeader.slice(7))
+    : await createClient();
 
   // 인증 확인
   const {
@@ -215,19 +220,48 @@ export async function POST(request: NextRequest) {
     const totalPnl = trades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
     const winRate = (wins / trades.length) * 100;
 
-    // 감정별 통계 계산
-    const emotionBuckets: Record<string, { count: number; wins: number; pnl: number }> = {};
+    // 복기 태그별/조합별 통계 계산
+    const reviewTagLabels = Object.fromEntries(REVIEW_TAGS.map((tag) => [tag.id, tag.label]));
+    const tagBuckets: Record<string, { count: number; wins: number; pnl: number }> = {};
+    const tagComboBuckets: Record<string, { count: number; wins: number; pnl: number }> = {};
+    let untaggedCount = 0;
+
     for (const t of trades) {
-      const emo = (t as Record<string, unknown>).emotion as string | null ?? '__unset__';
-      if (!emotionBuckets[emo]) emotionBuckets[emo] = { count: 0, wins: 0, pnl: 0 };
-      emotionBuckets[emo].count++;
-      if ((t.pnl ?? 0) > 0) emotionBuckets[emo].wins++;
-      emotionBuckets[emo].pnl += t.pnl ?? 0;
+      const tags = Array.isArray(t.tags) ? t.tags.filter(Boolean) : [];
+      if (tags.length === 0) {
+        untaggedCount++;
+        continue;
+      }
+
+      for (const tag of tags) {
+        if (!tagBuckets[tag]) tagBuckets[tag] = { count: 0, wins: 0, pnl: 0 };
+        tagBuckets[tag].count++;
+        if ((t.pnl ?? 0) > 0) tagBuckets[tag].wins++;
+        tagBuckets[tag].pnl += t.pnl ?? 0;
+      }
+
+      const comboKey = [...new Set(tags)].sort().join('+');
+      if (!tagComboBuckets[comboKey]) tagComboBuckets[comboKey] = { count: 0, wins: 0, pnl: 0 };
+      tagComboBuckets[comboKey].count++;
+      if ((t.pnl ?? 0) > 0) tagComboBuckets[comboKey].wins++;
+      tagComboBuckets[comboKey].pnl += t.pnl ?? 0;
     }
-    const emotionStatsStr = Object.entries(emotionBuckets)
-      .filter(([, s]) => s.count > 0)
-      .map(([emo, s]) => `${emo}: ${s.count}건, 승률 ${((s.wins / s.count) * 100).toFixed(1)}%, PnL ${s.pnl.toFixed(2)} USDT`)
+
+    const tagStatsStr = Object.entries(tagBuckets)
+      .sort((a, b) => Math.abs(b[1].pnl) - Math.abs(a[1].pnl))
+      .map(([tag, s]) => `${reviewTagLabels[tag] ?? tag}: ${s.count}건, 승률 ${((s.wins / s.count) * 100).toFixed(1)}%, PnL ${s.pnl.toFixed(2)} USDT`)
       .join('\n');
+
+    const tagComboStatsStr = Object.entries(tagComboBuckets)
+      .sort((a, b) => Math.abs(b[1].pnl) - Math.abs(a[1].pnl))
+      .slice(0, 12)
+      .map(([combo, s]) => {
+        const label = combo.split('+').map((tag) => reviewTagLabels[tag] ?? tag).join(' + ');
+        return `${label}: ${s.count}건, 승률 ${((s.wins / s.count) * 100).toFixed(1)}%, PnL ${s.pnl.toFixed(2)} USDT`;
+      })
+      .join('\n');
+
+    const emptyTagPct = ((untaggedCount / trades.length) * 100).toFixed(1);
 
     // 거래 데이터를 분석용 JSON으로 변환
     const tradesForAnalysis = trades.map((t) => ({
@@ -241,7 +275,6 @@ export async function POST(request: NextRequest) {
       reason: t.reason,
       notes: t.notes,
       tags: t.tags,
-      emotion: (t as Record<string, unknown>).emotion ?? null,
       entry_datetime: t.entry_datetime,
       exit_datetime: t.exit_datetime,
       scale_ins: (scaleIns ?? [])
@@ -420,15 +453,18 @@ ${periodStart} ~ ${periodEnd} (ISO week ${week})
 ## 종목별 통계
 ${assetStatsStr}
 
-## 감정별 통계
-${emotionStatsStr || '감정 태그 없음'}
+## 복기 태그별 통계
+${tagStatsStr || '복기 태그 없음'}
+
+## 복기 태그 조합 통계
+${tagComboStatsStr || '복기 태그 조합 없음'}
 
 ## 출력 형식
 ### 이번 주 요약
 1~2문장의 핵심 평가 (강점 또는 주의점 위주)
 
 ### 개선 포인트
-핵심 인사이트 1줄
+복기 태그 기준 핵심 인사이트 1줄. 뇌동매매/복수매매/재진입과다 손실이 크면 다음 행동 규칙으로 끝내라.
 
 ---
 
@@ -537,15 +573,17 @@ ${emotionStatsStr || '감정 태그 없음'}
 
     // Gemini 프롬프트 구성 (monthly)
     const prompt = `## 페르소나 및 임무
-너는 월스트리트 출신의 '시니어 리스크 매니저'이자 '트레이딩 심리 분석가'다.
-사용자의 한 달치 매매 데이터를 분석하여, 단순 요약을 넘어 수익 구조의 허점을 찌르고 장기적 생존 전략을 제시하라.
+너는 암호화폐 선물 트레이더를 돕는 '냉정하지만 비난하지 않는 트레이딩 코치'다.
+사용자의 한 달치 매매 데이터를 분석하여, 감정 평가가 아니라 **행동 패턴과 숫자** 중심으로 수익 구조의 허점을 짚고 다음 행동 규칙을 제시하라.
+문제 태그(뇌동매매/복수매매/재진입과다/손절지연 등)를 다룰 때 사용자를 모욕하지 말고, "근거가 약한 즉흥 진입", "손실 이후 같은 방향 재진입"처럼 행동을 구체적으로 설명하라.
 한국어로 작성하라.
 
 ## ⛔ 필수 제약 조건 (STRICT RULES)
 1. **표 형식 금지**: 마크다운 표(|---|)를 절대 사용하지 마라. 모든 데이터는 '불렛 포인트(-)'와 '굵은 글씨'를 조합하여 서술형으로 작성하라.
 2. **수치 기반 서술**: "수익이 났다"는 말 대신 "기대값(EV)이 낮아 파산 위험이 있다"는 식의 전문 용어를 사용하라.
-3. **톤앤매너 — 8:2 비판 우세 원칙**:
-   - 전체 분량의 **약 80%는 냉철한 비판과 경고**, **약 20%는 데이터로 입증된 강점 인정**으로 구성하라.
+3. **톤앤매너 — 코치형 냉정함 원칙**:
+   - 냉정하게 지적하되 비난하거나 낙인찍지 마라. "도박꾼" 같은 모욕적 표현은 금지한다.
+   - 전체 분량의 **약 70%는 행동 패턴 개선과 리스크 경고**, **약 30%는 데이터로 입증된 강점 인정**으로 구성하라.
    - 강점 인정은 반드시 구체적 수치를 동반해야 한다. "잘했다"는 금지, "BTC LONG 승률 75%(12전 9승)는 재현 가능한 엣지"처럼 작성하라.
    - 칭찬 뒤에는 반드시 "단," 으로 시작하는 리스크 경고를 붙여라.
 4. **EV 판단 기준**: 아래 기준으로 기대값을 해석하라:
@@ -561,7 +599,7 @@ ${emotionStatsStr || '감정 태그 없음'}
 ## 🔍 분석 프레임워크 (Core Pillars — 6대 축)
 1. **엣지(Edge) 검증**: 수익이 시장의 변동성 덕분인지, 사용자의 타점 덕분인지 분석하라.
 2. **자산 적합성(Asset Affinity)**: 특정 코인에서 반복되는 손실 패턴을 찾아내어 '거래 금지 종목'을 지정하라.
-3. **심리적 편향 & 틸트 감지**: 뇌동매매, 본절 집착, FOMO, 연패 후 과잉 대응(틸트) 등을 데이터에서 탐지하라.
+3. **복기 태그 조합 분석**: 뇌동매매, 복수매매, 재진입과다, 손절지연, 사이즈과다 같은 행동 태그 조합별 손익을 분석하라.
 4. **리스크 관리**: 레버리지 대비 MDD(최대 낙폭) 가능성을 경고하고 자금 관리 규칙을 설정하라.
 5. **시간대 분석**: 진입 시간대별 성과 차이를 분석하여 '골든 타임'과 '데드 타임'을 식별하라.
 6. **계획 준수도**: 트레이딩 플랜이 있는 거래와 없는 거래의 성과 차이를 분석하라.
@@ -596,8 +634,13 @@ ${assetStatsStr}
 ### 레버리지별 통계
 ${levStatsStr}
 
-### 감정별 통계 (거래 시 기록한 감정 태그)
-${emotionStatsStr || '감정 태그 데이터 없음'}
+### 복기 태그별 통계 (행동/근거 태그)
+${tagStatsStr || '복기 태그 데이터 없음'}
+
+### 복기 태그 조합 통계
+${tagComboStatsStr || '복기 태그 조합 데이터 없음'}
+
+- 복기 태그 미설정 비율: **${emptyTagPct}%**
 ${hasTimeData ? `
 ### 시간대별 통계 (진입 시각 기준, KST)
 ${hourStatsStr}` : ''}
@@ -629,12 +672,12 @@ ${hasTimeData ? `
 ### ⏰ 시간대 분석
 시간대별 성과를 분석하여 승률과 수익이 가장 높은 '골든 타임'과 손실이 집중되는 '데드 타임'을 식별하라. 데드 타임에는 거래 자제 또는 포지션 축소를 권고하라.` : ''}
 
-### 😶 감정별 매매 성과 분석
-감정 태그별(침착/확신/FOMO/복수매매/불안) 승률과 PnL을 비교하라. 가장 수익이 높은 감정 상태와 가장 위험한 감정 상태를 명확히 구분하라. 감정 태그 미설정 비율이 높다면 기록 습관 개선을 권고하라.
+### 🧩 복기 태그 조합별 손익 분석
+복기 태그 조합별 승률과 PnL을 비교하라. 손실이 큰 조합과 수익성이 좋은 조합을 명확히 구분하라. 특히 뇌동매매/복수매매/재진입과다/손절지연/사이즈과다 조합이 손실에 기여했는지 분석하라.
 
-### 🧠 심리적 편향 & 틸트 분석
-거래 데이터에서 발견되는 심리적 오류를 지적하라. 진입 이유(reason), 메모(notes), 거래 패턴에서 뇌동매매, FOMO, 본절 집착 등의 흔적을 찾아라.
-연속 손실 스트릭 데이터와 틸트 패턴(연패 후 레버리지 증가 등)을 반드시 분석하라. 최대 연패 기간 전후의 거래 패턴 변화를 짚어라.
+### 🧠 행동 패턴 & 틸트 분석
+거래 데이터에서 발견되는 행동 오류를 지적하라. 진입 이유(reason), 메모(notes), tags, 거래 패턴에서 근거부족, 뇌동매매, FOMO, 손실 후 재진입, 본절 집착의 흔적을 찾아라.
+연속 손실 스트릭 데이터와 틸트 패턴(연패 후 레버리지 증가 등)을 반드시 분석하라. 최대 연패 기간 전후의 거래 패턴 변화를 짚고, 지적은 반드시 다음 행동 규칙으로 끝내라.
 ${totalPlans > 0 ? `
 ### 📝 계획 준수도 분석
 트레이딩 플랜이 있는 거래와 없는 거래의 승률·PnL 차이를 분석하라. 플랜 준수도와 성과의 상관관계를 짚고, 계획 없이 진입한 거래의 비율이 높다면 경고하라.` : ''}
@@ -655,7 +698,8 @@ ${totalPlans > 0 ? '플랜 작성 관련 개선 규칙도 1개 이상 포함하�
 - 데이터에 없는 내용을 지어내지 마라.
 - 냉정한 팩트를 우선하되, 수치로 증명된 강점은 인정하라. 인정 후 반드시 리스크 경고를 붙여라.
 - 마크다운 표(|---|)를 사용하면 실격이다. 불렛 포인트만 사용하라.
-- ${parseInt(emptyReasonPct) > 50 ? '진입 이유 미기록 비율이 ' + emptyReasonPct + '%로 매우 높다. 이것을 최우선으로 지적하고 "매매 일지를 쓰지 않는 트레이더는 도박꾼이다"라고 경고하라.' : ''}
+- ${parseInt(emptyReasonPct) > 50 ? '진입 이유 미기록 비율이 ' + emptyReasonPct + '%로 매우 높다. 이것을 최우선으로 지적하되 비난하지 말고, "진입 전 근거 1개와 손절 기준 1개를 기록하지 않으면 신규 진입 금지" 규칙을 제시하라.' : ''}
+- ${parseInt(emptyTagPct) > 50 ? '복기 태그 미설정 비율이 ' + emptyTagPct + '%로 높다. 태그 누락 때문에 행동 패턴 분석의 신뢰도가 낮아진다고 지적하고, 초안 확정 전 최소 1개 복기 태그 선택 규칙을 제시하라.' : ''}
 - 물타기(scale-in) 데이터가 있다면 물타기 성공/실패율도 분석하라.
 - 연패 스트릭이 5회 이상이면 "즉시 매매 중단 후 복기" 경고를 발령하라.
 

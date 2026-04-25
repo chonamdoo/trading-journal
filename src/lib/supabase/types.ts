@@ -295,6 +295,41 @@ export type Database = {
           }
         ];
       };
+      exchange_connections: {
+        Row: ExchangeConnectionRow;
+        Insert: ExchangeConnectionInsert;
+        Update: ExchangeConnectionUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'exchange_connections_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      sync_logs: {
+        Row: SyncLogRow;
+        Insert: SyncLogInsert;
+        Update: SyncLogUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'sync_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sync_logs_connection_id_fkey';
+            columns: ['connection_id'];
+            isOneToOne: false;
+            referencedRelation: 'exchange_connections';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -420,6 +455,8 @@ export type TradeDirection = 'LONG' | 'SHORT';
 
 /** 거래 상태 */
 export type TradeStatus = 'open' | 'closed';
+export type TradeSource = 'manual' | 'api' | 'csv';
+export type TradeImportStatus = 'draft' | 'confirmed';
 
 export type TradeRow = {
   id: string;
@@ -440,6 +477,14 @@ export type TradeRow = {
   notes: string | null;
   tags: string[] | null;
   emotion: string | null;
+  exchange: string | null;
+  external_id: string | null;
+  source: TradeSource | null;
+  fee: number | null;
+  fee_asset: string | null;
+  synced_at: string | null;
+  import_status: TradeImportStatus | null;
+  raw_exchange_payload: Json | null;
   created_at: string;
   updated_at: string;
 }
@@ -463,6 +508,14 @@ export type TradeInsert = {
   notes?: string | null;
   tags?: string[] | null;
   emotion?: string | null;
+  exchange?: string | null;
+  external_id?: string | null;
+  source?: TradeSource | null;
+  fee?: number | null;
+  fee_asset?: string | null;
+  synced_at?: string | null;
+  import_status?: TradeImportStatus | null;
+  raw_exchange_payload?: Json | null;
 }
 
 export type TradeUpdate = {
@@ -482,6 +535,109 @@ export type TradeUpdate = {
   notes?: string | null;
   tags?: string[] | null;
   emotion?: string | null;
+  exchange?: string | null;
+  external_id?: string | null;
+  source?: TradeSource | null;
+  fee?: number | null;
+  fee_asset?: string | null;
+  synced_at?: string | null;
+  import_status?: TradeImportStatus | null;
+  raw_exchange_payload?: Json | null;
+}
+
+// ────────────────────────────────────────────
+// exchange_connections / sync_logs 테이블
+// ────────────────────────────────────────────
+
+export type ExchangeName = 'binance' | 'bybit' | 'okx' | 'bitget' | 'flipster';
+export type SyncStatus = 'running' | 'success' | 'failed' | 'partial';
+
+export type ExchangeConnectionRow = {
+  id: string;
+  user_id: string;
+  exchange: ExchangeName;
+  label: string | null;
+  api_key_encrypted: Json;
+  api_secret_encrypted: Json;
+  passphrase_encrypted: Json | null;
+  permissions_verified: boolean;
+  is_active: boolean;
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ExchangeConnectionInsert = {
+  id?: string;
+  user_id: string;
+  exchange: ExchangeName;
+  label?: string | null;
+  api_key_encrypted: Json;
+  api_secret_encrypted: Json;
+  passphrase_encrypted?: Json | null;
+  permissions_verified?: boolean;
+  is_active?: boolean;
+  last_synced_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type ExchangeConnectionUpdate = {
+  label?: string | null;
+  api_key_encrypted?: Json;
+  api_secret_encrypted?: Json;
+  passphrase_encrypted?: Json | null;
+  permissions_verified?: boolean;
+  is_active?: boolean;
+  last_synced_at?: string | null;
+  updated_at?: string;
+}
+
+export type SyncLogRow = {
+  id: string;
+  user_id: string;
+  connection_id: string | null;
+  exchange: ExchangeName;
+  status: SyncStatus;
+  started_at: string;
+  completed_at: string | null;
+  from_time: string | null;
+  to_time: string | null;
+  trades_found: number;
+  trades_imported: number;
+  trades_skipped: number;
+  error_message: string | null;
+  metadata: Json | null;
+}
+
+export type SyncLogInsert = {
+  id?: string;
+  user_id: string;
+  connection_id?: string | null;
+  exchange: ExchangeName;
+  status?: SyncStatus;
+  started_at?: string;
+  completed_at?: string | null;
+  from_time?: string | null;
+  to_time?: string | null;
+  trades_found?: number;
+  trades_imported?: number;
+  trades_skipped?: number;
+  error_message?: string | null;
+  metadata?: Json | null;
+}
+
+export type SyncLogUpdate = {
+  connection_id?: string | null;
+  status?: SyncStatus;
+  completed_at?: string | null;
+  from_time?: string | null;
+  to_time?: string | null;
+  trades_found?: number;
+  trades_imported?: number;
+  trades_skipped?: number;
+  error_message?: string | null;
+  metadata?: Json | null;
 }
 
 // ────────────────────────────────────────────
@@ -843,6 +999,8 @@ export interface TradeFilterParams extends PaginationParams {
   result?: 'profit' | 'loss';
   dateFrom?: string;
   dateTo?: string;
+  /** true면 24시간이 지난 미확정 API 초안도 포함한다. 기본값은 제외. */
+  includeExpiredDrafts?: boolean;
 }
 
 /** 마이그레이션 결과 */

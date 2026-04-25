@@ -3,7 +3,7 @@
 /** 포지션 방향 */
 export type Direction = 'LONG' | 'SHORT'
 
-/** 매매 감정 태그 */
+/** 레거시 감정 태그: 신규 UI/분석은 Trade.tags의 복기 태그를 사용 */
 export type Emotion = 'calm' | 'confident' | 'fomo' | 'revenge' | 'anxious'
 
 /** 거래 상태 */
@@ -29,6 +29,11 @@ export interface Trade {
   notes?: string | null           // 결과 메모
   tags?: string[] | null           // P2: 전략 태그 (DB에서 null 반환 가능, I-2)
   emotion?: Emotion | null
+  exchange?: string | null
+  external_id?: string | null
+  source?: 'manual' | 'api' | 'csv' | null
+  import_status?: 'draft' | 'confirmed' | null
+  raw_exchange_payload?: Record<string, unknown> | null
   created_at?: string
   updated_at?: string
 }
@@ -145,6 +150,7 @@ export interface TradeFilter {
   /** FE UI 표시용 필터값 (win/lose/open) */
   result?: 'win' | 'lose' | 'open' | ''
   hasNotes?: boolean
+  draftOnly?: boolean
 }
 
 /**

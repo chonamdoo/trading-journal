@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { Trade, TradeFilter, TradeClose, TradeScaleIn, TradeScreenshot } from '@/types'
-import { EMOTIONS } from '@/lib/constants'
+import { REVIEW_TAGS } from '@/lib/constants'
 import { DirectionBadge, Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -21,6 +21,70 @@ import {
 } from '@/lib/format'
 
 const PAGE_SIZE = 10
+const REVIEW_TAG_LABELS = Object.fromEntries(REVIEW_TAGS.map((tag) => [tag.id, tag.label]))
+
+const RAW_FIELD_KEYS = [
+  'aggregate.externalId',
+  'aggregate.fillCount',
+  'aggregate.totalQty',
+  'aggregate.totalNotional',
+  'symbol',
+  'instId',
+  'side',
+  'posSide',
+  'tradeSide',
+  'orderId',
+  'ordId',
+  'tradeId',
+  'price',
+  'fillPx',
+  'avgEntryPrice',
+  'avgExitPrice',
+  'profit',
+  'fillPnl',
+  'closedPnl',
+  'fee',
+  'fillTime',
+  'cTime',
+] as const
+
+function getPathValue(payload: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (!current || typeof current !== 'object') return undefined;
+    return (current as Record<string, unknown>)[key];
+  }, payload);
+}
+
+function rawSourcePayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const fills = payload.fills;
+  if (Array.isArray(fills) && fills[0] && typeof fills[0] === 'object') {
+    return {
+      ...fills[0] as Record<string, unknown>,
+      aggregate: payload.aggregate,
+    };
+  }
+  return payload;
+}
+
+function formatRawValue(value: unknown): string {
+  if (value == null || value === '') return '—'
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function mappedFields(trade: Trade): { label: string; value: string }[] {
+  return [
+    { label: '거래소', value: trade.exchange ?? '—' },
+    { label: '외부 ID', value: trade.external_id ?? '—' },
+    { label: '종목', value: trade.asset },
+    { label: '방향', value: trade.direction },
+    { label: '진입가', value: formatPrice(trade.entry_price) },
+    { label: '청산가', value: trade.exit_price != null ? formatPrice(trade.exit_price) : '—' },
+    { label: '증거금', value: formatNumber(trade.margin) },
+    { label: '손익', value: trade.pnl != null ? formatPnl(trade.pnl) : '—' },
+    { label: '상태', value: trade.import_status === 'draft' ? '초안' : '확정' },
+  ]
+}
 
 interface TradeTableProps {
   trades: Trade[]
@@ -69,6 +133,7 @@ export function TradeTable({
       if (filter.result === 'lose' && !(t.pnl != null && t.pnl <= 0)) return false
       if (filter.result === 'open' && t.status !== 'open') return false
       if (filter.hasNotes && !t.notes?.trim()) return false
+      if (filter.draftOnly && t.import_status !== 'draft') return false
       return true
     })
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -115,7 +180,7 @@ export function TradeTable({
   }
 
   const handleExportCSV = () => {
-    const headers = ['날짜', '종목', '방향', '레버리지', '진입가', '청산가', '증거금', '손익', '수익률', '감정', '이유', '메모']
+    const headers = ['날짜', '종목', '방향', '레버리지', '진입가', '청산가', '증거금', '손익', '수익률', '복기태그', '이유', '메모']
     const rows = filteredTrades.map((t) => [
       t.date,
       t.asset,
@@ -126,7 +191,7 @@ export function TradeTable({
       t.margin,
       t.pnl ?? '',
       t.pnl != null ? ((t.pnl / t.margin) * 100).toFixed(2) + '%' : '',
-      t.emotion ?? '',
+      (t.tags ?? []).map((tag) => REVIEW_TAG_LABELS[tag] ?? tag).join(' / '),
       t.reason ?? '',
       t.notes ?? '',
     ])
@@ -214,6 +279,18 @@ export function TradeTable({
         >
           메모 있음
         </button>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, draftOnly: f.draftOnly ? undefined : true }))}
+          aria-pressed={!!filter.draftOnly}
+          className={`px-[11px] py-[8px] rounded-input text-[13px] border transition-colors ${
+            filter.draftOnly
+              ? 'bg-warning-bg border-warning text-warning'
+              : 'bg-surface border-border-input text-content-secondary'
+          }`}
+        >
+          초안
+        </button>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[12px] text-content-muted font-mono">
             {filteredTrades.length}건
@@ -262,7 +339,7 @@ export function TradeTable({
                     수익률
                   </th>
                   <th className="px-sp-4 pb-sp-4 text-left text-[11px] font-semibold text-content-muted uppercase tracking-[0.4px] hidden lg:table-cell">
-                    감정
+                    복기
                   </th>
                   <th className="px-sp-4 pb-sp-4 text-right text-[11px] font-semibold text-content-muted uppercase tracking-[0.4px] w-8" />
                 </tr>
@@ -292,10 +369,24 @@ export function TradeTable({
                         aria-expanded={isExpanded}
                       >
                         <td className="px-sp-4 py-[11px] border-b border-border text-content-secondary text-[12px] font-mono">
-                          {t.date}
+                          <div className="flex flex-col gap-1">
+                            <span>{t.date}</span>
+                            {t.import_status === 'draft' && (
+                              <span className="inline-flex w-fit rounded-[4px] bg-warning-bg px-[6px] py-[2px] text-[10px] font-semibold text-warning">
+                                초안
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-sp-4 py-[11px] border-b border-border font-semibold">
-                          {t.asset}
+                          <div className="flex items-center gap-2">
+                            <span>{t.asset}</span>
+                            {t.source === 'api' && (
+                              <span className="rounded-[4px] bg-info-soft px-[5px] py-[2px] text-[10px] font-semibold text-info">
+                                API
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-sp-4 py-[11px] border-b border-border">
                           <DirectionBadge direction={t.direction} />
@@ -328,15 +419,15 @@ export function TradeTable({
                         </td>
                         <td className="px-sp-4 py-[11px] border-b border-border hidden lg:table-cell">
                           {(() => {
-                            const em = EMOTIONS.find((e) => e.id === t.emotion)
-                            if (!em) return <span className="text-content-muted text-[12px]">—</span>
-                            return (
-                              <span
-                                className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${em.color} ${em.bgColor}`}
-                              >
-                                {em.label}
-                              </span>
-                            )
+                            const primaryTag = t.tags?.[0]
+                            if (primaryTag) {
+                              return (
+                                <span className="inline-block rounded-full bg-info-soft px-2 py-0.5 text-[11px] font-semibold text-info">
+                                  {REVIEW_TAG_LABELS[primaryTag] ?? primaryTag}
+                                </span>
+                              )
+                            }
+                            return <span className="text-content-muted text-[12px]">—</span>
                           })()}
                         </td>
                         <td className="px-sp-4 py-[11px] border-b border-border text-right">
@@ -401,24 +492,24 @@ export function TradeTable({
                                     )}
                                   </div>
 
-                                  {/* 감정 태그 */}
-                                  {t.emotion && (() => {
-                                    const em = EMOTIONS.find((e) => e.id === t.emotion)
-                                    if (!em) return null
-                                    return (
-                                      <div>
-                                        <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-1">
-                                          감정 태그
-                                        </div>
-                                        <span
-                                          className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${em.color} ${em.bgColor}`}
-                                        >
-                                          {em.label}
-                                        </span>
+                                  {/* 복기 태그 */}
+                                  {t.tags && t.tags.length > 0 && (
+                                    <div>
+                                      <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-1">
+                                        복기 태그
                                       </div>
-                                    )
-                                  })()}
-
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {t.tags.map((tag) => (
+                                          <span
+                                            key={tag}
+                                            className="inline-block rounded-[4px] bg-info-soft px-2 py-0.5 text-[11px] font-semibold text-info"
+                                          >
+                                            {REVIEW_TAG_LABELS[tag] ?? tag}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                   {/* 스크린샷 */}
                                   {tradeScreenshots.length > 0 && (
                                     <div>
@@ -517,6 +608,52 @@ export function TradeTable({
                                   )}
 
                                   {/* 진입 이유 / 메모 */}
+                                  {t.import_status === 'draft' && (
+                                    <div className="rounded-input border border-warning/30 bg-warning-bg px-3 py-2 text-[12px] text-warning">
+                                      자동 가져온 초안입니다. 수정에서 진입 이유나 복기 태그를 저장하면 확정 상태로 전환됩니다. 24시간이 지나면 기본 목록에서 숨겨집니다.
+                                    </div>
+                                  )}
+
+                                  {t.source === 'api' && t.raw_exchange_payload && (
+                                    <div>
+                                      <div className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px] mb-2">
+                                        가져온 거래 매핑 검증
+                                      </div>
+                                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                        <div className="rounded-input border border-border bg-surface overflow-hidden">
+                                          <div className="border-b border-border px-3 py-2 text-[12px] font-semibold text-content-secondary">
+                                            앱 필드
+                                          </div>
+                                          <div className="divide-y divide-border">
+                                            {mappedFields(t).map((field) => (
+                                              <div key={field.label} className="grid grid-cols-[96px_1fr] gap-2 px-3 py-2 text-[12px]">
+                                                <span className="text-content-muted">{field.label}</span>
+                                                <span className="font-mono text-content break-all">{field.value}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        <div className="rounded-input border border-border bg-surface overflow-hidden">
+                                          <div className="border-b border-border px-3 py-2 text-[12px] font-semibold text-content-secondary">
+                                            원본 거래소 데이터
+                                          </div>
+                                          <div className="divide-y divide-border">
+                                            {RAW_FIELD_KEYS
+                                              .filter((key) => getPathValue(rawSourcePayload(t.raw_exchange_payload ?? {}), key) !== undefined)
+                                              .map((key) => (
+                                                <div key={key} className="grid grid-cols-[96px_1fr] gap-2 px-3 py-2 text-[12px]">
+                                                  <span className="text-content-muted">{key}</span>
+                                                  <span className="font-mono text-content break-all">
+                                                    {formatRawValue(getPathValue(rawSourcePayload(t.raw_exchange_payload ?? {}), key))}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {(t.reason || t.notes) && (
                                     <div className="space-y-sp-6">
                                       {t.reason && (

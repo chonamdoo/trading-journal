@@ -244,9 +244,9 @@ export default function AIReportPage() {
         </div>
       </section>
 
-      {/* Emotion Win Rate + Trading Intelligence */}
+      {/* Review Tag Win Rate + Trading Intelligence */}
       <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
-        <ChartCard title="Emotion Win Rate">
+        <ChartCard title="Review Tag Win Rate">
           {isLoading ? <SkeletonBarRows count={6} /> : <EmotionWinRateBar data={emotionWinRates} />}
         </ChartCard>
 
