@@ -107,31 +107,6 @@ export async function deleteProfile(
   }
 }
 
-/**
- * 사용자의 온보딩 완료 여부를 확인한다.
- * initial_capital이 0보다 크면 온보딩 완료로 판단한다.
- */
-export async function isOnboardingComplete(
-  supabase: Client,
-  userId: string
-): Promise<ApiResult<boolean>> {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('initial_capital')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, data: Number(data.initial_capital) > 0 };
-  } catch (err) {
-    return { success: false, error: getErrorMessage(err) };
-  }
-}
-
 // ────────────────────────────────────────────
 // 유틸리티
 // ────────────────────────────────────────────

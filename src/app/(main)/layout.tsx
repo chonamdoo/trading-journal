@@ -30,6 +30,12 @@ export default function MainLayout({
 }) {
   const pathname = usePathname()
 
+  // 온보딩 페이지는 AppShell(헤더·사이드바·하단 네비) 우회 — 신규 사용자에게 $0 헤더 노출 방지.
+  // initial_capital === 0 가드는 onboarding 페이지 자체의 진입 가드와 AppShell 가드의 결합으로 작동.
+  if (pathname === '/onboarding') {
+    return <>{children}</>
+  }
+
   // 현재 경로가 메인 탭인지 확인
   const isMainTab = MAIN_TAB_ROUTES.includes(pathname as typeof MAIN_TAB_ROUTES[number])
 

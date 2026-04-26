@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -32,10 +32,13 @@ import {
   fetchSyncBitgetTrades,
   fetchSyncBybitTrades,
   fetchSyncOkxTrades,
+  fetchImportJson,
   type ExchangeConnectionPublic,
+  type ImportPayload,
 } from '@/lib/api/client-api'
 import { curCapital, totalPnL, totalReturnPct, totalDeposits } from '@/lib/calc'
 import { formatNumber, formatPnl, toKrw, today, genId } from '@/lib/format'
+import { downloadCsv, tradesToCsv } from '@/lib/csv-export'
 import { TARGET_COLORS } from '@/lib/constants'
 
 type ExchangeFormValue = 'bybit' | 'binance' | 'okx' | 'bitget' | 'flipster'
@@ -123,6 +126,12 @@ export default function SettingsPage() {
 
   // 초기화 모달
   const [resetModal, setResetModal] = useState(false)
+
+  // JSON import 상태
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const [importPreview, setImportPreview] = useState<ImportPayload | null>(null)
+  const [importing, setImporting] = useState(false)
+  const MAX_IMPORT_BYTES = 4 * 1024 * 1024
 
   // 거래소 연결 상태
   const [bybitConnection, setBybitConnection] = useState<ExchangeConnectionPublic | null>(null)
@@ -299,6 +308,55 @@ export default function SettingsPage() {
       showToast('error', '로그아웃에 실패했습니다. 다시 시도해주세요.')
       setLoggingOut(false)
     }
+  }
+
+  const handleImportFile = async (file: File) => {
+    if (file.size > MAX_IMPORT_BYTES) {
+      showToast('error', `파일이 너무 큽니다 (최대 ${MAX_IMPORT_BYTES / 1024 / 1024}MB).`)
+      return
+    }
+    let text: string
+    try {
+      text = await file.text()
+    } catch {
+      showToast('error', '파일을 읽을 수 없습니다.')
+      return
+    }
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      showToast('error', 'JSON 파일을 읽을 수 없습니다.')
+      return
+    }
+    // 클라이언트 1차 검증 — 필수 필드만. 상세 검증은 서버 Zod에서 다시.
+    const p = parsed as Partial<ImportPayload>
+    if (
+      typeof p.initialCapital !== 'number'
+      || !Array.isArray(p.trades)
+      || !Array.isArray(p.deposits)
+      || !Array.isArray(p.targets)
+      || !Array.isArray(p.customAssets)
+    ) {
+      showToast('error', '레거시 v4 형식이 아닙니다.')
+      return
+    }
+    setImportPreview(p as ImportPayload)
+  }
+
+  const handleConfirmImport = async () => {
+    if (!importPreview || importing) return
+    setImporting(true)
+    const res = await fetchImportJson(importPreview)
+    setImporting(false)
+    if (!res.success) {
+      showToast('error', res.error)
+      return
+    }
+    const { trades: t, deposits: d, targets: g, custom_assets: c } = res.data
+    showToast('success', `Import 완료 — 거래 ${t}건, 입금 ${d}건, 목표 ${g}건, 코인 ${c}건`)
+    setImportPreview(null)
+    await reloadData()
   }
 
   const handleSaveCapital = async () => {
@@ -1315,10 +1373,22 @@ export default function SettingsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => showToast('info', 'Supabase 연동 후 사용 가능합니다.')}
+              onClick={() => importInputRef.current?.click()}
+              disabled={importing}
             >
               파일 선택
             </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (file) void handleImportFile(file)
+              }}
+            />
           </div>
 
           <div className="h-px bg-border" />
@@ -1334,7 +1404,14 @@ export default function SettingsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => showToast('info', '준비 중입니다.')}
+              onClick={() => {
+                if (trades.length === 0) {
+                  showToast('error', '내보낼 거래 기록이 없습니다.')
+                  return
+                }
+                downloadCsv(`trades_${today()}.csv`, tradesToCsv(trades))
+                showToast('success', `${trades.length}건을 CSV로 내보냈습니다.`)
+              }}
             >
               내보내기
             </Button>
@@ -1385,6 +1462,28 @@ export default function SettingsPage() {
           </div>
         </div>
       </Card>
+
+      {/* JSON import 미리보기 모달 */}
+      <Modal
+        open={importPreview !== null}
+        onClose={() => !importing && setImportPreview(null)}
+        title="JSON 가져오기 확인"
+        confirmLabel={importing ? '가져오는 중...' : '가져오기'}
+        onConfirm={handleConfirmImport}
+      >
+        {importPreview && (
+          <div className="space-y-2 text-sm">
+            <div>아래 데이터를 가져옵니다. 기존 데이터는 유지되며 추가됩니다 (덮어쓰지 않음).</div>
+            <ul className="list-disc pl-5 text-content-secondary">
+              <li>거래 <span className="font-mono">{importPreview.trades.length}</span>건</li>
+              <li>입금 <span className="font-mono">{importPreview.deposits.length}</span>건</li>
+              <li>목표 <span className="font-mono">{importPreview.targets.length}</span>건</li>
+              <li>커스텀 코인 <span className="font-mono">{importPreview.customAssets.length}</span>건</li>
+              <li>초기 자산 <span className="font-mono">{importPreview.initialCapital}</span></li>
+            </ul>
+          </div>
+        )}
+      </Modal>
 
       {/* 초기화 확인 모달 */}
       <Modal

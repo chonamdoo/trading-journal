@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -8,27 +8,42 @@ import { Card } from '@/components/ui/Card'
 import { showToast } from '@/components/ui/Toast'
 import { ToastContainer } from '@/components/ui/Toast'
 import { toKrw } from '@/lib/format'
+import { useTradeStore } from '@/hooks/useTrades'
 
 /**
  * 온보딩 페이지 - 초기 자산 설정
  * 최초 로그인 시 시드 머니를 입력받는다.
+ * 이미 initial_capital > 0 인 사용자는 즉시 / 로 이동.
  */
 export default function OnboardingPage() {
   const router = useRouter()
+  const profile = useTradeStore((s) => s.profile)
+  const setInitialCapital = useTradeStore((s) => s.setInitialCapital)
   const [capital, setCapital] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (profile && Number(profile.initial_capital) > 0) {
+      router.replace('/')
+    }
+  }, [profile, router])
 
   const capNum = parseFloat(capital)
   const isValid = !isNaN(capNum) && capNum > 0
 
-  const handleSubmit = () => {
-    if (!isValid) {
-      showToast('error', '유효한 금액을 입력해주세요.')
+  const handleSubmit = async () => {
+    if (!isValid || submitting) {
+      if (!isValid) showToast('error', '유효한 금액을 입력해주세요.')
       return
     }
-    // TODO: Supabase profiles.initial_capital 업데이트
-    // await supabase.from('profiles').update({ initial_capital: capNum }).eq('id', userId)
+    setSubmitting(true)
+    const ok = await setInitialCapital(capNum)
+    if (!ok) {
+      setSubmitting(false)
+      return
+    }
     showToast('success', '초기 자산이 설정되었습니다.')
-    router.push('/')
+    router.replace('/')
   }
 
   return (
@@ -57,9 +72,9 @@ export default function OnboardingPage() {
             <Button
               className="w-full py-3 text-sm"
               onClick={handleSubmit}
-              disabled={!isValid}
+              disabled={!isValid || submitting}
             >
-              시작하기
+              {submitting ? '저장 중...' : '시작하기'}
             </Button>
           </div>
         </Card>
