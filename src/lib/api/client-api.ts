@@ -644,6 +644,62 @@ export async function generateWeeklyReport(
   return { success: true, data: result.data.report };
 }
 
+// ── Import (레거시 v4 JSON 마이그레이션) ──
+
+export interface ImportTrade {
+  date: string
+  entryDatetime?: string | null
+  exitDatetime?: string | null
+  asset: string
+  direction: 'LONG' | 'SHORT'
+  leverage: number
+  entryPrice: number
+  exitPrice?: number | null
+  margin: number
+  status?: 'open' | 'closed'
+  pnl?: number | null
+  reason?: string | null
+  notes?: string | null
+}
+
+export interface ImportDeposit {
+  date: string
+  amount: number
+  memo?: string | null
+}
+
+export interface ImportTarget {
+  label: string
+  amount: number
+}
+
+export interface ImportPayload {
+  initialCapital: number
+  trades: ImportTrade[]
+  deposits: ImportDeposit[]
+  targets: ImportTarget[]
+  customAssets: string[]
+}
+
+export interface ImportResult {
+  success: boolean
+  trades: number
+  deposits: number
+  targets: number
+  custom_assets: number
+}
+
+export async function fetchImportJson(
+  payload: ImportPayload,
+): Promise<ApiResult<ImportResult>> {
+  const result = await apiFetch<{ success: boolean; data: ImportResult }>(
+    '/api/import/json',
+    { method: 'POST', body: JSON.stringify(payload) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 // ── Market Insight (공개 데이터 — 인증 불필요) ──
 
 export interface MarketInsight {

@@ -8,3 +8,8 @@
 | 004 | ai-report-components-page (P0 컴포넌트 6개 + AI Report 페이지) | planned | 2026-04-12 |
 | 005 | weekly-auto-report (주간 자동 리포트 생성) | planned | 2026-04-12 |
 | 006 | favorites-toggle (코인 즐겨찾기 토글 + API 분리) | in-progress | 2026-04-23 |
+| 007 | onboarding-page (라우팅 게이트 + 초기 자산 저장 연결) | completed | 2026-04-27 |
+| 008 | csv-export (거래 기록 CSV 다운로드) | completed | 2026-04-27 |
+| 009 | flipster-sync (체결 동기화) | deferred | 2026-04-27 — 공식 API 문서 부재로 스코프 아웃 |
+| 010 | json-import (레거시 v4 데이터 가져오기) | completed | 2026-04-27 |
+| 011 | data-reset (전체 데이터 초기화) | deferred | 2026-04-27 — use case 약함, 위험 대비 가치 낮아 스코프 아웃 |

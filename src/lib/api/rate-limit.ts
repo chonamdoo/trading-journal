@@ -93,4 +93,6 @@ export const RATE_LIMITS = {
   ai: { windowMs: 3_600_000, maxRequests: 5 },
   /** 거래소 연결/동기화: 10분당 20회 */
   exchange: { windowMs: 600_000, maxRequests: 20 },
+  /** 데이터 import/마이그레이션: 시간당 10회 (자주 안 쓰는 작업) */
+  import: { windowMs: 3_600_000, maxRequests: 10 },
 } as const;

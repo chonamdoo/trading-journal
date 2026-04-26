@@ -164,7 +164,7 @@ interface TradeStore {
   addTarget: (label: string, amount: number) => Promise<void>
   deleteTarget: (id: string) => Promise<void>
   // 프로필
-  setInitialCapital: (amount: number) => Promise<void>
+  setInitialCapital: (amount: number) => Promise<boolean>
   // 분할 청산
   tradeCloses: Record<string, TradeClose[]>
   addTradeClose: (params: {
@@ -537,12 +537,12 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     try {
       if (amount < 0) {
         showToast('error', '초기 자산은 0 이상이어야 합니다.')
-        return
+        return false
       }
       const res = await fetchUpdateProfile({ initial_capital: amount })
       if (!res.success) {
         showToast('error', res.error)
-        return
+        return false
       }
 
       set((state) => ({
@@ -550,9 +550,11 @@ const useTradeStore = create<TradeStore>((set, get) => ({
           ? { ...state.profile, initial_capital: amount }
           : null,
       }))
+      return true
     } catch (err) {
       const msg = err instanceof Error ? err.message : '초기 자산 설정 중 오류 발생'
       showToast('error', msg)
+      return false
     }
   },
 

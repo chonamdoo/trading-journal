@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
 import { ThemeToggle } from './ThemeToggle'
@@ -26,6 +28,8 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   // 마운트 시 Supabase에서 데이터 로드 (한 번만)
   const { loading } = useDataLoader()
+  const router = useRouter()
+  const pathname = usePathname()
 
   // 스토어에서 직접 구독하여 헤더에 표시
   const trades = useTradeStore((s) => s.trades)
@@ -35,6 +39,15 @@ export function AppShell({ children }: AppShellProps) {
   const currentCapital = curCapital(initialCapital, deposits, trades)
   const totalPnl = totalPnL(trades)
   const returnPct = totalReturnPct(trades, initialCapital, deposits)
+
+  // 온보딩 가드: profile 로드 후 initial_capital === 0 이면 /onboarding 으로 보냄.
+  // profile === null 인 동안에는 redirect 하지 않아 깜빡임 방지.
+  useEffect(() => {
+    if (loading || !profile) return
+    if (Number(profile.initial_capital) <= 0 && pathname !== '/onboarding') {
+      router.replace('/onboarding')
+    }
+  }, [loading, profile, pathname, router])
 
   return (
     <div className="flex min-h-screen bg-bg">
