@@ -346,6 +346,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      reset_user_data: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

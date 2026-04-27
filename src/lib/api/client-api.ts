@@ -700,6 +700,29 @@ export async function fetchImportJson(
   return { success: true, data: result.data.data };
 }
 
+// ── Data Reset (전체 데이터 초기화) ──
+
+export interface ResetResult {
+  success: boolean
+  trades: number
+  deposits: number
+  targets: number
+  monthly_reports: number
+  weekly_reports: number
+  trading_plans: number
+  storage_files_removed: number
+  storage_files_failed: number
+}
+
+export async function fetchResetUserData(): Promise<ApiResult<ResetResult>> {
+  const result = await apiFetch<{ success: boolean; data: ResetResult }>(
+    '/api/reset',
+    { method: 'POST', body: JSON.stringify({ confirm: '초기화' }) },
+  )
+  if (!result.success) return result
+  return { success: true, data: result.data.data }
+}
+
 // ── Market Insight (공개 데이터 — 인증 불필요) ──
 
 export interface MarketInsight {

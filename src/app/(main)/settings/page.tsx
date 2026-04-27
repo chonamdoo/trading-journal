@@ -33,6 +33,7 @@ import {
   fetchSyncBybitTrades,
   fetchSyncOkxTrades,
   fetchImportJson,
+  fetchResetUserData,
   type ExchangeConnectionPublic,
   type ImportPayload,
 } from '@/lib/api/client-api'
@@ -126,6 +127,9 @@ export default function SettingsPage() {
 
   // 초기화 모달
   const [resetModal, setResetModal] = useState(false)
+  const [resetConfirmText, setResetConfirmText] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const RESET_CONFIRM_PHRASE = '초기화'
 
   // JSON import 상태
   const importInputRef = useRef<HTMLInputElement>(null)
@@ -342,6 +346,24 @@ export default function SettingsPage() {
       return
     }
     setImportPreview(p as ImportPayload)
+  }
+
+  const handleConfirmReset = async () => {
+    if (resetConfirmText.trim() !== RESET_CONFIRM_PHRASE || resetting) return
+    setResetting(true)
+    const res = await fetchResetUserData()
+    setResetting(false)
+    if (!res.success) {
+      showToast('error', res.error)
+      return
+    }
+    const { trades: t, deposits: d, targets: g, storage_files_removed: s, storage_files_failed: sf } = res.data
+    const storageMsg = sf > 0 ? ` (스크린샷 ${s}건 삭제, ${sf}건 실패)` : ` (스크린샷 ${s}건 삭제)`
+    showToast('success', `초기화 완료 — 거래 ${t} · 입금 ${d} · 목표 ${g}${storageMsg}`)
+    setResetModal(false)
+    setResetConfirmText('')
+    await reloadData()
+    router.replace('/onboarding')
   }
 
   const handleConfirmImport = async () => {
@@ -1488,16 +1510,42 @@ export default function SettingsPage() {
       {/* 초기화 확인 모달 */}
       <Modal
         open={resetModal}
-        onClose={() => setResetModal(false)}
-        title="데이터 초기화"
-        confirmLabel="전체 삭제"
-        onConfirm={() => {
+        onClose={() => {
+          if (resetting) return
           setResetModal(false)
-          showToast('info', '초기화 기능은 Supabase 연동 후 사용 가능합니다.')
+          setResetConfirmText('')
         }}
+        title="전체 데이터 초기화"
+        confirmLabel={resetting ? '삭제 중...' : '전체 삭제'}
+        onConfirm={handleConfirmReset}
+        confirmDisabled={resetConfirmText.trim() !== RESET_CONFIRM_PHRASE || resetting}
         danger
       >
-        모든 거래, 입금, 목표 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+        <div className="space-y-3">
+          <div>
+            아래 데이터가 영구적으로 삭제됩니다. <span className="text-loss font-medium">PITR 외 복구 불가</span>합니다.
+          </div>
+          <ul className="list-disc pl-5 text-content-secondary space-y-0.5">
+            <li>모든 거래 (분할청산 · 추가진입 · 스크린샷 포함)</li>
+            <li>입금 · 목표 · 월간/주간 리포트 · 거래 계획</li>
+            <li>초기 자산은 0으로 리셋되어 다시 온보딩 페이지로 이동합니다</li>
+          </ul>
+          <div className="text-content-muted text-[12px]">
+            거래소 연결 · 즐겨찾기 · 커스텀 코인 · 구독 정보는 보존됩니다.
+          </div>
+          <div className="pt-2">
+            <label className="block text-[12px] text-content-secondary mb-1.5">
+              계속하려면 <span className="font-mono text-content">{RESET_CONFIRM_PHRASE}</span> 를 입력하세요
+            </label>
+            <Input
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder={RESET_CONFIRM_PHRASE}
+              disabled={resetting}
+              autoFocus
+            />
+          </div>
+        </div>
       </Modal>
     </>
   )

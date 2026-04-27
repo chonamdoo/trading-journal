@@ -1,8 +1,10 @@
 # SPEC-011: 데이터 초기화 — 사용자 거래 데이터 일괄 삭제
 
 생성일: 2026-04-27
-Tier: L (DB 마이그레이션 + RPC + Route + 보안 + UI 다중 안전장치)
-상태: **deferred (2026-04-27)** — use case가 약하고 (회원 탈퇴와 별개, "다시 시작" 시나리오는 import RPC가 INSERT만이라 백업→초기화→복원 흐름 불가) destructive 위험 대비 가치 낮음. 명확한 use case 확정 후 재개. 본 SPEC 본문은 재개 시 출발점으로 보존.
+재개일: 2026-04-27 (UI에 노출된 라벨 "전체 데이터 초기화"가 실제 동작하지 않는 상태가 사용자 혼란 유발 — 구현으로 결론)
+Tier: L (DB 마이그레이션 + RPC + Route + Storage 정리 + 보안 + UI 다중 안전장치)
+상태: in-progress
+정책 변경: Storage(`trade-screenshots` 버킷의 `{userId}/**`) 파일도 같이 삭제하도록 비범위에서 범위로 이동.
 
 ---
 
@@ -31,7 +33,7 @@ Tier: L (DB 마이그레이션 + RPC + Route + 보안 + UI 다중 안전장치)
 | `exchange_connections` | 보존 | 재연결 부담. 사용자가 별도 페이지에서 해제 가능 |
 | `subscriptions` | 보존 | 결제·구독 — 별도 절차 필요 |
 | `profiles` (행 자체 / email 등) | 보존 | 회원 탈퇴 ≠ 데이터 초기화 |
-| Storage 스크린샷 파일 | (별도) | trade_screenshots row가 CASCADE로 사라지면 DB 참조 끊김. 실제 Storage 파일은 잔존 — 본 SPEC 비범위 |
+| Storage 스크린샷 파일 (`trade-screenshots/{userId}/**`) | **삭제** | UI 라벨 "전체 데이터 초기화"와 일관. Route에서 RPC 호출 전 `storage_path` 수집 → RPC(DB 삭제) → Storage 일괄 remove |
 
 ## 4. 변경 범위
 
@@ -42,8 +44,10 @@ RPC `reset_user_data(p_user_id UUID)` — `SECURITY DEFINER` + `SET search_path 
 POST. 흐름:
 1. `withAuth` (인증 + Rate Limit `RATE_LIMITS.import` 시간당 10회 — 동일 카테고리)
 2. Body: `{ confirm: string }` Zod 검증. `confirm === '초기화'` 강제 (서버측 1차 가드)
-3. `supabase.rpc('reset_user_data', { p_user_id: userId })`
-4. 결과 반환
+3. **Storage path 수집**: `SELECT storage_path FROM trade_screenshots WHERE user_id = userId` (RPC 전에 수집해야 — RPC가 DB 지우면 path 잃음)
+4. `supabase.rpc('reset_user_data', { p_user_id: userId })` — DB 트랜잭션 (CASCADE로 trade_screenshots row도 삭제)
+5. **Storage 일괄 삭제**: `supabase.storage.from('trade-screenshots').remove([...storagePaths])`. 100개 단위 chunk (Supabase remove 상한 고려). 실패는 stderr 로깅만, 200 응답 유지 (DB는 이미 삭제 완료 — 부분 잔존 파일은 cron 또는 수동 청소).
+6. 결과 반환 — 카운트 + Storage 삭제된 파일 수
 
 ### F3. `src/lib/api/client-api.ts`
 `fetchResetUserData(): Promise<ApiResult<ResetResult>>` 추가. body는 `{ confirm: '초기화' }` 고정.
@@ -59,7 +63,6 @@ POST. 흐름:
 
 ## 5. 비범위
 
-- Storage(스크린샷 파일) 실제 삭제 — 별도 SPEC 필요 (Storage API + 파일 키 추적)
 - 회원 탈퇴 (auth.users 삭제) — 별도 절차
 - 부분 삭제 (특정 기간만 / 특정 자산만) — 향후 확장
 - "최근 N건만 초기화" — 향후 확장
