@@ -33,6 +33,21 @@ function formatPnlValue(pnl: number | null) {
 }
 
 /**
+ * ISO week 번호를 "그 달의 N주차" 로 환산.
+ * 규칙: 그 주 월요일의 달력 일자 / 7 올림.
+ * 예: 2026-04-06 (월) → ceil(6/7) = 1 → 4월 1주차
+ *     2026-04-20 (월) → ceil(20/7) = 3 → 4월 3주차
+ */
+function weekOfMonth(year: number, isoWeek: number): number {
+  const jan4 = new Date(year, 0, 4)
+  const week1Monday = new Date(jan4)
+  week1Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7))
+  const monday = new Date(week1Monday)
+  monday.setDate(week1Monday.getDate() + (isoWeek - 1) * 7)
+  return Math.ceil(monday.getDate() / 7)
+}
+
+/**
  * AI 월간 리포트 생성 + 목록 섹션
  */
 export function AIReportSection({ userId: _userId }: { userId?: string }) {
@@ -61,14 +76,20 @@ export function AIReportSection({ userId: _userId }: { userId?: string }) {
     loadReports()
   }, [loadReports])
 
-  // 현재 월만 생성 허용
+  // 현재 월 또는 이전 달만 생성 허용 (서버 generate route 가드와 동기화)
   const now = new Date()
-  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1
-  const isNotAvailable = !isCurrentMonth
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const prevDate = new Date(currentYear, currentMonth - 2, 1)
+  const prevYear = prevDate.getFullYear()
+  const prevMonth = prevDate.getMonth() + 1
+  const isCurrentMonth = selectedYear === currentYear && selectedMonth === currentMonth
+  const isPrevMonth = selectedYear === prevYear && selectedMonth === prevMonth
+  const isNotAvailable = !isCurrentMonth && !isPrevMonth
 
   const handleGenerate = async () => {
     if (isNotAvailable) {
-      setError(`리포트는 해당 월에만 생성할 수 있습니다. 현재는 ${now.getFullYear()}년 ${now.getMonth() + 1}월 리포트만 가능합니다.`)
+      setError(`리포트는 ${prevYear}년 ${prevMonth}월 또는 ${currentYear}년 ${currentMonth}월만 생성할 수 있습니다.`)
       return
     }
 
@@ -116,7 +137,6 @@ export function AIReportSection({ userId: _userId }: { userId?: string }) {
     }
   }
 
-  const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 3 }, (_, i) => currentYear - i)
   const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
@@ -157,7 +177,7 @@ export function AIReportSection({ userId: _userId }: { userId?: string }) {
             disabled={generating || isNotAvailable}
             className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-input hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {generating ? '분석 중... (약 10초)' : isNotAvailable ? '해당 월에만 생성 가능' : '리포트 생성'}
+            {generating ? '분석 중... (약 10초)' : isNotAvailable ? '현재 월 또는 이전 달만 가능' : '리포트 생성'}
           </button>
         </div>
         {error && (
@@ -194,7 +214,7 @@ export function AIReportSection({ userId: _userId }: { userId?: string }) {
                     <span className="text-[15px] font-semibold text-content">
                       {report.year}년 {report.month}월
                       {report.period_type === 'weekly' && report.week != null
-                        ? ` ${report.week}주차`
+                        ? ` ${weekOfMonth(report.year, report.week)}주차`
                         : ''}
                     </span>
                     <span className="text-xs text-content-muted">

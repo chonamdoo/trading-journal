@@ -86,13 +86,20 @@ export async function POST(request: NextRequest) {
 
   if (!isAdmin) {
     if (periodType === 'monthly') {
-      // 현재 월만 생성 허용 (4월이면 4월 리포트만 가능)
+      // 현재 월 또는 이전 달만 허용 (월이 바뀐 후 전달 회고 + 진행 중 미리 생성).
+      // 그보다 더 과거(2달 전 이상) 또는 미래는 차단.
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
-      if (year !== currentYear || month !== currentMonth) {
+      const prevDate = new Date(currentYear, currentMonth - 2, 1); // -1 은 prev month 의 0-indexed
+      const prevYear = prevDate.getFullYear();
+      const prevMonth = prevDate.getMonth() + 1;
+
+      const isCurrent = year === currentYear && month === currentMonth;
+      const isPrev = year === prevYear && month === prevMonth;
+      if (!isCurrent && !isPrev) {
         return NextResponse.json(
-          { error: `리포트는 해당 월에만 생성할 수 있습니다. 현재는 ${currentYear}년 ${currentMonth}월 리포트만 생성 가능합니다.` },
+          { error: `리포트는 ${prevYear}년 ${prevMonth}월 또는 ${currentYear}년 ${currentMonth}월만 생성할 수 있습니다.` },
           { status: 400 },
         );
       }

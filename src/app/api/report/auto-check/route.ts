@@ -5,41 +5,44 @@ import { withAuth } from '@/lib/api/auth'
  * GET /api/report/auto-check
  *
  * 자동 리포트 생성 조건을 체크한다.
+ * - 주간: 한 주 마무리 회고 — 지난 주 기준
+ * - 월간: 월 마무리 회고 — 이전 달 기준, 그 달에 주간 리포트가 1건 이상 존재할 때만
  * 응답: { needsWeekly, needsMonthly, weeklyMeta, monthlyMeta }
  */
 export async function GET(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
     const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth() + 1
 
-    // ── 월간 리포트 체크 ──
+    // ── 이전 달 계산 (월간 리포트는 월이 바뀐 후 전달 회고로 생성) ──
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const prevYear = prevMonthDate.getFullYear()
+    const prevMonth = prevMonthDate.getMonth() + 1
+
+    // ── 월간 리포트 체크 (전달 기준) ──
     const { data: existingMonthly } = await supabase
       .from('monthly_reports')
       .select('id')
       .eq('user_id', userId)
-      .eq('year', currentYear)
-      .eq('month', currentMonth)
+      .eq('year', prevYear)
+      .eq('month', prevMonth)
       .eq('period_type', 'monthly')
       .maybeSingle()
 
     let needsMonthly = false
     if (!existingMonthly) {
-      const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`
-      const monthEnd = new Date(currentYear, currentMonth, 0).toISOString().slice(0, 10)
-
-      const { count } = await supabase
-        .from('trades')
+      // 조건: 그 달에 주간 리포트가 1건 이상 존재해야 월간 생성 (= 한 주라도 활동 있던 달만)
+      const { count: weeklyCount } = await supabase
+        .from('monthly_reports')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('status', 'closed')
-        .gte('date', monthStart)
-        .lte('date', monthEnd)
+        .eq('year', prevYear)
+        .eq('month', prevMonth)
+        .eq('period_type', 'weekly')
 
-      needsMonthly = (count ?? 0) >= 5
+      needsMonthly = (weeklyCount ?? 0) >= 1
     }
 
-    // ── 주간 리포트 체크 ──
+    // ── 주간 리포트 체크 (지난 주 기준) ──
     const { data: latestWeekly } = await supabase
       .from('monthly_reports')
       .select('created_at')
@@ -56,9 +59,12 @@ export async function GET(req: NextRequest) {
       Date.now() - new Date(latestWeekly.created_at).getTime() < 7 * 24 * 60 * 60 * 1000
 
     if (!hasRecentWeekly) {
-      // ISO week 계산
+      // 지난 주 = 오늘 - 7일
       const target = new Date(now)
       target.setHours(0, 0, 0, 0)
+      target.setDate(target.getDate() - 7)
+
+      // ISO week 계산 (지난 주 기준)
       const thursday = new Date(target)
       thursday.setDate(target.getDate() - ((target.getDay() + 6) % 7) + 3)
       const jan4 = new Date(thursday.getFullYear(), 0, 4)
@@ -97,7 +103,7 @@ export async function GET(req: NextRequest) {
       needsWeekly,
       needsMonthly,
       weeklyMeta,
-      monthlyMeta: needsMonthly ? { year: currentYear, month: currentMonth } : null,
+      monthlyMeta: needsMonthly ? { year: prevYear, month: prevMonth } : null,
     })
   })
 }
