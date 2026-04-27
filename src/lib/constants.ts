@@ -85,6 +85,7 @@ export const REVIEW_TAGS = [
   { id: 'over_reentry', label: '재진입과다', group: 'risk' },
   { id: 'late_stop', label: '손절지연', group: 'risk' },
   { id: 'early_take_profit', label: '익절빠름', group: 'risk' },
+  { id: 'late_take_profit', label: '익절지연', group: 'risk' },
   { id: 'oversized', label: '사이즈과다', group: 'risk' },
   { id: 'breakout', label: '돌파', group: 'setup' },
   { id: 'support_rebound', label: '지지반등', group: 'setup' },
