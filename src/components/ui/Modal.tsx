@@ -14,6 +14,8 @@ interface ModalProps {
   onConfirm?: () => void
   /** 확인 버튼을 danger 스타일로 */
   danger?: boolean
+  /** 확인 버튼 비활성화 (예: 검증 통과 전) */
+  confirmDisabled?: boolean
 }
 
 /**
@@ -30,6 +32,7 @@ export function Modal({
   confirmLabel,
   onConfirm,
   danger = false,
+  confirmDisabled = false,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
 
@@ -90,6 +93,7 @@ export function Modal({
             <Button
               variant={danger ? 'danger' : 'primary'}
               onClick={onConfirm}
+              disabled={confirmDisabled}
             >
               {confirmLabel ?? '확인'}
             </Button>
