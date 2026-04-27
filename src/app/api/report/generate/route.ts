@@ -334,10 +334,15 @@ export async function POST(request: NextRequest) {
     const avgLoss = lossTrades.length ? lossTrades.reduce((s, t) => s + (t.pnl ?? 0), 0) / lossTrades.length : 0;
     const hasLosses = lossTrades.length > 0;
     const profitFactor = hasLosses ? Math.abs(avgWin / avgLoss) : 0;
-    // 표시용: 손실 거래가 0건이면 "측정 불가" — 손익비를 0으로 표시하면 AI 가 잘못 해석.
-    const profitFactorDisplay = !hasLosses && winTrades.length > 0
-      ? '측정 불가 (손실 거래 0건)'
+    // 손실 거래 0건 + 수익 거래 있음 → 손익비 수학적으로 ∞. 표본 크기 명시 (B) + ∞ 기호 (A).
+    const allWins = !hasLosses && winTrades.length > 0;
+    const profitFactorDisplay = allWins
+      ? `전승 (n=${trades.length}건, 손익비 ∞)`
       : profitFactor.toFixed(2);
+    // AI 프롬프트 부가 컨텍스트 (D) — 표본 신뢰도 평가를 명시적으로 지시.
+    const profitFactorContext = allWins
+      ? `\n  (참고: 손실 거래 0건이라 손익비는 수학적으로 ∞. 표본 ${trades.length}건의 통계적 신뢰도를 함께 평가하라.)`
+      : '';
     const profitFactorJson = hasLosses ? profitFactor.toFixed(2) : 'null';
     const ev = (winRate / 100) * avgWin + ((100 - winRate) / 100) * avgLoss;
 
@@ -454,7 +459,7 @@ ${periodStart} ~ ${periodEnd} (ISO week ${week})
 - 총 거래: ${trades.length}건 (승리 ${wins}건)
 - 승률: ${winRate.toFixed(1)}%
 - 총 손익: ${totalPnl.toFixed(2)} USDT
-- 손익비(Profit Factor): ${profitFactorDisplay}
+- 손익비(Profit Factor): ${profitFactorDisplay}${profitFactorContext}
 
 ## 종목별 통계
 ${assetStatsStr}
@@ -621,7 +626,7 @@ ${tagComboStatsStr || '복기 태그 조합 없음'}
 - 승률: **${winRate.toFixed(1)}%**
 - 총 손익: **${totalPnl.toFixed(2)} USDT**
 - 평균 수익: **${avgWin.toFixed(2)} USDT** / 평균 손실: **${avgLoss.toFixed(2)} USDT**
-- 손익비(Profit Factor): **${profitFactorDisplay}**
+- 손익비(Profit Factor): **${profitFactorDisplay}**${profitFactorContext}
 - 기대값(EV): **${ev.toFixed(2)} USDT/거래**
 - 진입 이유 미기록 비율: **${emptyReasonPct}%**
 
