@@ -14,4 +14,4 @@
 | 010 | json-import (레거시 v4 데이터 가져오기) | completed | 2026-04-27 |
 | 011 | data-reset (전체 데이터 초기화 + Storage 정리) | completed | 2026-04-27 |
 | 012 | report-period-fix (AI 리포트 시점/조건/주차 표시 정정) | completed | 2026-04-27 |
-| 013 | clean-architecture-refactor (Feature Module + Domain/Data Layer + TDD 기반 리팩토링) | planned | 2026-05-05 |
+| 013 | clean-architecture-refactor (Feature Module + Domain/Data Layer + TDD 기반 리팩토링) | completed | 2026-05-05 |
