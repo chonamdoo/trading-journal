@@ -1,6 +1,6 @@
 # 013 Clean Architecture Refactor Slice Plan
 
-Status: planned
+Status: completed
 Parent PRD: `specs/013-clean-architecture-refactor.md`
 GitHub Issue: https://github.com/chonamdoo/trading-journal/issues/12
 
