@@ -28,7 +28,13 @@ export interface Trade {
   tradeTags?: string[] | null;
   tradeEmotion?: TradeEmotion | null;
   tradeSource?: TradeSource | null;
+  exchange?: string | null;
+  externalId?: string | null;
+  fee?: number | null;
+  feeAsset?: string | null;
+  syncedAt?: string | null;
   importStatus?: ImportStatus | null;
+  rawExchangePayload?: unknown;
   createdAt?: string;
   updatedAt?: string;
 }

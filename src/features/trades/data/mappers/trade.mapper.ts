@@ -34,7 +34,13 @@ export function mapTradeRowToTrade(row: TradeRowDto): Trade {
     tradeTags: row.tags,
     tradeEmotion: row.emotion,
     tradeSource: mapTradeSource(row.source),
+    exchange: row.exchange,
+    externalId: row.external_id,
+    fee: parseNumeric(row.fee),
+    feeAsset: row.fee_asset,
+    syncedAt: row.synced_at,
     importStatus: row.import_status,
+    rawExchangePayload: row.raw_exchange_payload,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

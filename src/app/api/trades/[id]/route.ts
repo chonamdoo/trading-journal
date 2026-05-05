@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/api/auth';
 import { updateTrade, deleteTrade } from '@/lib/api/trades';
 import type { TradeUpdate } from '@/lib/supabase/types';
 import { createTradesCompositionRoot } from '@/features/trades/di.server';
+import { mapTradeToLegacyResponse } from '@/features/trades/presentation/mappers/trade-response.mapper';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (!trade) {
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true, data: trade });
+    return NextResponse.json({ success: true, data: mapTradeToLegacyResponse(trade) });
   });
 }
 

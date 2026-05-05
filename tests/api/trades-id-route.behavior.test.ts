@@ -24,11 +24,36 @@ describe('GET /api/trades/[id]', () => {
     findById.mockReset();
   });
 
-  it('returns a Trade through the Trades Composition Root', async () => {
+  it('returns the legacy TradeRow response shape through the Trades Composition Root', async () => {
     findById.mockResolvedValue({
       id: 'trade-1',
+      userId: 'user-1',
+      date: '2026-05-05',
+      entryDatetime: '2026-05-05T01:00:00.000Z',
+      exitDatetime: null,
+      asset: 'BTC',
+      positionDirection: 'LONG',
+      leverage: 10,
+      entryPrice: 100,
+      exitPrice: null,
+      stopLossPrice: null,
       margin: 100,
+      status: 'open',
       tradingPnl: 10,
+      tradeRationale: 'breakout',
+      tradeReview: null,
+      tradeTags: ['plan'],
+      tradeEmotion: 'calm',
+      tradeSource: 'exchange',
+      exchange: 'bybit',
+      externalId: 'external-1',
+      fee: 0.1,
+      feeAsset: 'USDT',
+      syncedAt: '2026-05-05T01:01:00.000Z',
+      importStatus: 'confirmed',
+      rawExchangePayload: { orderId: 'external-1' },
+      createdAt: '2026-05-05T01:02:00.000Z',
+      updatedAt: '2026-05-05T01:03:00.000Z',
     });
 
     const response = await GET(
@@ -43,8 +68,33 @@ describe('GET /api/trades/[id]', () => {
       success: true,
       data: {
         id: 'trade-1',
+        user_id: 'user-1',
+        date: '2026-05-05',
+        entry_datetime: '2026-05-05T01:00:00.000Z',
+        exit_datetime: null,
+        asset: 'BTC',
+        direction: 'LONG',
+        leverage: 10,
+        entry_price: 100,
+        exit_price: null,
+        stop_loss_price: null,
         margin: 100,
-        tradingPnl: 10,
+        status: 'open',
+        pnl: 10,
+        reason: 'breakout',
+        notes: null,
+        tags: ['plan'],
+        emotion: 'calm',
+        exchange: 'bybit',
+        external_id: 'external-1',
+        source: 'api',
+        fee: 0.1,
+        fee_asset: 'USDT',
+        synced_at: '2026-05-05T01:01:00.000Z',
+        import_status: 'confirmed',
+        raw_exchange_payload: { orderId: 'external-1' },
+        created_at: '2026-05-05T01:02:00.000Z',
+        updated_at: '2026-05-05T01:03:00.000Z',
       },
     });
   });

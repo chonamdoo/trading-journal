@@ -26,7 +26,13 @@ export interface TradeRowDto {
   tags?: string[] | null;
   emotion?: TradeEmotion | null;
   source?: TradeSource | 'api' | null;
+  exchange?: string | null;
+  external_id?: string | null;
+  fee?: string | number | null;
+  fee_asset?: string | null;
+  synced_at?: string | null;
   import_status?: ImportStatus | null;
+  raw_exchange_payload?: unknown;
   created_at?: string;
   updated_at?: string;
 }
