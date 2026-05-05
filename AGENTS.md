@@ -29,9 +29,10 @@
 | 마이그레이션 | `supabase/migrations/` |
 
 ## QA 명령 (Step 2)
-- **BUILD**: `npx next build --no-lint`
+- **BUILD**: `npx next build`
 - **TYPECHECK**: `npx tsc --noEmit`
 - **LINT**: `npm run lint`
+- **TEST**: `npm test`
 - **Supabase 정합성** (마이그레이션 변경 시): `npx supabase db diff` dry-run
 
 ## 프로젝트 특화 규칙

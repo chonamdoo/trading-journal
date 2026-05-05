@@ -86,7 +86,7 @@ PRD
 Run applicable gates before review and before commit:
 
 ```bash
-npx next build --no-lint
+npx next build
 npx tsc --noEmit
 npm run lint
 npm test
