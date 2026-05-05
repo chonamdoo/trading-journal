@@ -4,6 +4,7 @@ import { RATE_LIMITS } from '@/lib/api/rate-limit';
 import { decryptSecret, type EncryptedSecret } from '@/lib/exchange/crypto';
 import { fetchBybitClosedPnl, type BybitClosedPnl } from '@/lib/exchange/bybit';
 import type { Json, TradeInsert } from '@/lib/supabase/types';
+import { mapImportedTradeSourceToTradeInsertSource } from '@/features/exchange-import/data/mappers/imported-trade.mapper';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'sin1';
@@ -100,7 +101,7 @@ function toTradeInsert(userId: string, item: BybitClosedPnl): TradeInsert {
     notes: 'Bybit closed PnL에서 자동 가져온 초안입니다. 진입 근거와 회고를 직접 보완하세요.',
     exchange: 'bybit',
     external_id: item.orderId,
-    source: 'api',
+    source: mapImportedTradeSourceToTradeInsertSource('exchange'),
     fee,
     fee_asset: fee ? 'USDT' : null,
     synced_at: new Date().toISOString(),

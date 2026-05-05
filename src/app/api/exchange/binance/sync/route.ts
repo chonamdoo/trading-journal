@@ -8,6 +8,7 @@ import {
   type BinanceUserTrade,
 } from '@/lib/exchange/binance';
 import type { Json, TradeDirection, TradeInsert } from '@/lib/supabase/types';
+import { mapImportedTradeSourceToTradeInsertSource } from '@/features/exchange-import/data/mappers/imported-trade.mapper';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'sin1';
@@ -115,7 +116,7 @@ function makeDraftTrade(userId: string, trade: BinanceUserTrade, state: Position
     notes: 'Binance USD-M Futures 공식 userTrades 기반으로 자동 가져온 초안입니다. Binance 체결 응답에는 과거 레버리지/초기 증거금이 없어 x1, 진입 명목가 기준으로 저장했습니다. 진입 근거와 수치를 확인해 보완하세요.',
     exchange: 'binance',
     external_id: makeExternalId(trade),
-    source: 'api',
+    source: mapImportedTradeSourceToTradeInsertSource('exchange'),
     fee: commission,
     fee_asset: trade.commissionAsset || null,
     synced_at: new Date().toISOString(),

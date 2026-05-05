@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createHmac } from 'crypto';
 
 const OKX_BASE_URL = 'https://www.okx.com';

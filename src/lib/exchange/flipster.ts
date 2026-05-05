@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createHmac } from 'crypto';
 
 const FLIPSTER_BASE_URL = 'https://trading-api.flipster.io';

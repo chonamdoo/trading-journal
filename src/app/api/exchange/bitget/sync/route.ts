@@ -4,6 +4,7 @@ import { RATE_LIMITS } from '@/lib/api/rate-limit';
 import { decryptSecret, type EncryptedSecret } from '@/lib/exchange/crypto';
 import { fetchBitgetOrderFills, type BitgetOrderFill } from '@/lib/exchange/bitget';
 import type { Json, TradeInsert } from '@/lib/supabase/types';
+import { mapImportedTradeSourceToTradeInsertSource } from '@/features/exchange-import/data/mappers/imported-trade.mapper';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'sin1';
@@ -165,7 +166,7 @@ function toTradeInsert(userId: string, group: BitgetCloseGroup): TradeInsert {
     notes: 'Bitget 공식 order fills close 체결을 주문 단위로 집계한 초안입니다. API 응답에 실제 진입 시각/평균 진입가가 없어 실현손익 기준 break-even 진입가로 저장했습니다. 진입 근거와 수치를 확인해 보완하세요.',
     exchange: 'bitget',
     external_id: group.externalId,
-    source: 'api',
+    source: mapImportedTradeSourceToTradeInsertSource('exchange'),
     fee: group.fee,
     fee_asset: group.feeAsset,
     synced_at: new Date().toISOString(),
