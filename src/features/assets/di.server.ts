@@ -14,6 +14,7 @@ import { createListAllAssetsUseCase } from './domain/usecases/list-all-assets.us
 import { createListCustomAssetsUseCase } from './domain/usecases/list-custom-assets.usecase';
 import { createListFavoriteAssetsUseCase } from './domain/usecases/list-favorite-assets.usecase';
 import { createSetFavoriteAssetUseCase } from './domain/usecases/set-favorite-asset.usecase';
+import { createToggleFavoriteAssetUseCase } from './domain/usecases/toggle-favorite-asset.usecase';
 
 export function createAssetsCompositionRoot(supabase: SupabaseClient<Database>) {
   const customAssetRepository = new SupabaseCustomAssetRepository(supabase);
@@ -32,5 +33,6 @@ export function createAssetsCompositionRoot(supabase: SupabaseClient<Database>) 
     listCustomAssets: createListCustomAssetsUseCase(customAssetRepository),
     listFavoriteAssets: createListFavoriteAssetsUseCase(favoriteAssetRepository),
     setFavoriteAsset: createSetFavoriteAssetUseCase(favoriteAssetRepository),
+    toggleFavoriteAsset: createToggleFavoriteAssetUseCase(favoriteAssetRepository),
   };
 }

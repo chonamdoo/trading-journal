@@ -1,0 +1,13 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/api/favorites-toggle-route.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-favorites-toggle
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  01:35:19
+   Duration  192ms (transform 20ms, setup 0ms, import 59ms, tests 6ms, environment 0ms)
+

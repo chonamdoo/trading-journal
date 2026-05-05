@@ -9,4 +9,5 @@ export type CustomAssetRepository = {
 export type FavoriteAssetRepository = {
   findSymbolsByUser(userId: string): Promise<string[]>;
   setFavorite(userId: string, symbol: string, favorited: boolean): Promise<{ favorited: boolean }>;
+  toggleFavorite(userId: string, symbol: string): Promise<{ favorited: boolean; id?: string }>;
 };

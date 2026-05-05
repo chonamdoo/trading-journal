@@ -1,0 +1,6 @@
+{
+  "npm_test": "pass: 16 files, 31 tests",
+  "tsc_no_emit": "pass",
+  "lint": "pass: 0 errors, 47 existing warnings",
+  "next_build": "pass with local placeholder Supabase env"
+}

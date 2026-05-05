@@ -88,4 +88,21 @@ export class SupabaseFavoriteAssetRepository implements FavoriteAssetRepository 
     if (error) throw new Error(error.message);
     return { favorited: false };
   }
+
+  async toggleFavorite(userId: string, symbol: string): Promise<{ favorited: boolean; id?: string }> {
+    const { data, error } = await this.supabase.rpc('toggle_favorite_asset', {
+      p_user_id: userId,
+      p_symbol: symbol,
+    });
+
+    if (error) throw new Error(error.message);
+
+    const result = data[0];
+    if (!result) throw new Error('즐겨찾기 토글 결과가 없습니다.');
+
+    return {
+      favorited: result.favorited,
+      id: result.id ?? undefined,
+    };
+  }
 }

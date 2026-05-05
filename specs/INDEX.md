@@ -7,7 +7,7 @@
 | 003 | checklist-market-insight (프리트레이드 체크리스트 + 마켓 인사이트) | in-progress | 2026-04-11 |
 | 004 | ai-report-components-page (P0 컴포넌트 6개 + AI Report 페이지) | planned | 2026-04-12 |
 | 005 | weekly-auto-report (주간 자동 리포트 생성) | planned | 2026-04-12 |
-| 006 | favorites-toggle (코인 즐겨찾기 토글 + API 분리) | in-progress | 2026-04-23 |
+| 006 | favorites-toggle (코인 즐겨찾기 토글 + API 분리) | completed | 2026-04-23 |
 | 007 | onboarding-page (라우팅 게이트 + 초기 자산 저장 연결) | completed | 2026-04-27 |
 | 008 | csv-export (거래 기록 CSV 다운로드) | completed | 2026-04-27 |
 | 009 | flipster-sync (체결 동기화) | deferred | 2026-04-27 — 공식 API 문서 부재로 스코프 아웃 |
