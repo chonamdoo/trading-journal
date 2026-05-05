@@ -33,7 +33,7 @@ import {
   fetchUpdateProfile,
   fetchCustomAssets,
   fetchFavorites,
-  fetchSetFavorite,
+  fetchToggleFavorite,
   fetchTradeById,
 } from '@/lib/api/client-api'
 
@@ -559,7 +559,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
   },
 
   // ── 즐겨찾기 토글 (옵티미스틱 + 심볼 단위 롤백) ──
-  // 현재 상태를 읽어 목표 상태를 계산하고 멱등 API(setFavorite)를 호출한다.
+  // 현재 상태를 읽어 낙관적으로 반영하고 서버 토글 결과로 확정한다.
   // 실패 시 해당 심볼만 원상 복구하여, 다른 심볼의 동시 변경을 훼손하지 않는다.
   toggleFavorite: async (rawSymbol: string) => {
     const symbol = rawSymbol.trim().toUpperCase()
@@ -580,7 +580,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     applyDesired(desired)
 
     try {
-      const res = await fetchSetFavorite(symbol, desired)
+      const res = await fetchToggleFavorite(symbol)
       if (!res.success) {
         applyDesired(wasFavorited)
         showToast('error', res.error)

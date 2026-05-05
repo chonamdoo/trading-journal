@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { combineAssets, createFavoriteAsset, normalizeAssetSymbol } from './domain/entities/asset';
 import { createAddCustomAssetUseCase } from './domain/usecases/add-custom-asset.usecase';
+import { createToggleFavoriteAssetUseCase } from './domain/usecases/toggle-favorite-asset.usecase';
 
 describe('Assets feature module', () => {
   it('keeps Supported Asset, Custom Asset, and Favorite Asset distinct', () => {
@@ -42,5 +43,22 @@ describe('Assets feature module', () => {
 
   it('normalizes Asset symbols for Custom and Favorite Assets', () => {
     expect(normalizeAssetSymbol(' eth ')).toBe('ETH');
+  });
+
+  it('toggles a normalized Favorite Asset through the domain use case', async () => {
+    const toggleFavorite = createToggleFavoriteAssetUseCase({
+      async findSymbolsByUser() {
+        return [];
+      },
+      async setFavorite() {
+        throw new Error('should use toggle behavior');
+      },
+      async toggleFavorite(userId, symbol) {
+        return { favorited: true, id: `${userId}-${symbol}` };
+      },
+    });
+
+    await expect(toggleFavorite.execute({ userId: 'user-1', symbol: ' btc ' }))
+      .resolves.toEqual({ favorited: true, id: 'user-1-BTC' });
   });
 });

@@ -88,4 +88,34 @@ export class SupabaseFavoriteAssetRepository implements FavoriteAssetRepository 
     if (error) throw new Error(error.message);
     return { favorited: false };
   }
+
+  async toggleFavorite(userId: string, symbol: string): Promise<{ favorited: boolean; id?: string }> {
+    const { data: existing, error: selectError } = await this.supabase
+      .from('favorites')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('symbol', symbol)
+      .maybeSingle();
+
+    if (selectError) throw new Error(selectError.message);
+
+    if (existing) {
+      const { error: deleteError } = await this.supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('symbol', symbol);
+      if (deleteError) throw new Error(deleteError.message);
+      return { favorited: false };
+    }
+
+    const { data: inserted, error: insertError } = await this.supabase
+      .from('favorites')
+      .insert({ user_id: userId, symbol })
+      .select('id')
+      .single();
+
+    if (insertError) throw new Error(insertError.message);
+    return { favorited: true, id: inserted.id };
+  }
 }

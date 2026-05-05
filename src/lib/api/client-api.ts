@@ -602,6 +602,20 @@ export async function fetchSetFavorite(
   return { success: true, data: result.data.data };
 }
 
+export async function fetchToggleFavorite(
+  symbol: string,
+): Promise<ApiResult<{ favorited: boolean; id?: string }>> {
+  const result = await apiFetch<{
+    success: boolean;
+    data: { favorited: boolean; id?: string };
+  }>('/api/favorites/toggle', {
+    method: 'POST',
+    body: JSON.stringify({ symbol }),
+  });
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 // ── Reports ──
 
 export async function fetchReports(): Promise<ApiResult<MonthlyReportRow[]>> {

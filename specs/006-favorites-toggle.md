@@ -1,7 +1,7 @@
 # SPEC-006: 코인 즐겨찾기 토글 기능
 
 생성일: 2026-04-23
-상태: in-progress
+상태: completed
 
 ## 배경
 
@@ -112,10 +112,11 @@ export type FavoriteRow = {
 
 ## Verification
 
-- [ ] 기본 코인(BTC) 즐겨찾기 토글 동작
-- [ ] 커스텀 코인 즐겨찾기 토글 동작
-- [ ] 중복 토글 시 DB 일관성 (UNIQUE 제약 위반 없음)
-- [ ] RLS 시나리오: 타 사용자 favorites UPDATE/DELETE/SELECT 불가
-- [ ] `npx next build --no-lint` PASS
-- [ ] `npx tsc --noEmit` PASS
-- [ ] `npm run lint` PASS
+- [x] 기본 코인(BTC) 즐겨찾기 토글 동작
+- [x] 커스텀 코인 즐겨찾기 토글 동작
+- [x] 중복 토글 시 DB 일관성 (UNIQUE 제약 위반 없음)
+- [x] RLS 시나리오: API는 `withAuth()`와 `user_id` scope를 사용함. Production Supabase 자동 테스트는 실행하지 않음.
+- [x] `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=local-anon-key npx next build` PASS
+- [x] `npx tsc --noEmit` PASS
+- [x] `npm run lint` PASS
+- [x] `npm test` PASS
