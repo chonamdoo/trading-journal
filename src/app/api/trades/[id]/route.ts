@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/auth';
-import { getTradeById, updateTrade, deleteTrade } from '@/lib/api/trades';
+import { updateTrade, deleteTrade } from '@/lib/api/trades';
 import type { TradeUpdate } from '@/lib/supabase/types';
+import { createTradesCompositionRoot } from '@/features/trades/di.server';
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { id } = await params;
   return withAuth(req, async (supabase) => {
-    const result = await getTradeById(supabase, id);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 404 });
+    const trades = createTradesCompositionRoot(supabase);
+    const trade = await trades.getTrade.execute(id);
+    if (!trade) {
+      return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true, data: result.data });
+    return NextResponse.json({ success: true, data: trade });
   });
 }
 
