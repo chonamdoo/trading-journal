@@ -50,4 +50,21 @@ describe('POST /api/favorites/toggle', () => {
     expect(response.status).toBe(400);
     expect(toggleFavorite).not.toHaveBeenCalled();
   });
+
+  it('hides unexpected server errors from the public response', async () => {
+    toggleFavorite.mockRejectedValue(new Error('database connection leaked detail'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await POST(new NextRequest('http://localhost/api/favorites/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ symbol: 'BTC' }),
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: '서버 오류가 발생했습니다.' });
+    expect(consoleError).toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
 });
