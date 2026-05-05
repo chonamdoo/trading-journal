@@ -1,0 +1,72 @@
+id: full-feature
+mode: cli-enforced
+stages:
+  - id: domain-grill
+    artifact: artifacts/domain-grill.md
+    instruction: "Interview one question at a time, resolve domain decisions, and record decisions, open questions, terms, assumptions, and sources checked."
+  - id: domain-map
+    artifact: artifacts/domain-map.md
+    instruction: "Update or reference CONTEXT.md with glossary, bounded contexts, ubiquitous language, and domain decisions from domain-grill."
+  - id: product-brief
+    artifact: artifacts/product-brief.md
+    instruction: "Validate demand, status quo, target user, narrowest wedge, observed behavior, why now, cut list, and build/defer/cut decision."
+  - id: prd
+    artifact: artifacts/prd.md
+    instruction: "Write the PRD before planning slices."
+  - id: slice-plan
+    artifact: artifacts/slice-plan.md
+    instruction: "Break the PRD into independently shippable slices."
+  - id: plan-review
+    artifact: artifacts/plan-review.md
+    instruction: "Review the slice plan like a senior reviewer. Record verdict: approve or verdict: request-changes with missing steps, wrong order, oversized slices, validation gaps, and required changes."
+  - id: ddd-design
+    artifact: artifacts/ddd-design.md
+    instruction: "Design data / domain / presentation boundaries, domain core modules, repository interfaces, repository implementations, and dependency rules."
+  - id: worktree
+    artifact: artifacts/worktree.md
+    instruction: "Create or record the dedicated branch/worktree for this slice."
+  - id: run-start
+    artifact: artifacts/run-start.md
+    instruction: "Record the workflow run setup and selected provider."
+  - id: red
+    artifact: artifacts/red.log
+    instruction: "Write failing tests first and save the failure output."
+  - id: green
+    artifact: artifacts/green.log
+    instruction: "Implement the minimum change and save passing test output."
+  - id: refactor
+    artifact: artifacts/refactor.md
+    instruction: "Refactor only after green and summarize changed structure."
+  - id: gates
+    artifact: gate-results.json
+    instruction: "Run project gates and save structured results."
+  - id: multi-review
+    artifact: artifacts/multi-review.md
+    instruction: "Run reviewer agents and record approve/request-changes results."
+  - id: fix-loop
+    artifact: artifacts/fix-loop.md
+    instruction: "Apply review/gate fixes or record that no fixes were required."
+  - id: architecture-review
+    artifact: artifacts/architecture-review.md
+    instruction: "Review implemented code against domain decisions and DDD/Clean Architecture. Record verdict: approve or verdict: request-changes with violations and required refactors."
+  - id: commit
+    artifact: artifacts/commit.md
+    instruction: "Commit the verified slice and record the commit hash."
+  - id: push-pr
+    artifact: artifacts/push-pr.md
+    instruction: "Push the branch or open a PR and record the remote reference."
+  - id: pr-watch
+    artifact: artifacts/pr-watch.md
+    instruction: "Poll PR checks and review threads; record status: green, status: comments, status: ci-failed, or status: pending with PR URL."
+  - id: pr-comment-fix
+    artifact: artifacts/pr-comment-fix.md
+    instruction: "Resolve actionable PR review comments, commit and push fixes, or record that no comments are pending."
+  - id: pr-ci-fix
+    artifact: artifacts/pr-ci-fix.md
+    instruction: "Fix failed PR checks, commit and push fixes, or record that checks are green."
+  - id: merge
+    artifact: artifacts/merge.md
+    instruction: "Merge the PR only after approvals, resolved comments, and green checks; record merge SHA or URL."
+  - id: handoff
+    artifact: artifacts/handoff.md
+    instruction: "Write final handoff with decisions, risks, files, and remaining work."
