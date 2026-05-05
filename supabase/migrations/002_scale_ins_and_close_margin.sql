@@ -48,7 +48,39 @@ CREATE POLICY "trade_scale_ins_delete_own"
 -- 2. trade_closes에 close_margin 컬럼 추가
 -- ────────────────────────────────────────────
 
-ALTER TABLE trade_closes ADD COLUMN close_margin NUMERIC(18,2);
+CREATE TABLE IF NOT EXISTS trade_closes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  trade_id UUID NOT NULL REFERENCES trades(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  exit_price NUMERIC(24,8) NOT NULL CHECK (exit_price > 0),
+  exit_datetime TIMESTAMPTZ NOT NULL,
+  quantity_pct NUMERIC(5,2) NOT NULL CHECK (quantity_pct > 0 AND quantity_pct <= 100),
+  pnl NUMERIC(18,2) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_trade_closes_trade ON trade_closes(trade_id);
+CREATE INDEX IF NOT EXISTS idx_trade_closes_user ON trade_closes(user_id);
+
+ALTER TABLE trade_closes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "trade_closes_select_own"
+  ON trade_closes FOR SELECT
+  USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "trade_closes_insert_own"
+  ON trade_closes FOR INSERT
+  WITH CHECK ((select auth.uid()) = user_id);
+
+CREATE POLICY "trade_closes_update_own"
+  ON trade_closes FOR UPDATE
+  USING ((select auth.uid()) = user_id);
+
+CREATE POLICY "trade_closes_delete_own"
+  ON trade_closes FOR DELETE
+  USING ((select auth.uid()) = user_id);
+
+ALTER TABLE trade_closes ADD COLUMN IF NOT EXISTS close_margin NUMERIC(18,2);
 
 -- 기존 데이터 마이그레이션: close_margin = 부모 trade.margin * quantity_pct / 100
 UPDATE trade_closes tc
