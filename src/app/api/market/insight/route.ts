@@ -13,6 +13,24 @@ export interface MarketInsight {
 let cache: { data: MarketInsight; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000;
 
+function assertFiniteNumber(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error('Invalid market insight payload');
+  }
+  return value;
+}
+
+function assertNumericString(value: unknown): number {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error('Invalid market insight payload');
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error('Invalid market insight payload');
+  }
+  return parsed;
+}
+
 /** 마켓 인사이트 API — 인증 불필요, IP Rate Limit만 적용 (분당 30회) */
 export async function GET(req: NextRequest) {
   // Rate Limit (IP 기반, 분당 30회)
@@ -66,15 +84,20 @@ export async function GET(req: NextRequest) {
       bitcoin?: { usd?: number; usd_24h_change?: number };
     };
 
+    const fearGreedItem = fgData.data?.[0];
+    if (!fearGreedItem?.value_classification) {
+      throw new Error('Invalid market insight payload');
+    }
+
     const insight: MarketInsight = {
       fearGreed: {
-        value: Number(fgData.data?.[0]?.value ?? 50),
-        classification: fgData.data?.[0]?.value_classification ?? 'Neutral',
+        value: assertNumericString(fearGreedItem.value),
+        classification: fearGreedItem.value_classification,
       },
-      btcDominance: globalData.data?.market_cap_percentage?.btc ?? 0,
-      btcPrice: btcData.bitcoin?.usd ?? 0,
-      btcChange24h: btcData.bitcoin?.usd_24h_change ?? 0,
-      totalMarketCap: globalData.data?.total_market_cap?.usd ?? 0,
+      btcDominance: assertFiniteNumber(globalData.data?.market_cap_percentage?.btc),
+      btcPrice: assertFiniteNumber(btcData.bitcoin?.usd),
+      btcChange24h: assertFiniteNumber(btcData.bitcoin?.usd_24h_change),
+      totalMarketCap: assertFiniteNumber(globalData.data?.total_market_cap?.usd),
     };
 
     cache = { data: insight, timestamp: Date.now() };

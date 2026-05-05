@@ -1,0 +1,134 @@
+import { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const successPayloads = [
+  {
+    ok: true,
+    json: async () => ({
+      name: 'Fear and Greed Index',
+      data: [{ value: '40', value_classification: 'Fear' }],
+      metadata: { error: null },
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ({
+      data: {
+        market_cap_percentage: { btc: 51.25 },
+        total_market_cap: { usd: 2_700_000_000_000 },
+      },
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ({
+      bitcoin: {
+        usd: 91_500,
+        usd_24h_change: -2.35,
+      },
+    }),
+  },
+];
+
+function mockFetchSequence(...responses: Array<{ ok: boolean; json: () => Promise<unknown> }>) {
+  const fetchMock = vi.fn();
+  for (const response of responses) {
+    fetchMock.mockResolvedValueOnce(response);
+  }
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+async function loadRoute() {
+  vi.resetModules();
+  return import('@/app/api/market/insight/route');
+}
+
+describe('GET /api/market/insight', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-05T00:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('maps public provider data into MarketInsight', async () => {
+    const fetchMock = mockFetchSequence(...successPayloads);
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.10' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(body).toEqual({
+      fearGreed: { value: 40, classification: 'Fear' },
+      btcDominance: 51.25,
+      btcPrice: 91_500,
+      btcChange24h: -2.35,
+      totalMarketCap: 2_700_000_000_000,
+    });
+  });
+
+  it('returns stale cache when providers fail after the cache ttl', async () => {
+    mockFetchSequence(
+      ...successPayloads,
+      { ok: false, json: async () => ({}) },
+      { ok: true, json: async () => ({}) },
+      { ok: true, json: async () => ({}) },
+    );
+    const { GET } = await loadRoute();
+
+    const first = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.11' },
+    }));
+    const cachedBody = await first.json();
+
+    vi.setSystemTime(new Date('2026-05-05T00:06:00Z'));
+
+    const second = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.11' },
+    }));
+    const body = await second.json();
+
+    expect(second.status).toBe(200);
+    expect(body).toEqual(cachedBody);
+  });
+
+  it('returns 502 when provider payloads are malformed and no stale cache exists', async () => {
+    mockFetchSequence(
+      { ok: true, json: async () => ({ data: [] }) },
+      { ok: true, json: async () => ({ data: {} }) },
+      { ok: true, json: async () => ({ bitcoin: {} }) },
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.12' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(body).toEqual({ error: 'Failed to fetch market data' });
+  });
+
+  it('limits public market insight requests to 30 per minute per ip', async () => {
+    mockFetchSequence(...successPayloads);
+    const { GET } = await loadRoute();
+
+    let lastResponse: Response | null = null;
+    for (let i = 0; i < 31; i += 1) {
+      lastResponse = await GET(new NextRequest('http://localhost/api/market/insight', {
+        headers: { 'x-forwarded-for': '203.0.113.13' },
+      }));
+    }
+
+    expect(lastResponse?.status).toBe(429);
+    expect(lastResponse?.headers.get('Retry-After')).toBe('60');
+  });
+});
