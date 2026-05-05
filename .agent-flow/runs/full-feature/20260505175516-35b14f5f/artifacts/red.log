@@ -1,0 +1,8 @@
+> trading-journal@0.1.0 test
+> vitest run tests/components/pre-trade-checklist.behavior.test.ts
+
+FAIL tests/components/pre-trade-checklist.behavior.test.ts
+Error: Cannot find package '@/components/trades/preTradeChecklist'
+
+Test Files 1 failed
+Tests no tests

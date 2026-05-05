@@ -10,6 +10,12 @@ import { showToast } from '@/components/ui/Toast'
 import { AssetCombobox } from '@/components/ui/AssetCombobox'
 import { REVIEW_CHOICES, REVIEW_TAGS } from '@/lib/constants'
 import {
+  PRE_TRADE_CHECKLIST_ITEMS,
+  createInitialPreTradeChecklistState,
+  getPreTradeChecklistWarning,
+  type PreTradeChecklistState,
+} from './preTradeChecklist'
+import {
   formatNumber,
   formatPnl,
   formatPercent,
@@ -96,6 +102,9 @@ export function TradeForm({
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.tags ?? [])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [preTradeChecklist, setPreTradeChecklist] = useState<PreTradeChecklistState>(
+    createInitialPreTradeChecklistState
+  )
 
   // ── P&L 미리보기 계산 ──
   const entNum = parseFloat(entryPrice)
@@ -231,7 +240,15 @@ export function TradeForm({
     setNotes('')
     setSelectedTags([])
     setPendingFiles([])
+    setPreTradeChecklist(createInitialPreTradeChecklistState())
   }, [allAssetsProp])
+
+  const togglePreTradeChecklist = (key: keyof PreTradeChecklistState) => {
+    setPreTradeChecklist((current) => ({
+      ...current,
+      [key]: !current[key],
+    }))
+  }
 
   const toggleTag = (tagId: string) => {
     setSelectedTags((current) => current.includes(tagId)
@@ -267,6 +284,11 @@ export function TradeForm({
     if (!leverage || leverage < 1 || leverage > 125) {
       showToast('error', '레버리지를 입력해주세요. (1~125)')
       return
+    }
+
+    if (!isEdit) {
+      const warning = getPreTradeChecklistWarning(preTradeChecklist)
+      if (warning) showToast('info', warning)
     }
 
     const slVal = parseFloat(stopLossPrice)
@@ -696,6 +718,30 @@ export function TradeForm({
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
+
+      {!isEdit && (
+        <div className="mb-sp-6 rounded-input border border-border bg-surface-muted px-4 py-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-content-muted mb-3">
+            프리트레이드 체크리스트
+          </div>
+          <div className="flex flex-col gap-2">
+            {PRE_TRADE_CHECKLIST_ITEMS.map((item) => (
+              <label
+                key={item.key}
+                className="flex items-center gap-2 text-[13px] font-medium text-content-secondary"
+              >
+                <input
+                  type="checkbox"
+                  checked={preTradeChecklist[item.key]}
+                  onChange={() => togglePreTradeChecklist(item.key)}
+                  className="h-4 w-4 rounded border-border-input accent-accent-primary"
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 액션 버튼 */}
       <div className="flex gap-2 justify-end items-center">
