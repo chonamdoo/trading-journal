@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/auth';
-import { setFavorite } from '@/lib/api/favorites';
+import { createAssetsCompositionRoot } from '@/features/assets/di.server';
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
@@ -18,10 +18,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'favorited 값(boolean)이 필요합니다.' }, { status: 400 });
     }
 
-    const result = await setFavorite(supabase, userId, body.symbol, body.favorited);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    try {
+      const result = await createAssetsCompositionRoot(supabase).setFavoriteAsset.execute({
+        userId,
+        symbol: body.symbol,
+        favorited: body.favorited,
+      });
+      return NextResponse.json({ success: true, data: result });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : '알 수 없는 오류' },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ success: true, data: result.data });
   });
 }

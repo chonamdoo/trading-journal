@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "functions": {
     "src/app/api/exchange/binance/connection/route.ts": {
       "regions": ["sin1"]

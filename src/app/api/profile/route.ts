@@ -1,25 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/auth';
-import { getProfile, updateProfile } from '@/lib/api/profile';
 import type { ProfileUpdate } from '@/lib/supabase/types';
+import { createUserProfileCompositionRoot } from '@/features/user-profile/di.server';
+import { mapProfileUpdateRequest } from '@/features/user-profile/presentation/mappers/user-profile-request.mapper';
+import { mapUserProfileToProfileResponse } from '@/features/user-profile/presentation/mappers/user-profile-response.mapper';
 
 export async function GET(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
-    const result = await getProfile(supabase, userId);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    try {
+      const profile = await createUserProfileCompositionRoot(supabase).getUserProfile.execute({
+        authUserId: userId,
+      });
+      if (!profile) {
+        return NextResponse.json({ error: 'Profile not found' }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: mapUserProfileToProfileResponse(profile),
+      });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : '알 수 없는 오류' },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ success: true, data: result.data });
   });
 }
 
 export async function PUT(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
-    const body = await req.json() as ProfileUpdate;
-    const result = await updateProfile(supabase, userId, body);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    try {
+      const body = await req.json() as ProfileUpdate;
+      const profile = await createUserProfileCompositionRoot(supabase).updateUserProfile.execute({
+        authUserId: userId,
+        update: mapProfileUpdateRequest(body),
+      });
+      if (!profile) {
+        return NextResponse.json({ error: 'Profile not found' }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: mapUserProfileToProfileResponse(profile),
+      });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : '알 수 없는 오류' },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ success: true, data: result.data });
   });
 }

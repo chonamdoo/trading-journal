@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createHmac } from 'crypto';
 
 const BITGET_BASE_URL = 'https://api.bitget.com';

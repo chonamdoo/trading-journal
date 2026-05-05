@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createHmac } from 'crypto';
 
 const BYBIT_BASE_URLS = ['https://api.bybit.com', 'https://api.bytick.com'];

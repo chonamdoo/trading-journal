@@ -47,3 +47,17 @@
 - 보안 감사: `.claude/security-reviewer.md`
 
 원본 `docs/`는 `.claudeignore`로 시작 시 차단됨.
+
+<!-- agent-flow:start -->
+## Agent Flow
+
+Before feature work, run:
+
+```bash
+npx github:chonamdoo/agent-flow run start --task "<task>"
+npx github:chonamdoo/agent-flow run next
+```
+
+Follow the CLI output exactly. Do not manually skip phases; use `npx github:chonamdoo/agent-flow run advance` only after the required artifact exists.
+
+<!-- agent-flow:end -->
