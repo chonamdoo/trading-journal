@@ -11,9 +11,10 @@ const eslintConfig = defineConfig([
       'prefer-const': 'warn',
     },
   },
-  globalIgnores([
-    '.next/**',
-    'out/**',
+    globalIgnores([
+      '.next/**',
+      '.worktrees/**',
+      'out/**',
     'build/**',
     'next-env.d.ts',
   ]),
