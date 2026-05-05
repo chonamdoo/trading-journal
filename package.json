@@ -26,7 +26,7 @@
     "@types/node": "^20.11.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "agent-flow-kit": "github:chonamdoo/agent-flow",
+    "agent-flow-kit": "git+https://github.com/chonamdoo/agent-flow.git",
     "autoprefixer": "^10.4.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
