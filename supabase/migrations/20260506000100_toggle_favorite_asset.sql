@@ -13,7 +13,10 @@ delete from public.favorites a
 using public.favorites b
 where a.user_id = b.user_id
   and upper(btrim(a.symbol)) = upper(btrim(b.symbol))
-  and a.created_at > b.created_at;
+  and (
+    a.created_at > b.created_at
+    or (a.created_at = b.created_at and a.id > b.id)
+  );
 
 create unique index if not exists favorites_user_symbol_norm_uq
   on public.favorites (user_id, upper(btrim(symbol)));
@@ -70,7 +73,7 @@ begin
     into v_existing_id
   from public.favorites
   where favorites.user_id = p_user_id
-    and favorites.symbol = v_symbol
+    and upper(btrim(favorites.symbol)) = v_symbol
   limit 1;
 
   if v_existing_id is not null then
