@@ -10,4 +10,4 @@ Boundary review:
 - Presentation/UI components unchanged.
 
 Notes:
-- Toggle is implemented with select then delete/insert because no DB RPC function exists in repo; UNIQUE(user_id, symbol) still protects duplicate favorites.
+- Toggle is implemented through public.toggle_favorite_asset RPC so the write path is transaction-scoped and protected from concurrent read-then-insert races.

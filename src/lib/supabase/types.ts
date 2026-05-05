@@ -352,6 +352,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      toggle_favorite_asset: {
+        Args: {
+          p_user_id: string;
+          p_symbol: string;
+        };
+        Returns: {
+          favorited: boolean;
+          id: string | null;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;

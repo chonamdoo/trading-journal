@@ -1,0 +1,85 @@
+create table if not exists public.favorites (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  symbol text not null,
+  created_at timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'favorites_user_id_symbol_key'
+      and conrelid = 'public.favorites'::regclass
+  ) then
+    alter table public.favorites
+      add constraint favorites_user_id_symbol_key unique (user_id, symbol);
+  end if;
+end;
+$$;
+
+alter table public.favorites enable row level security;
+
+drop policy if exists "favorites_select_own" on public.favorites;
+create policy "favorites_select_own"
+  on public.favorites
+  for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "favorites_insert_own" on public.favorites;
+create policy "favorites_insert_own"
+  on public.favorites
+  for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "favorites_delete_own" on public.favorites;
+create policy "favorites_delete_own"
+  on public.favorites
+  for delete
+  using (auth.uid() = user_id);
+
+create or replace function public.toggle_favorite_asset(
+  p_user_id uuid,
+  p_symbol text
+)
+returns table (
+  favorited boolean,
+  id uuid
+)
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_existing_id uuid;
+  v_inserted_id uuid;
+begin
+  if auth.uid() is distinct from p_user_id then
+    raise exception 'not allowed';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':' || p_symbol, 0));
+
+  select favorites.id
+    into v_existing_id
+  from public.favorites
+  where favorites.user_id = p_user_id
+    and favorites.symbol = p_symbol
+  limit 1;
+
+  if v_existing_id is not null then
+    delete from public.favorites
+    where favorites.id = v_existing_id;
+
+    return query select false, null::uuid;
+    return;
+  end if;
+
+  insert into public.favorites (user_id, symbol)
+  values (p_user_id, p_symbol)
+  returning favorites.id into v_inserted_id;
+
+  return query select true, v_inserted_id;
+end;
+$$;
