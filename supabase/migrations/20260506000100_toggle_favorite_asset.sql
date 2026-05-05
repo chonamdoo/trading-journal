@@ -1,23 +1,22 @@
 create table if not exists public.favorites (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
-  symbol text not null,
+  symbol text not null check (btrim(symbol) <> ''),
   created_at timestamptz not null default now()
 );
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'favorites_user_id_symbol_key'
-      and conrelid = 'public.favorites'::regclass
-  ) then
-    alter table public.favorites
-      add constraint favorites_user_id_symbol_key unique (user_id, symbol);
-  end if;
-end;
-$$;
+update public.favorites
+set symbol = upper(btrim(symbol))
+where symbol <> upper(btrim(symbol));
+
+delete from public.favorites a
+using public.favorites b
+where a.user_id = b.user_id
+  and upper(btrim(a.symbol)) = upper(btrim(b.symbol))
+  and a.created_at > b.created_at;
+
+create unique index if not exists favorites_user_symbol_norm_uq
+  on public.favorites (user_id, upper(btrim(symbol)));
 
 alter table public.favorites enable row level security;
 
@@ -54,18 +53,24 @@ as $$
 declare
   v_existing_id uuid;
   v_inserted_id uuid;
+  v_symbol text;
 begin
+  v_symbol := upper(btrim(coalesce(p_symbol, '')));
+  if v_symbol = '' then
+    raise exception 'symbol is required';
+  end if;
+
   if auth.uid() is distinct from p_user_id then
     raise exception 'not allowed';
   end if;
 
-  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':' || p_symbol, 0));
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':' || v_symbol, 0));
 
   select favorites.id
     into v_existing_id
   from public.favorites
   where favorites.user_id = p_user_id
-    and favorites.symbol = p_symbol
+    and favorites.symbol = v_symbol
   limit 1;
 
   if v_existing_id is not null then
@@ -77,7 +82,7 @@ begin
   end if;
 
   insert into public.favorites (user_id, symbol)
-  values (p_user_id, p_symbol)
+  values (p_user_id, v_symbol)
   returning favorites.id into v_inserted_id;
 
   return query select true, v_inserted_id;

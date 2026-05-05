@@ -64,21 +64,25 @@ CREATE INDEX IF NOT EXISTS idx_trade_closes_user ON trade_closes(user_id);
 
 ALTER TABLE trade_closes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "trade_closes_select_own" ON trade_closes;
 CREATE POLICY "trade_closes_select_own"
   ON trade_closes FOR SELECT
-  USING ((select auth.uid()) = user_id);
+  USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "trade_closes_insert_own" ON trade_closes;
 CREATE POLICY "trade_closes_insert_own"
   ON trade_closes FOR INSERT
-  WITH CHECK ((select auth.uid()) = user_id);
+  WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "trade_closes_update_own" ON trade_closes;
 CREATE POLICY "trade_closes_update_own"
   ON trade_closes FOR UPDATE
-  USING ((select auth.uid()) = user_id);
+  USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "trade_closes_delete_own" ON trade_closes;
 CREATE POLICY "trade_closes_delete_own"
   ON trade_closes FOR DELETE
-  USING ((select auth.uid()) = user_id);
+  USING (auth.uid() = user_id);
 
 ALTER TABLE trade_closes ADD COLUMN IF NOT EXISTS close_margin NUMERIC(18,2);
 
