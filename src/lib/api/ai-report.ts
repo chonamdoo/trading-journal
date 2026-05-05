@@ -160,7 +160,20 @@ export function parseReportStats(report: MonthlyReportRow): AIReportData | null 
   try {
     const stats = (report as MonthlyReportRow & { stats?: unknown }).stats
     if (!stats || typeof stats !== 'object' || Array.isArray(stats)) return null
-    return stats as unknown as AIReportData
+    const value = stats as Record<string, unknown>
+    if (
+      typeof value.headline !== 'string' ||
+      typeof value.masterScore !== 'number' ||
+      typeof value.kpis !== 'object' ||
+      value.kpis === null ||
+      Array.isArray(value.kpis) ||
+      !Array.isArray(value.behavioralPatterns) ||
+      !Array.isArray(value.recommendations) ||
+      !Array.isArray(value.radarData)
+    ) {
+      return null
+    }
+    return value as unknown as AIReportData
   } catch {
     return null
   }

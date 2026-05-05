@@ -33,7 +33,7 @@ import {
   calcTimeHeatmap,
   parseReportStats,
 } from '@/lib/api/ai-report'
-import { fetchReports } from '@/lib/api/client-api'
+import { fetchReportsByType } from '@/lib/api/client-api'
 import type { MonthlyReportRow } from '@/lib/supabase/types'
 import type { AIReportData } from '@/types/ai-report'
 
@@ -73,7 +73,7 @@ export default function AIReportPage() {
 
   const loadLatestReport = useCallback(async () => {
     setLoadingReport(true)
-    const res = await fetchReports()
+    const res = await fetchReportsByType('monthly')
     if (res.success && res.data.length > 0) {
       setLatestReport(res.data[0])
     } else {
