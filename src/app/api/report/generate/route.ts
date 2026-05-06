@@ -541,7 +541,6 @@ ${tagComboStatsStr || '복기 태그 조합 없음'}
         .select('id')
         .eq('user_id', user.id)
         .eq('year', year)
-        .eq('month', month)
         .eq('week', week!)
         .eq('period_type', 'weekly')
         .maybeSingle();
