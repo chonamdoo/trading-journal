@@ -1,0 +1,12 @@
+{
+  "run_id": "20260506145028-05cfe54d",
+  "workflow": "full-feature",
+  "task": "SPEC-002 Slice 2: Mobile Route Redirect Compatibility",
+  "phase_index": 16,
+  "phase": "commit",
+  "status": "running",
+  "run_dir": ".agent-flow/runs/full-feature/20260506145028-05cfe54d",
+  "started_at": "2026-05-06T14:50:28.863Z",
+  "phase_entered_at": "2026-05-06T14:55:12.233Z",
+  "updated_at": "2026-05-06T14:55:12.233Z"
+}
