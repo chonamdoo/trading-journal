@@ -1,0 +1,13 @@
+# RED - SPEC-002 Slice 1
+
+Command:
+- `npm test -- tests/api/auth-boundary.behavior.test.ts`
+
+Result:
+- Failed as expected after dependency install.
+
+Failure:
+- `Cannot find package '@/lib/api/mobile-auth'`
+
+Meaning:
+- The compatibility auth boundary required by SPEC-002 Phase 1 was missing.

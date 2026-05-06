@@ -1,0 +1,12 @@
+# GREEN - SPEC-002 Slice 1
+
+Command:
+- `npm test -- tests/api/auth-boundary.behavior.test.ts`
+
+Result:
+- Passed.
+
+Coverage:
+- Bearer request uses `createMobileClient(token)`.
+- Cookie request uses server Supabase client.
+- `mobile-auth.ts` re-exports unified auth API.
