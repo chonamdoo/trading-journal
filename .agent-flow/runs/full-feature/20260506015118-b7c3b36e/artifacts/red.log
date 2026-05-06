@@ -1,0 +1,11 @@
+# RED - SPEC-003 Completion Status
+
+Runtime behavior tests:
+- Not applicable. This slice changes documentation status only.
+
+Pre-change failing condition:
+- `specs/INDEX.md` listed SPEC-003 as `in-progress`.
+- `specs/003-checklist-market-insight.md` listed status as `in-progress`.
+
+Command used for confirmation:
+- `rg -n "003 \\| checklist-market-insight|상태: in-progress" specs/INDEX.md specs/003-checklist-market-insight.md`

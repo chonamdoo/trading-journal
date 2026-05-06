@@ -1,0 +1,9 @@
+# GREEN - SPEC-003 Completion Status
+
+Implemented:
+- `specs/INDEX.md` now marks SPEC-003 as `completed`.
+- `specs/003-checklist-market-insight.md` now marks SPEC-003 as `completed`.
+- Implementation evidence for PR #15 and PR #16 is recorded.
+
+Runtime behavior:
+- Unchanged.
