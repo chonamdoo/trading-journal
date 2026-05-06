@@ -5,7 +5,7 @@
   "phase_index": 17,
   "phase": "push-pr",
   "status": "running",
-  "run_dir": "/Users/namdoo/Downloads/Aiproject/trading-journal-spec-002-auth-boundary/.agent-flow/runs/full-feature/20260506140906-79471aef",
+  "run_dir": ".agent-flow/runs/full-feature/20260506140906-79471aef",
   "started_at": "2026-05-06T14:09:06.909Z",
   "phase_entered_at": "2026-05-06T14:22:40.803Z",
   "updated_at": "2026-05-06T14:22:40.803Z"
