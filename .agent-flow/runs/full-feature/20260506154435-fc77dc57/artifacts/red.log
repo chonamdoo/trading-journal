@@ -1,0 +1,14 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/api/client-fetch.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-spec-002-client-fetch-wrapper
+
+ ❯ tests/api/client-fetch.behavior.test.ts (5 tests | 1 failed) 35ms
+     × treats a successful 204 response as a successful empty result 3ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  00:48:36
+   Duration  170ms (transform 24ms, setup 0ms, import 27ms, tests 35ms, environment 0ms)

@@ -57,13 +57,16 @@ stages:
     instruction: "Push the branch or open a PR and record the remote reference."
   - id: pr-watch
     artifact: artifacts/pr-watch.md
-    instruction: "Poll PR checks and review threads; record status: green, status: comments, status: ci-failed, or status: pending with PR URL."
+    instruction: "Poll PR checks and review threads; record status: green, status: has_comments, status: ci_failed (legacy alias status: ci-failed), status: pending, status: merged, status: closed, or status: error with PR URL."
   - id: pr-comment-fix
     artifact: artifacts/pr-comment-fix.md
-    instruction: "Resolve actionable PR review comments, commit and push fixes, or record that no comments are pending."
+    instruction: "Resolve actionable PR review comments, commit and push fixes, resolve the corresponding GitHub review threads, or record that no comments are pending."
   - id: pr-ci-fix
     artifact: artifacts/pr-ci-fix.md
     instruction: "Fix failed PR checks, commit and push fixes, or record that checks are green."
+  - id: merge-approval
+    artifact: artifacts/merge-approval.md
+    instruction: "Ask for explicit user approval before merge. Record verdict: approve only after approval."
   - id: merge
     artifact: artifacts/merge.md
     instruction: "Merge the PR only after approvals, resolved comments, and green checks; record merge SHA or URL."

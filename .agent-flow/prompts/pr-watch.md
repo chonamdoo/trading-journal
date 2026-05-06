@@ -1,6 +1,6 @@
 # pr-watch
 
-Poll PR checks and review threads; record status: green, status: comments, status: ci-failed, or status: pending with PR URL.
+Poll PR checks and review threads; record status: green, status: has_comments, status: ci_failed (legacy alias status: ci-failed), status: pending, status: merged, status: closed, or status: error with PR URL.
 
 Save the required artifact before running:
 
