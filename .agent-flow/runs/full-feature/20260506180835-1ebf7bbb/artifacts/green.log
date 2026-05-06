@@ -1,0 +1,13 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/api/report-auto-check.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-spec-005-auto-weekly-check
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  03:13:12
+   Duration  144ms (transform 18ms, setup 0ms, import 42ms, tests 11ms, environment 0ms)
+
