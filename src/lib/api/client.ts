@@ -22,6 +22,20 @@ async function refreshAuthHeader(): Promise<Record<string, string> | null> {
   return null;
 }
 
+async function readJsonBody<T>(res: Response): Promise<T | undefined> {
+  if (res.status === 204) {
+    return undefined;
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return undefined;
+  }
+
+  const jsonText = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  return JSON.parse(jsonText) as T;
+}
+
 /**
  * 통합 API 호출 래퍼
  * - Supabase 세션에서 access_token 추출 → Bearer 헤더
@@ -55,9 +69,9 @@ export async function apiFetch<T>(
       }
     }
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = await readJsonBody<Record<string, unknown>>(res);
     if (!res.ok) {
-      return { success: false, error: (json.error as string) || `HTTP ${res.status}` };
+      return { success: false, error: (json?.error as string) || `HTTP ${res.status}` };
     }
     return { success: true, data: json as T };
   } catch (err) {
@@ -94,9 +108,9 @@ export async function apiFetchFormData<T>(
       }
     }
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = await readJsonBody<Record<string, unknown>>(res);
     if (!res.ok) {
-      return { success: false, error: (json.error as string) || `HTTP ${res.status}` };
+      return { success: false, error: (json?.error as string) || `HTTP ${res.status}` };
     }
     return { success: true, data: json as T };
   } catch (err) {

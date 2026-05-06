@@ -31,8 +31,9 @@ Canonical order:
 19. pr-watch
 20. pr-comment-fix
 21. pr-ci-fix
-22. merge
-23. handoff
+22. merge-approval
+23. merge
+24. handoff
 
 Do not skip phases. If existing docs satisfy a phase, write the required artifact and reference those docs. If a gate, review, PR comment, or PR check fails, complete the matching fix phase and push again before merge/handoff.
 

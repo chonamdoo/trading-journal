@@ -1,0 +1,12 @@
+{
+  "run_id": "20260506154435-fc77dc57",
+  "workflow": "full-feature",
+  "task": "SPEC-002 Slice 3: Client Fetch Wrapper Foundation",
+  "phase_index": 19,
+  "phase": "pr-comment-fix",
+  "status": "running",
+  "run_dir": ".agent-flow/runs/full-feature/20260506154435-fc77dc57",
+  "started_at": "2026-05-06T15:44:35.696Z",
+  "phase_entered_at": "2026-05-06T15:59:21.479Z",
+  "updated_at": "2026-05-06T15:59:21.479Z"
+}
