@@ -1,0 +1,5 @@
+> trading-journal@0.1.0 test
+> vitest run tests/components/pre-trade-checklist.behavior.test.ts
+
+Test Files 1 passed
+Tests 3 passed

@@ -1,0 +1,8 @@
+{
+  "test": "passed: 18 files, 39 tests",
+  "typecheck": "passed",
+  "lint": "passed with existing warnings: 0 errors, 47 warnings",
+  "build": "passed",
+  "diffCheck": "passed",
+  "supabase": "not run: no migration changes"
+}
