@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "commands": [
+    {
+      "command": "npm test -- tests/api/auth-boundary.behavior.test.ts",
+      "status": "passed",
+      "summary": "1 file, 3 tests passed"
+    },
+    {
+      "command": "npm test",
+      "status": "passed",
+      "summary": "19 files, 42 tests passed"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed",
+      "summary": "0 errors, existing warnings only"
+    },
+    {
+      "command": "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=local-anon-key npx next build",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ]
+}
