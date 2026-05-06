@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "scope": "documentation-only",
+  "commands": [
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "command": "rg -n \"003 \\\\| checklist-market-insight|상태:|구현 근거|PR #15|PR #16\" specs/INDEX.md specs/003-checklist-market-insight.md",
+      "status": "passed"
+    }
+  ],
+  "skipped": [
+    {
+      "command": "npx next build",
+      "reason": "No production code changed."
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "reason": "No TypeScript changed."
+    },
+    {
+      "command": "npm run lint",
+      "reason": "No linted source changed."
+    },
+    {
+      "command": "npm test",
+      "reason": "No runtime behavior changed."
+    }
+  ]
+}

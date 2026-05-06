@@ -1,7 +1,13 @@
 # SPEC-003: 프리트레이드 체크리스트 + 마켓 인사이트
 
 생성일: 2026-04-11
-상태: in-progress
+상태: completed
+
+완료일: 2026-05-06
+
+구현 근거:
+- Market Insight API Boundary: PR #15
+- Pre-trade Checklist UI: PR #16
 
 ## 기능 1: 프리트레이드 체크리스트
 
