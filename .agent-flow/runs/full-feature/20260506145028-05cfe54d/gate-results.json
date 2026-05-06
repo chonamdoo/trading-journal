@@ -9,7 +9,7 @@
     {
       "command": "npm test",
       "status": "passed",
-      "summary": "20 files, 46 tests passed"
+      "summary": "20 files, 47 tests passed"
     },
     {
       "command": "npx tsc --noEmit",

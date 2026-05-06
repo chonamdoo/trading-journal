@@ -11,8 +11,8 @@ describe('/api/mobile/profile compatibility redirect', () => {
     );
 
     expect(getResponse.status).toBe(308);
-    expect(getResponse.headers.get('location')).toBe('http://localhost/api/profile');
+    expect(getResponse.headers.get('location')).toBe('http://localhost/api/profile?__mobile_compat=1');
     expect(putResponse.status).toBe(308);
-    expect(putResponse.headers.get('location')).toBe('http://localhost/api/profile');
+    expect(putResponse.headers.get('location')).toBe('http://localhost/api/profile?__mobile_compat=1');
   });
 });

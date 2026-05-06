@@ -49,6 +49,12 @@ async function expectPermanentRedirect(
   expect(response.headers.get('location')).toBe(target);
 }
 
+function mobileCompatTarget(target: string): string {
+  const url = new URL(target);
+  url.searchParams.set('__mobile_compat', '1');
+  return url.toString();
+}
+
 describe('/api/mobile compatibility redirects', () => {
   it('redirects mobile trades collection requests to /api/trades', async () => {
     const getResponse = await mobileTradesRoute.GET(
@@ -58,8 +64,8 @@ describe('/api/mobile compatibility redirects', () => {
       new NextRequest('http://localhost/api/mobile/trades', { method: 'POST' }),
     );
 
-    await expectPermanentRedirect(getResponse, 'http://localhost/api/trades?page=2');
-    await expectPermanentRedirect(postResponse, 'http://localhost/api/trades');
+    await expectPermanentRedirect(getResponse, mobileCompatTarget('http://localhost/api/trades?page=2'));
+    await expectPermanentRedirect(postResponse, mobileCompatTarget('http://localhost/api/trades'));
   });
 
   it('redirects mobile trade detail requests to /api/trades/[id]', async () => {
@@ -67,15 +73,15 @@ describe('/api/mobile compatibility redirects', () => {
 
     await expectPermanentRedirect(
       await mobileTradeByIdRoute.GET(new NextRequest('http://localhost/api/mobile/trades/trade-1'), params),
-      'http://localhost/api/trades/trade-1',
+      mobileCompatTarget('http://localhost/api/trades/trade-1'),
     );
     await expectPermanentRedirect(
       await mobileTradeByIdRoute.PUT(new NextRequest('http://localhost/api/mobile/trades/trade-1', { method: 'PUT' }), params),
-      'http://localhost/api/trades/trade-1',
+      mobileCompatTarget('http://localhost/api/trades/trade-1'),
     );
     await expectPermanentRedirect(
       await mobileTradeByIdRoute.DELETE(new NextRequest('http://localhost/api/mobile/trades/trade-1', { method: 'DELETE' }), params),
-      'http://localhost/api/trades/trade-1',
+      mobileCompatTarget('http://localhost/api/trades/trade-1'),
     );
   });
 
@@ -84,38 +90,38 @@ describe('/api/mobile compatibility redirects', () => {
 
     await expectPermanentRedirect(
       await mobileTradeClosesRoute.GET(new NextRequest('http://localhost/api/mobile/trades/trade-1/closes'), params),
-      'http://localhost/api/trades/trade-1/closes',
+      mobileCompatTarget('http://localhost/api/trades/trade-1/closes'),
     );
     await expectPermanentRedirect(
       await mobileTradeClosesRoute.POST(new NextRequest('http://localhost/api/mobile/trades/trade-1/closes', { method: 'POST' }), params),
-      'http://localhost/api/trades/trade-1/closes',
+      mobileCompatTarget('http://localhost/api/trades/trade-1/closes'),
     );
     await expectPermanentRedirect(
       await mobileTradeScaleInsRoute.GET(new NextRequest('http://localhost/api/mobile/trades/trade-1/scale-ins'), params),
-      'http://localhost/api/trades/trade-1/scale-ins',
+      mobileCompatTarget('http://localhost/api/trades/trade-1/scale-ins'),
     );
     await expectPermanentRedirect(
       await mobileTradeScaleInsRoute.POST(new NextRequest('http://localhost/api/mobile/trades/trade-1/scale-ins', { method: 'POST' }), params),
-      'http://localhost/api/trades/trade-1/scale-ins',
+      mobileCompatTarget('http://localhost/api/trades/trade-1/scale-ins'),
     );
   });
 
   it('redirects mobile deposits and profile routes', async () => {
     await expectPermanentRedirect(
       await mobileDepositsRoute.GET(new NextRequest('http://localhost/api/mobile/deposits')),
-      'http://localhost/api/deposits',
+      mobileCompatTarget('http://localhost/api/deposits'),
     );
     await expectPermanentRedirect(
       await mobileDepositsRoute.POST(new NextRequest('http://localhost/api/mobile/deposits', { method: 'POST' })),
-      'http://localhost/api/deposits',
+      mobileCompatTarget('http://localhost/api/deposits'),
     );
     await expectPermanentRedirect(
       await mobileProfileRoute.GET(new NextRequest('http://localhost/api/mobile/profile')),
-      'http://localhost/api/profile',
+      mobileCompatTarget('http://localhost/api/profile'),
     );
     await expectPermanentRedirect(
       await mobileProfileRoute.PUT(new NextRequest('http://localhost/api/mobile/profile', { method: 'PUT' })),
-      'http://localhost/api/profile',
+      mobileCompatTarget('http://localhost/api/profile'),
     );
   });
 });
