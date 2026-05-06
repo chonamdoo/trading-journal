@@ -1,0 +1,14 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/schema/weekly-report-period.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-spec-005-weekly-period
+
+ ✓ tests/schema/weekly-report-period.behavior.test.ts (2 tests) 1ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  02:24:40
+   Duration  84ms (transform 7ms, setup 0ms, import 11ms, tests 1ms, environment 0ms)
+

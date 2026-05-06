@@ -1,0 +1,25 @@
+{
+  "targetedTest": {
+    "command": "npm test -- tests/schema/weekly-report-period.behavior.test.ts",
+    "status": "passed",
+    "summary": "1 file, 2 tests passed"
+  },
+  "fullTest": {
+    "command": "npm test",
+    "status": "passed",
+    "summary": "23 files, 57 tests passed"
+  },
+  "typecheck": {
+    "command": "npx tsc --noEmit",
+    "status": "passed"
+  },
+  "lint": {
+    "command": "npm run lint",
+    "status": "passed",
+    "summary": "0 errors, 47 existing warnings"
+  },
+  "build": {
+    "command": "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=local-anon-key npx next build",
+    "status": "passed"
+  }
+}
