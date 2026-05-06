@@ -1,0 +1,15 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/api/screenshot-data-url.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-spec-002-screenshot-data-url
+
+ ❯ tests/api/screenshot-data-url.behavior.test.ts (2 tests | 2 failed) 15ms
+     × loads screenshot metadata by id and trade before returning a data URL 6ms
+     × unwraps screenshot data URL responses in the client API 8ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  01:15:28
+   Duration  129ms (transform 24ms, setup 0ms, import 19ms, tests 15ms, environment 0ms)

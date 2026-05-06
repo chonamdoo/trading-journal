@@ -480,6 +480,17 @@ export async function fetchDeleteScreenshot(
   return { success: true, data: undefined };
 }
 
+export async function fetchScreenshotDataUrl(
+  tradeId: string,
+  screenshotId: string,
+): Promise<ApiResult<{ dataUrl: string }>> {
+  const result = await apiFetch<{ success: boolean; data: { dataUrl: string } }>(
+    `/api/trades/${tradeId}/screenshots/${screenshotId}/data-url`,
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 // ── Deposits ──
 
 export async function fetchDeposits(): Promise<ApiResult<DepositRow[]>> {

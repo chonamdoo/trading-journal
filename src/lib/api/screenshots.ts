@@ -128,6 +128,40 @@ export async function getScreenshotsByTradeIds(
   return { success: true, data: withUrls };
 }
 
+/** 공유 카드 렌더링용 스크린샷 Data URL을 생성한다 */
+export async function getScreenshotDataUrl(
+  supabase: Client,
+  tradeId: string,
+  screenshotId: string,
+): Promise<ApiResult<{ dataUrl: string }>> {
+  const { data: screenshot, error: metadataError } = await supabase
+    .from('trade_screenshots')
+    .select('id, trade_id, storage_path, mime_type')
+    .eq('id', screenshotId)
+    .eq('trade_id', tradeId)
+    .single();
+
+  if (metadataError || !screenshot) {
+    return { success: false, error: metadataError?.message ?? '스크린샷을 찾을 수 없습니다.' };
+  }
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .download(screenshot.storage_path);
+
+  if (error || !data) {
+    return { success: false, error: error?.message ?? '스크린샷 다운로드 실패' };
+  }
+
+  const buffer = Buffer.from(await data.arrayBuffer());
+  return {
+    success: true,
+    data: {
+      dataUrl: `data:${screenshot.mime_type};base64,${buffer.toString('base64')}`,
+    },
+  };
+}
+
 /** 스크린샷을 삭제한다 (Storage + DB) */
 export async function deleteScreenshot(
   supabase: Client,

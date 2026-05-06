@@ -6,7 +6,7 @@ import type { Trade, TradingPlan, TradeScreenshot } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { showToast } from '@/components/ui/Toast'
 import { ShareCard } from './ShareCard'
-import { createClient } from '@/lib/supabase/client'
+import { fetchScreenshotDataUrl } from '@/lib/api/client-api'
 
 interface ShareCardModalProps {
   trade: Trade
@@ -31,22 +31,12 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
       return
     }
     setScreenshotReady(false)
-    const supabase = createClient()
-    supabase.storage
-      .from('trade-screenshots')
-      .download(screenshot.storage_path)
-      .then(async ({ data, error }) => {
-        if (error || !data) {
-          setScreenshotReady(true)
-          return
+    fetchScreenshotDataUrl(screenshot.trade_id, screenshot.id)
+      .then((result) => {
+        if (result.success) {
+          setScreenshotDataUrl(result.data.dataUrl)
         }
-        const reader = new FileReader()
-        reader.onload = () => {
-          setScreenshotDataUrl(reader.result as string)
-          setScreenshotReady(true)
-        }
-        reader.onerror = () => setScreenshotReady(true)
-        reader.readAsDataURL(data)
+        setScreenshotReady(true)
       })
       .catch(() => setScreenshotReady(true))
   }, [screenshot])
