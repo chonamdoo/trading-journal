@@ -3,7 +3,7 @@
 PR:
 - `https://github.com/chonamdoo/trading-journal/pull/21`
 
-status: pending
+status: has_comments
 
 Checks observed:
 - Typecheck & Lint: success.
@@ -12,8 +12,8 @@ Checks observed:
 - Vercel: success.
 - Vercel Preview Comments: success.
 
-Review threads:
-- None.
+Review comments:
+- Codex P1: Stop serializing screenshot blobs as JSON data URLs.
 
 Notes:
-- CodeRabbit top-level comment still says review in progress.
+- Fixed by returning binary screenshot blob from `/download` route and converting to Data URL in the browser.

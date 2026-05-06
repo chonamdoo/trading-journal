@@ -6,7 +6,7 @@ import type { Trade, TradingPlan, TradeScreenshot } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { showToast } from '@/components/ui/Toast'
 import { ShareCard } from './ShareCard'
-import { fetchScreenshotDataUrl } from '@/lib/api/client-api'
+import { fetchScreenshotBlob } from '@/lib/api/client-api'
 
 interface ShareCardModalProps {
   trade: Trade
@@ -31,12 +31,19 @@ export function ShareCardModal({ trade, plan, screenshot, open, onClose }: Share
       return
     }
     setScreenshotReady(false)
-    fetchScreenshotDataUrl(screenshot.trade_id, screenshot.id)
+    fetchScreenshotBlob(screenshot.trade_id, screenshot.id)
       .then((result) => {
-        if (result.success) {
-          setScreenshotDataUrl(result.data.dataUrl)
+        if (!result.success) {
+          setScreenshotReady(true)
+          return
         }
-        setScreenshotReady(true)
+        const reader = new FileReader()
+        reader.onload = () => {
+          setScreenshotDataUrl(reader.result as string)
+          setScreenshotReady(true)
+        }
+        reader.onerror = () => setScreenshotReady(true)
+        reader.readAsDataURL(result.data)
       })
       .catch(() => setScreenshotReady(true))
   }, [screenshot])

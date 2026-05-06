@@ -128,12 +128,12 @@ export async function getScreenshotsByTradeIds(
   return { success: true, data: withUrls };
 }
 
-/** 공유 카드 렌더링용 스크린샷 Data URL을 생성한다 */
-export async function getScreenshotDataUrl(
+/** 공유 카드 렌더링용 스크린샷 Blob을 조회한다 */
+export async function getScreenshotBlob(
   supabase: Client,
   tradeId: string,
   screenshotId: string,
-): Promise<ApiResult<{ dataUrl: string }>> {
+): Promise<ApiResult<{ blob: Blob; mimeType: string }>> {
   const { data: screenshot, error: metadataError } = await supabase
     .from('trade_screenshots')
     .select('id, trade_id, storage_path, mime_type')
@@ -153,11 +153,11 @@ export async function getScreenshotDataUrl(
     return { success: false, error: error?.message ?? '스크린샷 다운로드 실패' };
   }
 
-  const buffer = Buffer.from(await data.arrayBuffer());
   return {
     success: true,
     data: {
-      dataUrl: `data:${screenshot.mime_type};base64,${buffer.toString('base64')}`,
+      blob: data,
+      mimeType: screenshot.mime_type,
     },
   };
 }
