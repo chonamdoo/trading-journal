@@ -16,12 +16,21 @@ describe('weekly report period schema', () => {
     expect(correctiveMigration).toMatch(/DROP\s+CONSTRAINT\s+IF\s+EXISTS\s+monthly_reports_user_period_unique/i);
     expect(correctiveMigration).toMatch(/monthly_reports_monthly_period_unique/i);
     expect(correctiveMigration).toMatch(
+      /ROW_NUMBER\s*\(\s*\)\s+OVER\s*\([\s\S]*PARTITION\s+BY\s+user_id\s*,\s*year\s*,\s*month/i,
+    );
+    expect(correctiveMigration).toMatch(
       /CREATE\s+UNIQUE\s+INDEX\s+monthly_reports_monthly_period_unique[\s\S]*ON\s+monthly_reports\s*\(\s*user_id\s*,\s*year\s*,\s*month\s*\)[\s\S]*WHERE\s+period_type\s*=\s*'monthly'/i,
     );
   });
 
   it('enforces weekly report uniqueness by ISO week', () => {
     expect(correctiveMigration).toMatch(/monthly_reports_weekly_period_unique/i);
+    expect(correctiveMigration).toMatch(
+      /ROW_NUMBER\s*\(\s*\)\s+OVER\s*\([\s\S]*PARTITION\s+BY\s+user_id\s*,\s*year\s*,\s*week/i,
+    );
+    expect(correctiveMigration).toMatch(
+      /DELETE\s+FROM\s+monthly_reports[\s\S]*WHERE\s+period_type\s*=\s*'weekly'[\s\S]*AND\s+week\s+IS\s+NULL/i,
+    );
     expect(correctiveMigration).toMatch(
       /CREATE\s+UNIQUE\s+INDEX\s+monthly_reports_weekly_period_unique[\s\S]*ON\s+monthly_reports\s*\(\s*user_id\s*,\s*year\s*,\s*week\s*\)[\s\S]*WHERE\s+period_type\s*=\s*'weekly'/i,
     );
