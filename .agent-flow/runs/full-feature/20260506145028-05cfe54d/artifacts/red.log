@@ -1,0 +1,13 @@
+# RED - SPEC-002 Slice 2
+
+Command:
+- `npm test -- tests/api/mobile-redirects.behavior.test.ts`
+
+Result:
+- Failed as expected.
+
+Failure:
+- Mobile data routes returned legacy `200` behavior instead of `308` redirect.
+
+Meaning:
+- `/api/mobile/*` data routes had not yet been converted to compatibility redirects.

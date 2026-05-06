@@ -4,6 +4,7 @@ import { updateTrade, deleteTrade } from '@/lib/api/trades';
 import type { TradeUpdate } from '@/lib/supabase/types';
 import { createTradesCompositionRoot } from '@/features/trades/di.server';
 import { mapTradeToLegacyResponse } from '@/features/trades/presentation/mappers/trade-response.mapper';
+import { isMobileCompatibilityRequest } from '@/lib/api/mobile-redirect';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -15,7 +16,11 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (!trade) {
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true, data: mapTradeToLegacyResponse(trade) });
+    const response = mapTradeToLegacyResponse(trade);
+    if (isMobileCompatibilityRequest(req)) {
+      return NextResponse.json(response);
+    }
+    return NextResponse.json({ success: true, data: response });
   });
 }
 
@@ -27,6 +32,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+    if (isMobileCompatibilityRequest(req)) {
+      return NextResponse.json(result.data);
+    }
     return NextResponse.json({ success: true, data: result.data });
   });
 }
@@ -37,6 +45,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const result = await deleteTrade(supabase, id);
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    if (isMobileCompatibilityRequest(req)) {
+      return new NextResponse(null, { status: 204 });
     }
     return NextResponse.json({ success: true });
   });

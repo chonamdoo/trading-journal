@@ -1,0 +1,16 @@
+# GREEN - SPEC-002 Slice 2
+
+Command:
+- `npm test -- tests/api/mobile-redirects.behavior.test.ts`
+
+Result:
+- Passed.
+
+Coverage:
+- Trades collection redirect.
+- Trade detail redirect.
+- Trade closes redirect.
+- Trade scale-ins redirect.
+- Deposits redirect.
+- Profile redirect.
+- Query string preservation.

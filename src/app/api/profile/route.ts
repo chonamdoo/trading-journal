@@ -4,6 +4,7 @@ import type { ProfileUpdate } from '@/lib/supabase/types';
 import { createUserProfileCompositionRoot } from '@/features/user-profile/di.server';
 import { mapProfileUpdateRequest } from '@/features/user-profile/presentation/mappers/user-profile-request.mapper';
 import { mapUserProfileToProfileResponse } from '@/features/user-profile/presentation/mappers/user-profile-response.mapper';
+import { isMobileCompatibilityRequest } from '@/lib/api/mobile-redirect';
 
 export async function GET(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
@@ -15,9 +16,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Profile not found' }, { status: 400 });
       }
 
+      const response = mapUserProfileToProfileResponse(profile);
+      if (isMobileCompatibilityRequest(req)) {
+        return NextResponse.json(response);
+      }
+
       return NextResponse.json({
         success: true,
-        data: mapUserProfileToProfileResponse(profile),
+        data: response,
       });
     } catch (err) {
       return NextResponse.json(
@@ -40,9 +46,14 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Profile not found' }, { status: 400 });
       }
 
+      const response = mapUserProfileToProfileResponse(profile);
+      if (isMobileCompatibilityRequest(req)) {
+        return NextResponse.json(response);
+      }
+
       return NextResponse.json({
         success: true,
-        data: mapUserProfileToProfileResponse(profile),
+        data: response,
       });
     } catch (err) {
       return NextResponse.json(
