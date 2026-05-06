@@ -1,0 +1,31 @@
+{
+  "slice": "SPEC-002 Slice 4: Screenshot Data URL API Boundary",
+  "status": "passed",
+  "commands": [
+    {
+      "command": "npm test",
+      "status": "passed",
+      "summary": "22 files passed, 55 tests passed"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "status": "passed",
+      "summary": "typecheck passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed",
+      "summary": "0 errors, 47 existing warnings"
+    },
+    {
+      "command": "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=local-anon-key npx next build",
+      "status": "passed",
+      "summary": "production build passed with local Supabase env placeholders"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed",
+      "summary": "no whitespace errors"
+    }
+  ]
+}

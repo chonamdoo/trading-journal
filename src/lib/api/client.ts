@@ -118,6 +118,38 @@ export async function apiFetchFormData<T>(
   }
 }
 
+export async function apiFetchBlob(path: string): Promise<ApiResult<Blob>> {
+  const authHeader = await getAuthHeader();
+  const headers: Record<string, string> = {
+    ...authHeader,
+  };
+
+  try {
+    let res = await fetch(path, { headers });
+
+    if (res.status === 401) {
+      const refreshed = await refreshAuthHeader();
+      if (refreshed) {
+        res = await fetch(path, { headers: { ...headers, ...refreshed } });
+      } else {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return { success: false, error: '인증이 만료되었습니다. 다시 로그인해주세요.' };
+      }
+    }
+
+    if (!res.ok) {
+      const json = await readJsonBody<Record<string, unknown>>(res);
+      return { success: false, error: (json?.error as string) || `HTTP ${res.status}` };
+    }
+
+    return { success: true, data: await res.blob() };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}
+
 export const api = {
   get: <T>(path: string) => apiFetch<T>(path),
   post: <T>(path: string, body: unknown) =>

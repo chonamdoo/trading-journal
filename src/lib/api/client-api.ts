@@ -7,7 +7,7 @@
  * 기존 서버용 함수(getTrades 등)는 Route Handler에서 계속 사용하므로 삭제하지 않는다.
  */
 
-import { apiFetch, apiFetchFormData } from './client';
+import { apiFetch, apiFetchBlob, apiFetchFormData } from './client';
 import type { ApiResult } from './client';
 import type {
   TradeRow,
@@ -478,6 +478,13 @@ export async function fetchDeleteScreenshot(
   );
   if (!result.success) return result;
   return { success: true, data: undefined };
+}
+
+export async function fetchScreenshotBlob(
+  tradeId: string,
+  screenshotId: string,
+): Promise<ApiResult<Blob>> {
+  return apiFetchBlob(`/api/trades/${tradeId}/screenshots/${screenshotId}/download`);
 }
 
 // ── Deposits ──
