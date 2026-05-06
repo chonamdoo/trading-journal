@@ -1,0 +1,12 @@
+{
+  "run_id": "20260506171909-761f53d9",
+  "workflow": "full-feature",
+  "task": "SPEC-005 Slice 1: Weekly Report Period Schema",
+  "phase_index": 16,
+  "phase": "commit",
+  "status": "running",
+  "run_dir": "/Users/namdoo/Downloads/Aiproject/trading-journal-spec-005-weekly-period/.agent-flow/runs/full-feature/20260506171909-761f53d9",
+  "started_at": "2026-05-06T17:19:09.370Z",
+  "phase_entered_at": "2026-05-06T17:27:19.671Z",
+  "updated_at": "2026-05-06T17:27:19.671Z"
+}
