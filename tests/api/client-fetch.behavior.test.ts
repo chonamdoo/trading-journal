@@ -97,6 +97,20 @@ describe('client fetch wrapper', () => {
     expect(result).toEqual({ success: true, data: undefined });
   });
 
+  it('parses valid JSON responses that include a UTF-8 BOM', async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValueOnce(
+      new Response('\uFEFF{"success":true,"data":{"id":"profile-1"}}', {
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const { apiFetch } = await import('@/lib/api/client');
+
+    const result = await apiFetch('/api/profile');
+
+    expect(result).toEqual({ success: true, data: { success: true, data: { id: 'profile-1' } } });
+  });
+
   it('sends FormData without forcing a JSON content type', async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { id: 'shot-1' } }));

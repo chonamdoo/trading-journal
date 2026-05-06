@@ -32,7 +32,8 @@ async function readJsonBody<T>(res: Response): Promise<T | undefined> {
     return undefined;
   }
 
-  return JSON.parse(text) as T;
+  const jsonText = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  return JSON.parse(jsonText) as T;
 }
 
 /**

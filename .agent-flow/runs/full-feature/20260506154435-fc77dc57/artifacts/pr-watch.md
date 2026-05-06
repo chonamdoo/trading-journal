@@ -3,7 +3,7 @@
 PR:
 - `https://github.com/chonamdoo/trading-journal/pull/20`
 
-status: pending
+status: has_comments
 
 Checks observed:
 - Typecheck & Lint: success.
@@ -13,7 +13,9 @@ Checks observed:
 - Vercel Preview Comments: success.
 
 Review threads:
-- None.
+- No GitHub review threads.
+- Top-level Codex review comment requested BOM-tolerant JSON parsing.
 
 Notes:
 - CodeRabbit top-level comment still says review in progress.
+- Codex review fix is being handled in the current branch.
