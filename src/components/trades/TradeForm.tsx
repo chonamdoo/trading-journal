@@ -312,6 +312,10 @@ export function TradeForm({
     try {
       const result = await onSave(data)
       if (result.success) {
+        if (!isEdit) {
+          setPreTradeChecklist(createInitialPreTradeChecklistState())
+        }
+
         // 스크린샷 업로드 (거래 저장 후)
         const id = isEdit ? tradeId : result.tradeId
         if (id && pendingFiles.length > 0 && onUploadScreenshots) {

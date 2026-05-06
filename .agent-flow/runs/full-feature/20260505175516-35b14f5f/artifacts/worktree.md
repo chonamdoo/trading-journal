@@ -4,7 +4,7 @@ Branch:
 - `codex/spec-003-pretrade-checklist`
 
 Worktree:
-- `/Users/namdoo/Downloads/Aiproject/trading-journal-pretrade-checklist`
+- `<local-worktree-path>`
 
 Base:
 - `origin/main`
