@@ -43,6 +43,32 @@ export async function GET(req: NextRequest) {
     }
 
     // ── 주간 리포트 체크 (지난 주 기준) ──
+    let needsWeekly = false
+    let weeklyMeta: { year: number; month: number; week: number } | null = null
+
+    // 지난 주 = 오늘 - 7일
+    const target = new Date(now)
+    target.setHours(0, 0, 0, 0)
+    target.setDate(target.getDate() - 7)
+
+    // ISO week 계산 (지난 주 기준)
+    const thursday = new Date(target)
+    thursday.setDate(target.getDate() - ((target.getDay() + 6) % 7) + 3)
+    const jan4 = new Date(thursday.getFullYear(), 0, 4)
+    const week1Monday = new Date(jan4)
+    week1Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7))
+    const diff = thursday.getTime() - week1Monday.getTime()
+    const week = Math.round(diff / (7 * 24 * 60 * 60 * 1000)) + 1
+
+    const { data: existingTargetWeekly } = await supabase
+      .from('monthly_reports')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('year', thursday.getFullYear())
+      .eq('week', week)
+      .eq('period_type', 'weekly')
+      .maybeSingle()
+
     const { data: latestWeekly } = await supabase
       .from('monthly_reports')
       .select('created_at')
@@ -52,27 +78,10 @@ export async function GET(req: NextRequest) {
       .limit(1)
       .maybeSingle()
 
-    let needsWeekly = false
-    let weeklyMeta: { year: number; month: number; week: number } | null = null
-
     const hasRecentWeekly = latestWeekly &&
       Date.now() - new Date(latestWeekly.created_at).getTime() < 7 * 24 * 60 * 60 * 1000
 
-    if (!hasRecentWeekly) {
-      // 지난 주 = 오늘 - 7일
-      const target = new Date(now)
-      target.setHours(0, 0, 0, 0)
-      target.setDate(target.getDate() - 7)
-
-      // ISO week 계산 (지난 주 기준)
-      const thursday = new Date(target)
-      thursday.setDate(target.getDate() - ((target.getDay() + 6) % 7) + 3)
-      const jan4 = new Date(thursday.getFullYear(), 0, 4)
-      const week1Monday = new Date(jan4)
-      week1Monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7))
-      const diff = thursday.getTime() - week1Monday.getTime()
-      const week = Math.round(diff / (7 * 24 * 60 * 60 * 1000)) + 1
-
+    if (!existingTargetWeekly && !hasRecentWeekly) {
       const weekMonday = new Date(target)
       weekMonday.setDate(target.getDate() - ((target.getDay() + 6) % 7))
       const weekSunday = new Date(weekMonday)
