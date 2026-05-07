@@ -359,7 +359,8 @@ export default function SettingsPage() {
       return
     }
     const signedAmount = capitalEventType === 'withdrawal' ? -amount : amount
-    await addDeposit(depositDate, signedAmount, depositMemo || undefined)
+    const result = await addDeposit(depositDate, signedAmount, depositMemo || undefined)
+    if (!result.success) return
     setDepositAmount('')
     setDepositMemo('')
     showToast('success', capitalEventType === 'withdrawal' ? '출금이 추가되었습니다.' : '입금이 추가되었습니다.')

@@ -36,6 +36,7 @@ import {
   fetchToggleFavorite,
   fetchTradeById,
 } from '@/lib/api/client-api'
+import type { ApiResult } from '@/lib/api/client'
 
 /**
  * 거래/입금 데이터 변경 시 분석 캐시를 무효화한다.
@@ -160,7 +161,7 @@ interface TradeStore {
   deleteTrade: (id: string) => Promise<void>
   closeTrade: (id: string, exitPrice: number, exitDatetime: string) => Promise<{ success: boolean; error?: string }>
   // 입금 CRUD
-  addDeposit: (date: string, amount: number, memo?: string) => Promise<void>
+  addDeposit: (date: string, amount: number, memo?: string) => Promise<ApiResult<Deposit>>
   deleteDeposit: (id: string) => Promise<void>
   // 목표 CRUD
   addTarget: (label: string, amount: number) => Promise<void>
@@ -480,15 +481,17 @@ const useTradeStore = create<TradeStore>((set, get) => ({
 
       if (!res.success) {
         showToast('error', res.error)
-        return
+        return { success: false, error: res.error }
       }
 
       const newDeposit = rowToDeposit(res.data as unknown as Record<string, unknown>)
       set((state) => ({ deposits: [...state.deposits, newDeposit] }))
       invalidateAnalysisCache()
+      return { success: true, data: newDeposit }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '입출금 추가 중 오류 발생'
       showToast('error', msg)
+      return { success: false, error: msg }
     }
   },
 
