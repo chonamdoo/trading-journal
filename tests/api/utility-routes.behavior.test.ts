@@ -112,6 +112,17 @@ describe('SPEC-002 utility route boundaries', () => {
     });
   });
 
+  it('rejects non-finite initial capital amounts', async () => {
+    const response = await initialCapitalRoute.PUT(new NextRequest('http://localhost/api/profile/initial-capital', {
+      method: 'PUT',
+      body: JSON.stringify({ amount: 1e309 }),
+    }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Invalid initial capital' });
+    expect(mocks.updateUserProfile).not.toHaveBeenCalled();
+  });
+
   it('returns onboarding completion from initial capital', async () => {
     const response = await onboardingRoute.GET(new NextRequest('http://localhost/api/profile/onboarding'));
 

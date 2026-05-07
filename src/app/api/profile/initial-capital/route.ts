@@ -7,7 +7,7 @@ export async function PUT(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
     try {
       const body = await req.json() as { amount?: number };
-      if (typeof body.amount !== 'number' || body.amount < 0) {
+      if (typeof body.amount !== 'number' || !Number.isFinite(body.amount) || body.amount < 0) {
         return NextResponse.json({ error: 'Invalid initial capital' }, { status: 400 });
       }
 
