@@ -7,6 +7,7 @@ import type {
   TradingPlanRow,
   TradingPlanUpdate,
 } from '../supabase/types';
+import { parseNumeric } from './trades';
 import { getErrorMessage } from './utils';
 
 type Client = SupabaseClient<Database>;
@@ -19,14 +20,14 @@ export interface PlanFilterParams {
 function normalizePlanRow(row: Record<string, unknown>): TradingPlanRow {
   return {
     ...row,
-    entry_price_min: row.entry_price_min != null ? Number(row.entry_price_min) : null,
-    entry_price_max: row.entry_price_max != null ? Number(row.entry_price_max) : null,
-    stop_loss_price: row.stop_loss_price != null ? Number(row.stop_loss_price) : null,
-    risk_reward_ratio: row.risk_reward_ratio != null ? Number(row.risk_reward_ratio) : null,
-    leverage_plan: row.leverage_plan != null ? Number(row.leverage_plan) : null,
-    margin_plan: row.margin_plan != null ? Number(row.margin_plan) : null,
-    confidence_level: Number(row.confidence_level),
-    plan_adherence: row.plan_adherence != null ? Number(row.plan_adherence) : null,
+    entry_price_min: parseNumeric(row.entry_price_min as string | number | null),
+    entry_price_max: parseNumeric(row.entry_price_max as string | number | null),
+    stop_loss_price: parseNumeric(row.stop_loss_price as string | number | null),
+    risk_reward_ratio: parseNumeric(row.risk_reward_ratio as string | number | null),
+    leverage_plan: parseNumeric(row.leverage_plan as string | number | null),
+    margin_plan: parseNumeric(row.margin_plan as string | number | null),
+    confidence_level: parseNumeric(row.confidence_level as string | number | null) ?? 0,
+    plan_adherence: parseNumeric(row.plan_adherence as string | number | null),
     target_prices: row.target_prices ?? [],
   } as TradingPlanRow;
 }
@@ -67,6 +68,7 @@ export async function getActivePlans(
 
 export async function getPlanById(
   supabase: Client,
+  userId: string,
   planId: string,
 ): Promise<ApiResult<TradingPlanRow>> {
   try {
@@ -74,6 +76,7 @@ export async function getPlanById(
       .from('trading_plans')
       .select('*')
       .eq('id', planId)
+      .eq('user_id', userId)
       .single();
 
     if (error) return { success: false, error: error.message };
@@ -104,6 +107,7 @@ export async function createPlan(
 
 export async function updatePlan(
   supabase: Client,
+  userId: string,
   planId: string,
   data: TradingPlanUpdate,
 ): Promise<ApiResult<TradingPlanRow>> {
@@ -112,6 +116,7 @@ export async function updatePlan(
       .from('trading_plans')
       .update(data)
       .eq('id', planId)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -124,13 +129,15 @@ export async function updatePlan(
 
 export async function deletePlan(
   supabase: Client,
+  userId: string,
   planId: string,
 ): Promise<ApiResult<void>> {
   try {
     const { error } = await supabase
       .from('trading_plans')
       .delete()
-      .eq('id', planId);
+      .eq('id', planId)
+      .eq('user_id', userId);
 
     if (error) return { success: false, error: error.message };
     return { success: true, data: undefined };
@@ -141,10 +148,22 @@ export async function deletePlan(
 
 export async function linkPlanToTrade(
   supabase: Client,
+  userId: string,
   planId: string,
   tradeId: string,
 ): Promise<ApiResult<TradingPlanRow>> {
-  return updatePlan(supabase, planId, {
+  const { data: trade, error } = await supabase
+    .from('trades')
+    .select('id')
+    .eq('id', tradeId)
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !trade) {
+    return { success: false, error: error?.message ?? 'Trade not found' };
+  }
+
+  return updatePlan(supabase, userId, planId, {
     linked_trade_id: tradeId,
     linked_at: new Date().toISOString(),
     status: 'linked',
@@ -153,9 +172,10 @@ export async function linkPlanToTrade(
 
 export async function unlinkPlan(
   supabase: Client,
+  userId: string,
   planId: string,
 ): Promise<ApiResult<TradingPlanRow>> {
-  return updatePlan(supabase, planId, {
+  return updatePlan(supabase, userId, planId, {
     linked_trade_id: null,
     linked_at: null,
     status: 'active',

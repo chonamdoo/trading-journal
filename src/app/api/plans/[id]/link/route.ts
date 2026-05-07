@@ -10,11 +10,11 @@ function errorResponse(error: string, status = 400) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  return withAuth(req, async (supabase) => {
+  return withAuth(req, async (supabase, userId) => {
     const body = await req.json() as { tradeId?: string };
     if (!body.tradeId) return errorResponse('tradeId is required');
 
-    const result = await linkPlanToTrade(supabase, id, body.tradeId);
+    const result = await linkPlanToTrade(supabase, userId, id, body.tradeId);
     if (!result.success) return errorResponse(result.error);
     return NextResponse.json({ success: true, data: result.data });
   });
@@ -22,8 +22,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 export async function DELETE(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  return withAuth(req, async (supabase) => {
-    const result = await unlinkPlan(supabase, id);
+  return withAuth(req, async (supabase, userId) => {
+    const result = await unlinkPlan(supabase, userId, id);
     if (!result.success) return errorResponse(result.error);
     return NextResponse.json({ success: true, data: result.data });
   });

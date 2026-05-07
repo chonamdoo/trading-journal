@@ -11,8 +11,8 @@ function errorResponse(error: string, status = 400) {
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  return withAuth(req, async (supabase) => {
-    const result = await getPlanById(supabase, id);
+  return withAuth(req, async (supabase, userId) => {
+    const result = await getPlanById(supabase, userId, id);
     if (!result.success) return errorResponse(result.error, 404);
     return NextResponse.json({ success: true, data: result.data });
   });
@@ -20,9 +20,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  return withAuth(req, async (supabase) => {
+  return withAuth(req, async (supabase, userId) => {
     const body = await req.json() as TradingPlanUpdate;
-    const result = await updatePlan(supabase, id, body);
+    const result = await updatePlan(supabase, userId, id, body);
     if (!result.success) return errorResponse(result.error);
     return NextResponse.json({ success: true, data: result.data });
   });
@@ -30,8 +30,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 export async function DELETE(req: NextRequest, { params }: Params) {
   const { id } = await params;
-  return withAuth(req, async (supabase) => {
-    const result = await deletePlan(supabase, id);
+  return withAuth(req, async (supabase, userId) => {
+    const result = await deletePlan(supabase, userId, id);
     if (!result.success) return errorResponse(result.error);
     return NextResponse.json({ success: true });
   });
