@@ -495,6 +495,12 @@ export async function fetchDeposits(): Promise<ApiResult<DepositRow[]>> {
   return { success: true, data: result.data.data };
 }
 
+export async function fetchDepositTotal(): Promise<ApiResult<number>> {
+  const result = await apiFetch<{ success: boolean; data: number }>('/api/deposits/total');
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 export async function fetchCreateDeposit(
   data: Omit<DepositInsert, 'user_id'>,
 ): Promise<ApiResult<DepositRow>> {
@@ -532,6 +538,23 @@ export async function fetchUpdateProfile(data: ProfileUpdate): Promise<ApiResult
   return { success: true, data: result.data.data };
 }
 
+export async function fetchSetInitialCapital(amount: number): Promise<ApiResult<ProfileRow>> {
+  const result = await apiFetch<{ success: boolean; data: ProfileRow }>(
+    '/api/profile/initial-capital',
+    { method: 'PUT', body: JSON.stringify({ amount }) },
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
+export async function fetchOnboardingStatus(): Promise<ApiResult<{ completed: boolean }>> {
+  const result = await apiFetch<{ success: boolean; data: { completed: boolean } }>(
+    '/api/profile/onboarding',
+  );
+  if (!result.success) return result;
+  return { success: true, data: result.data.data };
+}
+
 // ── Targets ──
 
 export async function fetchTargets(): Promise<ApiResult<TargetRow[]>> {
@@ -555,6 +578,15 @@ export async function fetchDeleteTarget(id: string): Promise<ApiResult<void>> {
   const result = await apiFetch<{ success: boolean }>(
     `/api/targets/${id}`,
     { method: 'DELETE' },
+  );
+  if (!result.success) return result;
+  return { success: true, data: undefined };
+}
+
+export async function fetchReorderTargets(targetIds: string[]): Promise<ApiResult<void>> {
+  const result = await apiFetch<{ success: boolean; data: null }>(
+    '/api/targets/reorder',
+    { method: 'POST', body: JSON.stringify({ targetIds }) },
   );
   if (!result.success) return result;
   return { success: true, data: undefined };
