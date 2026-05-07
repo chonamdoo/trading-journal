@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Card } from '@/components/ui/Card'
 import { showToast } from '@/components/ui/Toast'
 import { AssetCombobox } from '@/components/ui/AssetCombobox'
+import { EmotionTag } from '@/components/ai-report/EmotionTag'
 import { REVIEW_CHOICES, REVIEW_TAGS } from '@/lib/constants'
 import {
   PRE_TRADE_CHECKLIST_ITEMS,
@@ -429,23 +430,13 @@ export function TradeForm({
                 {REVIEW_TAGS.filter((tag) => tag.group === group.key).map((tag) => {
                   const active = selectedTags.includes(tag.id)
                   return (
-                    <button
+                    <EmotionTag
                       key={tag.id}
-                      type="button"
-                      aria-pressed={active}
+                      label={tag.label}
+                      active={active}
+                      tone={tag.group}
                       onClick={() => toggleTag(tag.id)}
-                      className={`px-2.5 py-1 rounded-[4px] border text-[11px] font-semibold transition-colors ${
-                        active
-                          ? tag.group === 'good'
-                            ? 'border-profit/30 bg-profit-bg text-profit'
-                            : tag.group === 'risk'
-                              ? 'border-loss/30 bg-loss-bg text-loss'
-                              : 'border-info/30 bg-info-soft text-info'
-                          : 'border-border bg-surface text-content-muted hover:text-content'
-                      }`}
-                    >
-                      {tag.label}
-                    </button>
+                    />
                   )
                 })}
               </div>

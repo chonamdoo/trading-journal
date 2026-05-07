@@ -5,7 +5,7 @@
 | 001 | ux-redesign-v2 (사이드바+감정태그+요약바+인라인상세+명언) | completed | 2026-04-11 |
 | 002 | api-unification (Supabase 직접 호출 -> /api/* Route Handler 경유) | completed | 2026-04-11 |
 | 003 | checklist-market-insight (프리트레이드 체크리스트 + 마켓 인사이트) | completed | 2026-04-11 |
-| 004 | ai-report-components-page (P0 컴포넌트 6개 + AI Report 페이지) | planned | 2026-04-12 |
+| 004 | ai-report-components-page (P0 컴포넌트 6개 + AI Report 페이지) | completed | 2026-04-12 |
 | 005 | weekly-auto-report (주간 자동 리포트 생성) | completed | 2026-04-12 |
 | 006 | favorites-toggle (코인 즐겨찾기 토글 + API 분리) | completed | 2026-04-23 |
 | 007 | onboarding-page (라우팅 게이트 + 초기 자산 저장 연결) | completed | 2026-04-27 |

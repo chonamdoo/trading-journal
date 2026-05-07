@@ -4,24 +4,34 @@
 Stitch UI/UX 시안의 P0 신규 컴포넌트 6개를 구현하고, 이를 조합한 AI Report 전용 페이지를 `/analysis/report` 라우트로 추가한다. 기존 분석 페이지(`/analysis`)의 "AI 리포트" 탭은 이 전용 페이지로의 진입점으로 전환한다.
 
 ## 완료 조건
-- [ ] Emotion Tag 컴포넌트 — TradeForm에서 이미 사용 중인 감정 태그를 design-tokens 스펙에 맞게 독립 컴포넌트로 추출
-- [ ] Master Score Ring 컴포넌트 — SVG 원형 프로그레스 (0~100, 등급별 색상)
-- [ ] Behavioral Pattern Card 컴포넌트 — Critical/Caution/Positive 3단계 경고 카드
-- [ ] Emotion Win Rate Bar 컴포넌트 — 감정별 승률 수평 바 (design-tokens 스펙 준수)
-- [ ] Time Heatmap Grid 컴포넌트 — 요일(7)x시간대(12) 수익 히트맵
-- [ ] AI Recommendation List 컴포넌트 — 번호 매긴 권고사항 + Impact 배지
-- [ ] AI Report 전용 페이지 (`/analysis/report`) — 위 6개 + 기존 RadarChart + KPI 행 조합
-- [ ] AI Report 생성 API 확장 — Gemini 프롬프트에 감정 데이터/행동 패턴/시간대 분석 추가
-- [ ] 기존 `/analysis` 페이지의 "AI 리포트" 탭 → `/analysis/report`로 라우팅 전환
-- [ ] 빈 상태, 로딩 스켈레톤, 에러 상태 처리
-- [ ] 반응형 (모바일 1열, 태블릿 2열, 데스크톱 4열 KPI)
-- [ ] design-tokens의 No-Line Rule, Ghost Border Rule, 숫자 Mono 원칙 준수
+- [x] Emotion Tag 컴포넌트 — TradeForm에서 이미 사용 중인 감정 태그를 design-tokens 스펙에 맞게 독립 컴포넌트로 추출
+- [x] Master Score Ring 컴포넌트 — SVG 원형 프로그레스 (0~100, 등급별 색상)
+- [x] Behavioral Pattern Card 컴포넌트 — Critical/Caution/Positive 3단계 경고 카드
+- [x] Emotion Win Rate Bar 컴포넌트 — 감정별 승률 수평 바 (design-tokens 스펙 준수)
+- [x] Time Heatmap Grid 컴포넌트 — 요일(7)x시간대(12) 수익 히트맵
+- [x] AI Recommendation List 컴포넌트 — 번호 매긴 권고사항 + Impact 배지
+- [x] AI Report 전용 페이지 (`/analysis/report`) — 위 6개 + 기존 RadarChart + KPI 행 조합
+- [x] AI Report 생성 API 확장 — Gemini 프롬프트에 감정 데이터/행동 패턴/시간대 분석 추가
+- [x] 기존 `/analysis` 페이지의 "AI 리포트" 탭 → `/analysis/report`로 라우팅 전환
+- [x] 빈 상태, 로딩 스켈레톤, 에러 상태 처리
+- [x] 반응형 (모바일 1열, 태블릿 2열, 데스크톱 4열 KPI)
+- [x] design-tokens의 No-Line Rule, Ghost Border Rule, 숫자 Mono 원칙 준수
+
+## 구현 완료 근거
+
+- `src/components/ai-report/EmotionTag.tsx`: 현재 `Trade.tags` 복기 태그 버튼의 시각/토글 경계를 독립 컴포넌트로 추출.
+- `src/components/trades/TradeForm.tsx`: 기존 복기 태그 버튼을 `EmotionTag`로 교체하고 UI/동작 유지.
+- `src/components/ai-report/MasterScoreRing.tsx`, `BehavioralPatternCard.tsx`, `EmotionWinRateBar.tsx`, `TimeHeatmapGrid.tsx`, `AIRecommendationList.tsx`: AI Report 핵심 컴포넌트 구현.
+- `src/app/(main)/analysis/report/page.tsx`, `loading.tsx`: AI Report 전용 페이지와 로딩 상태 구현.
+- `src/app/api/report/generate/route.ts`: Gemini 응답의 구조화 JSON 블록을 파싱해 `monthly_reports.stats`에 저장.
+- `supabase/migrations/20260412_add_stats_to_monthly_reports.sql`, `src/lib/supabase/types.ts`: `stats` JSONB 저장 계약 반영.
+- `specs/004-CODE_REVIEW.md`, `specs/004-DESIGN_REVIEW.md`: 코드 리뷰와 디자인 리뷰 2회차 승인 기록.
 
 ## 파일 변경
 
 | 경로 | 작업 | 비고 |
 |------|------|------|
-| `src/components/ai-report/EmotionTag.tsx` | 신규 | 독립 컴포넌트. 기존 TradeForm 내 인라인 코드 → 이 컴포넌트로 교체 |
+| `src/components/ai-report/EmotionTag.tsx` | 신규 | 독립 컴포넌트. 기존 TradeForm 내 복기 태그 버튼 코드 → 이 컴포넌트로 교체 |
 | `src/components/ai-report/MasterScoreRing.tsx` | 신규 | SVG 원형 프로그레스. 140x140px |
 | `src/components/ai-report/BehavioralPatternCard.tsx` | 신규 | severity: critical/caution/positive |
 | `src/components/ai-report/EmotionWinRateBar.tsx` | 신규 | 감정별 수평 바. design-tokens §4 스펙 |
@@ -34,7 +44,7 @@ Stitch UI/UX 시안의 P0 신규 컴포넌트 6개를 구현하고, 이를 조�
 | `src/app/(main)/analysis/page.tsx` | 수정 | "AI 리포트" 탭 → router.push('/analysis/report')로 전환 |
 | `src/components/analysis/AIReportSection.tsx` | 수정 | 기존 월간 리포트 목록을 새 페이지에서도 재사용할 수 있도록 props 인터페이스 정리 |
 | `src/app/api/report/generate/route.ts` | 수정 | Gemini 프롬프트 확장 — 감정/행동패턴/시간대 분석 데이터 포함 |
-| `src/components/trades/TradeForm.tsx` | 수정 | 인라인 감정 태그 → EmotionTag 컴포넌트 교체 |
+| `src/components/trades/TradeForm.tsx` | 수정 | 인라인 복기 태그 버튼 → EmotionTag 컴포넌트 교체 |
 
 ## 데이터/API 계약
 
@@ -153,7 +163,7 @@ export interface AIReportKPIs {
 - 비로그인 접근: 기존 미들웨어 가드로 리다이렉트 (변경 없음)
 
 ## 테스트 케이스
-1. EmotionTag: 5개 태그 렌더 → 클릭 시 활성화 → 재클릭 시 비활성화 → 콜백 호출 확인
+1. EmotionTag: 복기 태그 렌더 → 클릭 시 활성화 → 재클릭 시 비활성화 → 콜백 호출 확인
 2. MasterScoreRing: score=0/50/75/100 각각 렌더 → SVG stroke-dasharray 비율 검증 → 등급별 색상 확인
 3. BehavioralPatternCard: critical/caution/positive 각 severity → 배경색/태그색 일치 확인
 4. EmotionWinRateBar: 감정 5개 + 미설정 데이터 → 바 너비가 winRate 비율 → 색상 임계값(60/40) 확인
@@ -174,8 +184,8 @@ export interface AIReportKPIs {
 - `src/app/api/report/generate/route.ts` — 기존 Gemini API 호출 + Rate Limit 패턴. 프롬프트 확장만 필요
 - `src/lib/api/reports.ts` — 기존 리포트 API 함수 패턴(`ApiResult<T>`). ai-report.ts도 동일 패턴
 - `src/app/(main)/analysis/page.tsx` — 현재 탭 전환 + 감정별 승률 계산 로직. EmotionWinRateBar로 이전
-- `src/lib/constants.ts:78-84` — EMOTIONS 상수. EmotionTag/EmotionWinRateBar에서 import
-- `src/components/trades/TradeForm.tsx` — 현재 인라인 감정 태그 UI. EmotionTag 컴포넌트로 교체 대상
+- `src/lib/constants.ts` — REVIEW_TAGS/REVIEW_CHOICES 상수. EmotionTag/EmotionWinRateBar에서 참조하는 복기 태그 데이터의 기반
+- `src/components/trades/TradeForm.tsx` — 현재 인라인 복기 태그 버튼 UI. EmotionTag 컴포넌트로 교체 대상
 
 ## AI Report 페이지 레이아웃 (Designer 참조)
 
