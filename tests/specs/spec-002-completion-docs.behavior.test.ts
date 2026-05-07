@@ -1,10 +1,13 @@
 import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 describe('SPEC-002 completion docs', () => {
   it('marks API unification as completed with implementation evidence', () => {
-    const spec = readFileSync('specs/002-api-unification.md', 'utf8');
-    const index = readFileSync('specs/INDEX.md', 'utf8');
+    const here = dirname(fileURLToPath(import.meta.url));
+    const spec = readFileSync(resolve(here, '../../specs/002-api-unification.md'), 'utf8');
+    const index = readFileSync(resolve(here, '../../specs/INDEX.md'), 'utf8');
 
     expect(index).toContain('| 002 | api-unification (Supabase 직접 호출 -> /api/* Route Handler 경유) | completed |');
     expect(spec).toContain('## 구현 완료 근거');
