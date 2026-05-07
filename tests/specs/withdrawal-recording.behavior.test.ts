@@ -44,6 +44,26 @@ describe('withdrawal recording', () => {
     expect(settingsPage).toContain('출금');
   });
 
+  it('allows signed non-zero capital movement amounts in the database', () => {
+    const migrations = readFileSync('supabase/migrations/20260507000300_allow_signed_deposit_amounts.sql', 'utf8');
+
+    expect(migrations).toContain('DROP CONSTRAINT IF EXISTS deposits_amount_check');
+    expect(migrations).toContain('CHECK (amount <> 0)');
+  });
+
+  it('does not show success after a failed withdrawal save', () => {
+    const settingsPage = readFileSync('src/app/(main)/settings/page.tsx', 'utf8');
+    const tradeStore = readFileSync('src/hooks/useTrades.ts', 'utf8');
+    const depositActionSource = settingsPage.slice(
+      settingsPage.indexOf('const handleAddDeposit = async'),
+      settingsPage.indexOf('// 칩의', settingsPage.indexOf('const handleAddDeposit = async')),
+    );
+
+    expect(tradeStore).toContain('addDeposit: (date: string, amount: number, memo?: string) => Promise<ApiResult<Deposit>>');
+    expect(depositActionSource).toContain('const result = await addDeposit');
+    expect(depositActionSource).toContain('if (!result.success) return');
+  });
+
   it('does not render net capital movement as always positive', () => {
     const kpiGrid = readFileSync('src/components/dashboard/KpiGrid.tsx', 'utf8');
 
