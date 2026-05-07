@@ -1,0 +1,13 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/app/analysis-auto-report-wiring.behavior.test.ts tests/components/auto-report-toast.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-spec-005-analysis-auto-wiring
+
+
+ Test Files  2 passed (2)
+      Tests  2 passed (2)
+   Start at  19:28:50
+   Duration  103ms (transform 16ms, setup 0ms, import 26ms, tests 3ms, environment 0ms)
+
