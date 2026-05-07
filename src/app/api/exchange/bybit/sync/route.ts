@@ -81,7 +81,7 @@ function toTradeInsert(userId: string, item: BybitClosedPnl): TradeInsert {
   const leverage = Math.max(parseNumber(item.leverage, 1), 1);
   const cumEntryValue = Math.abs(parseNumber(item.cumEntryValue));
   const margin = cumEntryValue > 0 ? cumEntryValue / leverage : Math.abs(parseNumber(item.closedPnl));
-  const fee = parseNumber(item.openFee) + parseNumber(item.closeFee);
+  const fee = -(Math.abs(parseNumber(item.openFee)) + Math.abs(parseNumber(item.closeFee)));
   const direction = item.side === 'Sell' ? 'LONG' : 'SHORT';
 
   return {

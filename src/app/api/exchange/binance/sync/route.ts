@@ -96,7 +96,7 @@ function makeExternalId(trade: BinanceUserTrade): string {
 function makeDraftTrade(userId: string, trade: BinanceUserTrade, state: PositionState, closeQty: number): TradeInsert {
   const closeRatio = closeQty / Math.abs(state.signedQty);
   const margin = Math.max(state.entryNotional * closeRatio, Math.abs(parseNumber(trade.quoteQty)));
-  const commission = parseNumber(trade.commission);
+  const commission = Math.abs(parseNumber(trade.commission));
   const direction = toDirection(state.signedQty);
 
   return {
@@ -117,7 +117,7 @@ function makeDraftTrade(userId: string, trade: BinanceUserTrade, state: Position
     exchange: 'binance',
     external_id: makeExternalId(trade),
     source: mapImportedTradeSourceToTradeInsertSource('exchange'),
-    fee: commission,
+    fee: commission > 0 ? -commission : 0,
     fee_asset: trade.commissionAsset || null,
     synced_at: new Date().toISOString(),
     import_status: 'draft',

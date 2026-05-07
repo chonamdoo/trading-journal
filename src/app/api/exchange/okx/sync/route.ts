@@ -113,7 +113,7 @@ function aggregateCloseFills(fills: OkxFillHistory[]): OkxCloseGroup[] {
         totalQty: qty,
         totalNotional: notional,
         pnl,
-        fee: Math.abs(parseNumber(fill.fee)),
+        fee: parseNumber(fill.fee),
         feeAsset: fill.feeCcy || null,
       });
       continue;
@@ -125,7 +125,7 @@ function aggregateCloseFills(fills: OkxFillHistory[]): OkxCloseGroup[] {
     current.totalQty += qty;
     current.totalNotional += notional;
     current.pnl += pnl;
-    current.fee += Math.abs(parseNumber(fill.fee));
+    current.fee += parseNumber(fill.fee);
     current.feeAsset ||= fill.feeCcy || null;
   }
 
