@@ -10,7 +10,7 @@ The user wants to refactor the project without changing features, UI, design com
 
 Refactor Trading Journal into feature modules using the glossary and ADR-defined architecture language. Each feature module will separate the **Presentation Layer**, **Domain Layer**, and **Data Layer** while preserving current behavior and UI.
 
-The refactor will proceed in small PR-sized slices. The first slice establishes the architecture, TDD setup, Vercel ignored build policy for refactor branches, local Supabase test environment, and the first **Trades** tracer bullet. Later slices migrate **Reports**, **User Profile**, **Assets**, **Favorite Assets**, and **Capital Targets** in order.
+The refactor will proceed in small PR-sized slices. The first slice establishes the architecture, TDD setup, Vercel ignored build policy for refactor branches, and the first **Trades** tracer bullet. Later slices migrate **Reports**, **User Profile**, **Assets**, **Favorite Assets**, and **Capital Targets** in order.
 
 FastAPI is out of the immediate implementation path. The Next.js backend will be refactored first so that later FastAPI migration can reuse the same domain boundaries and API contracts.
 
@@ -42,7 +42,6 @@ FastAPI is out of the immediate implementation path. The Next.js backend will be
 24. As a developer, I want Behavior Tests written in Trading Journal language, so that tests survive internal refactors.
 25. As a developer, I want one Tracer Bullet before broad migration, so that the new architecture path is proven end to end.
 26. As a developer, I want Red-Green-Refactor Cycles, so that TDD remains incremental instead of becoming a batch of implementation-coupled tests.
-27. As a developer, I want local Supabase testing, so that automated verification does not mutate production data.
 28. As a developer, I want production demo account use limited to manual read-oriented Smoke Tests, so that production data stays safe.
 29. As a future backend developer, I want Next.js domain boundaries to map cleanly to FastAPI later, so that migration does not require rediscovering business rules.
 
@@ -61,7 +60,7 @@ FastAPI is out of the immediate implementation path. The Next.js backend will be
 - Keep existing UI and design components unchanged during backend/domain refactor slices.
 - Convert Next route handlers into thin Route Adapters over time.
 - Start migration order with Trades, then Reports, then User Profile, then Assets, Favorite Assets, and Capital Targets.
-- First PR slice should establish architecture scaffolding, TDD tooling, local Supabase test environment, Vercel ignored build policy, and a small Trades tracer bullet.
+- First PR slice should establish architecture scaffolding, TDD tooling, Vercel ignored build policy, and a small Trades tracer bullet.
 - FastAPI is deferred until the Next.js architecture is clean enough to migrate safely.
 - Production demo account is not an automated test dependency.
 
@@ -76,7 +75,6 @@ FastAPI is out of the immediate implementation path. The Next.js backend will be
 - Prioritize Trades behavior because it is the core position lifecycle domain.
 - Cover behavior around Trade lifecycle, Close, Scale-In, Position Direction, Margin, Trading PnL, Funded Capital, and Equity before broader migration.
 - Add Data Layer mapping tests only where DTO conversion is externally observable through a public interface or contract.
-- Use local Supabase for automated tests that touch auth, RLS, persistence, or seeded data.
 - Use production demo account only for manual, read-oriented Smoke Tests.
 - Run project QA after implementation slices: build, typecheck, lint, and Supabase consistency checks when migrations change.
 

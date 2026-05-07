@@ -61,11 +61,11 @@
 | `/api/favorites`, `/api/favorites/set` | GET / POST | 즐겨찾기 (멱등 토글) |
 | `/api/profile` | GET, PATCH | 프로필 / 초기자본 |
 
-### 거래소 (5종)
+### 거래소 (4종)
 | 엔드포인트 | 메소드 | 비고 |
 |------------|--------|------|
-| `/api/exchange/{bybit\|binance\|okx\|bitget\|flipster}/connection` | GET, POST, DELETE | API 키 암호화 저장 |
-| `/api/exchange/{bybit\|binance\|okx\|bitget}/sync` | POST | 7일 단위 배치, 중복 차단 (Flipster 제외) |
+| `/api/exchange/{bybit\|binance\|okx\|bitget}/connection` | GET, POST, DELETE | API 키 암호화 저장 |
+| `/api/exchange/{bybit\|binance\|okx\|bitget}/sync` | POST | 7일 단위 배치, 중복 차단 |
 
 ### AI 리포트
 | 엔드포인트 | 메소드 | 비고 |
@@ -147,14 +147,13 @@
 - Rate Limit: 사용자별 + IP별 시간당 5회
 - 환경변수: `GEMINI_API_KEY` (서버 전용)
 
-### 거래소 (5종, `src/lib/exchange/`)
+### 거래소 (4종, `src/lib/exchange/`)
 | 거래소 | 특이사항 |
 |--------|----------|
 | Bybit | Read-only + Futures 읽기 권한 |
 | Binance | USD-M Futures. 과거 레버리지 미제공 → x1 초안 입력 |
 | OKX | API v5, Passphrase 필수, `fills-history` 사용, SWAP |
 | Bitget | USDT Futures, Read-only + Passphrase |
-| Flipster | Private Launch — 권한 검증만, 동기화 미지원 |
 
 공통: API 키 서버 검증 후 암호화 저장 / 7일 배치 / `external_id` 기반 중복 차단 / `import_status: draft → confirmed` 검토 흐름
 
@@ -183,7 +182,6 @@
 | JSON 가져오기 | `src/app/(main)/settings/page.tsx:1318` | 버튼만 |
 | 데이터 초기화 | `src/app/(main)/settings/page.tsx:1397` | 모달만 |
 | 온보딩 페이지 | `src/app/(main)/onboarding/page.tsx` | 빈 파일 |
-| Flipster 동기화 | `/api/exchange/flipster/sync` | 권한 검증만 |
 | 시장 인사이트 | `/api/market/insight` | 라우트만 |
 
 ---
@@ -375,5 +373,5 @@
 - API 라우트: 40+ (모바일 별도 포함 50+)
 - 컴포넌트: 60+ (ui 13 + dashboard 5 + charts 5 + trades 11 + analysis 6 + ai-report 5 + layout 6 + 기타)
 - DB 마이그레이션: 18종
-- 거래소 통합: 5종 (Bybit / Binance / OKX / Bitget / Flipster)
+- 거래소 통합: 4종 (Bybit / Binance / OKX / Bitget)
 - 디자인 토큰: 색상 30+ · 간격 10단계 · 폰트 3종
