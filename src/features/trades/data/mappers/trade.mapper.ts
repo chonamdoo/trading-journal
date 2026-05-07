@@ -37,6 +37,7 @@ export function mapTradeRowToTrade(row: TradeRowDto): Trade {
     exchange: row.exchange,
     externalId: row.external_id,
     fee: parseNumeric(row.fee),
+    fundingFee: parseNumeric(row.funding_fee) ?? 0,
     feeAsset: row.fee_asset,
     syncedAt: row.synced_at,
     importStatus: row.import_status,

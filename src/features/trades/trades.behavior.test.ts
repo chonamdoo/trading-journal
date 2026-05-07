@@ -20,6 +20,8 @@ describe('Trades feature tracer bullet', () => {
       margin: '100.00',
       status: 'closed',
       pnl: '10.00',
+      fee: '2.50',
+      funding_fee: '-1.25',
       reason: 'breakout',
       notes: 'followed plan',
       tags: ['breakout'],
@@ -30,6 +32,8 @@ describe('Trades feature tracer bullet', () => {
 
     expect(trade.margin).toBe(100);
     expect(trade.tradingPnl).toBe(10);
+    expect(trade.fee).toBe(2.5);
+    expect(trade.fundingFee).toBe(-1.25);
     expect(tradeReturnPct(trade)).toBe(10);
   });
 });

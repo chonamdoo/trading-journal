@@ -366,6 +366,8 @@ export function normalizeTradeRow(row: Record<string, unknown>): TradeRow {
     stop_loss_price: parseNumeric(row.stop_loss_price as string | number | null),
     margin: parseNumeric(row.margin as string | number) ?? 0,
     pnl: parseNumeric(row.pnl as string | number | null),
+    fee: parseNumeric(row.fee as string | number | null),
+    funding_fee: parseNumeric(row.funding_fee as string | number | null) ?? 0,
   } as TradeRow;
 }
 

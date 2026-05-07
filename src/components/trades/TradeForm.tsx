@@ -90,6 +90,12 @@ export function TradeForm({
   const [exitPrice, setExitPrice] = useState(
     initialData?.exit_price?.toString() ?? ''
   )
+  const [tradingFee, setTradingFee] = useState(
+    initialData?.fee?.toString() ?? ''
+  )
+  const [fundingFee, setFundingFee] = useState(
+    initialData?.funding_fee?.toString() ?? ''
+  )
   const [entryDatetime, setEntryDatetime] = useState(
     initialData?.entry_datetime ? utcToDatetimeLocal(initialData.entry_datetime) : nowDatetimeLocal()
   )
@@ -114,8 +120,13 @@ export function TradeForm({
   const hasEntry = !isNaN(entNum) && entNum > 0
   const hasExit = !isNaN(extNum) && extNum > 0
   const hasMargin = !isNaN(marNum) && marNum > 0
+  const feeNum = parseFloat(tradingFee)
+  const fundingFeeNum = parseFloat(fundingFee)
+  const normalizedTradingFee = !isNaN(feeNum) ? Math.abs(feeNum) : 0
+  const normalizedFundingFee = !isNaN(fundingFeeNum) ? fundingFeeNum : 0
 
   let pnlPreview: number | null = null
+  let closingPnlPreview: number | null = null
   let returnPct: number | null = null
   let positionSize: number | null = null
   let duration: string | null = null
@@ -129,7 +140,8 @@ export function TradeForm({
       direction === 'LONG'
         ? (extNum - entNum) / entNum
         : (entNum - extNum) / entNum
-    pnlPreview = positionSize! * ratio
+    closingPnlPreview = positionSize! * ratio
+    pnlPreview = closingPnlPreview - normalizedTradingFee + normalizedFundingFee
     returnPct = ratio * 100
     priceChange =
       direction === 'LONG' ? extNum - entNum : entNum - extNum
@@ -301,6 +313,8 @@ export function TradeForm({
       entry_price: entNum,
       exit_price: hasExit ? extNum : null,
       stop_loss_price: !isNaN(slVal) && slVal > 0 ? slVal : null,
+      fee: tradingFee.trim() ? normalizedTradingFee : null,
+      funding_fee: fundingFee.trim() ? normalizedFundingFee : 0,
       entry_datetime: entryDatetime,
       exit_datetime: hasExit ? exitDatetime : null,
       reason: reason.trim() || undefined,
@@ -610,6 +624,23 @@ export function TradeForm({
               onChange={(e) => setExitPrice(e.target.value)}
             />
           </div>
+          <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1 mt-3">
+            <Input
+              label="Trading Fee (USDT)"
+              type="number"
+              placeholder="0.00"
+              value={tradingFee}
+              onChange={(e) => setTradingFee(e.target.value)}
+            />
+            <Input
+              label="Funding Fee (USDT)"
+              hint="받으면 +, 내면 -"
+              type="number"
+              placeholder="예: -6.77 또는 4.20"
+              value={fundingFee}
+              onChange={(e) => setFundingFee(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -662,6 +693,32 @@ export function TradeForm({
                 </span>
               </div>
             )}
+            {closingPnlPreview !== null && (
+              <div className="flex flex-col gap-[2px]">
+                <span className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px]">
+                  Closing PNL
+                </span>
+                <span className={`text-[13px] font-mono font-medium ${pnlColorClass(closingPnlPreview)}`}>
+                  {formatPnl(closingPnlPreview)}
+                </span>
+              </div>
+            )}
+            <div className="flex flex-col gap-[2px]">
+              <span className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px]">
+                Trading Fee
+              </span>
+              <span className="text-[13px] font-mono font-medium text-loss">
+                {normalizedTradingFee > 0 ? '-' : ''}${formatNumber(normalizedTradingFee)}
+              </span>
+            </div>
+            <div className="flex flex-col gap-[2px]">
+              <span className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px]">
+                Funding Fee
+              </span>
+              <span className={`text-[13px] font-mono font-medium ${pnlColorClass(normalizedFundingFee)}`}>
+                {formatPnl(normalizedFundingFee)}
+              </span>
+            </div>
           </div>
         </div>
       )}
