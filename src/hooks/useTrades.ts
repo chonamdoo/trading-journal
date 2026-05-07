@@ -469,7 +469,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
     }
   },
 
-  // ── 입금 추가 ──
+  // ── 입출금 추가 ──
   addDeposit: async (date: string, amount: number, memo?: string) => {
     try {
       const res = await fetchCreateDeposit({
@@ -487,7 +487,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       set((state) => ({ deposits: [...state.deposits, newDeposit] }))
       invalidateAnalysisCache()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '입금 추가 중 오류 발생'
+      const msg = err instanceof Error ? err.message : '입출금 추가 중 오류 발생'
       showToast('error', msg)
     }
   },

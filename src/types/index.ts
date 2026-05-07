@@ -59,13 +59,13 @@ export interface TradeFormData {
   emotion?: Emotion | null
 }
 
-// ── 추가 입금 ──
+// ── 입출금 기록 ──
 
 export interface Deposit {
   id: string
   user_id?: string
   date: string          // YYYY-MM-DD
-  amount: number        // 입금 금액 (USDT)
+  amount: number        // 입금은 양수, 출금은 음수 (USDT)
   memo?: string | null
   created_at?: string
 }

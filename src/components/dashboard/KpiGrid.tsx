@@ -40,6 +40,7 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
   const avg = avgPnl(trades)
   const worst = worstTrade(trades)
   const tdep = totalDeposits(deposits)
+  const depositSign = tdep >= 0 ? '+' : '-'
   const retPct = totalReturnPct(trades, initialCapital, deposits)
 
   return (
@@ -78,7 +79,7 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
         />
       </div>
 
-      {/* Tertiary: 총 거래 횟수, 추가 입금, 초기 자산, 거래당 평균, 최대 손실 */}
+      {/* Tertiary: 총 거래 횟수, 입출금 합계, 초기 자산, 거래당 평균, 최대 손실 */}
       <div className="grid grid-cols-5 gap-sp-4 max-md:grid-cols-3 max-sm:grid-cols-2">
         <KpiCard
           tier="tertiary"
@@ -88,10 +89,10 @@ export function KpiGrid({ trades, deposits, initialCapital }: KpiGridProps) {
         />
         <KpiCard
           tier="tertiary"
-          label="추가 입금"
-          value={`+${formatNumber(tdep)} USDT`}
+          label="입출금 합계"
+          value={`${depositSign}${formatNumber(Math.abs(tdep))} USDT`}
           sub={`${deposits.length}회`}
-          colorClass="text-info"
+          colorClass={tdep >= 0 ? 'text-info' : 'text-loss'}
         />
         <KpiCard
           tier="tertiary"
