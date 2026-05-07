@@ -127,7 +127,7 @@ export function calcRealizedPnl(closes: Pick<TradeClose, 'pnl'>[]): number {
 
 /**
  * 개별 거래의 실현 손익을 계산한다.
- * LONG/SHORT 가격 손익에서 트레이딩피를 비용으로 차감하고 펀딩피는 signed 값으로 더한다.
+ * LONG/SHORT 가격 손익에 거래소가 기록한 signed 수수료와 펀딩비를 더한다.
  */
 export function calcPnL(trade: Trade): number | null {
   if (!trade.exit_price || trade.status === 'open') return null
@@ -137,9 +137,9 @@ export function calcPnL(trade: Trade): number | null {
       ? (trade.exit_price - trade.entry_price) / trade.entry_price
       : (trade.entry_price - trade.exit_price) / trade.entry_price
   const closingPnl = positionValue * ratio
-  const tradingFee = Math.abs(trade.fee ?? 0)
+  const tradingFee = trade.fee ?? 0
   const fundingFee = trade.funding_fee ?? 0
-  return +(closingPnl - tradingFee + fundingFee).toFixed(2)
+  return +(closingPnl + tradingFee + fundingFee).toFixed(2)
 }
 
 // ── 집계 계산 ──

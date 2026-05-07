@@ -27,6 +27,26 @@ import {
 } from '@/lib/format'
 import { ImageUploader } from './ImageUploader'
 
+type TradingFeeDirection = 'paid' | 'rebate'
+type FundingFeeDirection = 'paid' | 'received'
+
+function initialAmount(value: number | null | undefined): string {
+  return value == null ? '' : Math.abs(value).toString()
+}
+
+function tradingFeeDirection(value: number | null | undefined): TradingFeeDirection {
+  return value != null && value > 0 ? 'rebate' : 'paid'
+}
+
+function fundingFeeDirection(value: number | null | undefined): FundingFeeDirection {
+  return value != null && value > 0 ? 'received' : 'paid'
+}
+
+function signedAmount(amount: number, direction: TradingFeeDirection | FundingFeeDirection): number {
+  if (amount === 0) return 0
+  return direction === 'rebate' || direction === 'received' ? amount : -amount
+}
+
 interface TradeFormProps {
   /** 즐겨찾기 종목 */
   favorites?: string[]
@@ -91,10 +111,16 @@ export function TradeForm({
     initialData?.exit_price?.toString() ?? ''
   )
   const [tradingFee, setTradingFee] = useState(
-    initialData?.fee?.toString() ?? ''
+    initialAmount(initialData?.fee)
+  )
+  const [tradingFeeDir, setTradingFeeDir] = useState<TradingFeeDirection>(
+    tradingFeeDirection(initialData?.fee)
   )
   const [fundingFee, setFundingFee] = useState(
-    initialData?.funding_fee?.toString() ?? ''
+    initialAmount(initialData?.funding_fee)
+  )
+  const [fundingFeeDir, setFundingFeeDir] = useState<FundingFeeDirection>(
+    fundingFeeDirection(initialData?.funding_fee)
   )
   const [entryDatetime, setEntryDatetime] = useState(
     initialData?.entry_datetime ? utcToDatetimeLocal(initialData.entry_datetime) : nowDatetimeLocal()
@@ -122,8 +148,8 @@ export function TradeForm({
   const hasMargin = !isNaN(marNum) && marNum > 0
   const feeNum = parseFloat(tradingFee)
   const fundingFeeNum = parseFloat(fundingFee)
-  const normalizedTradingFee = !isNaN(feeNum) ? Math.abs(feeNum) : 0
-  const normalizedFundingFee = !isNaN(fundingFeeNum) ? fundingFeeNum : 0
+  const normalizedTradingFee = signedAmount(!isNaN(feeNum) ? Math.abs(feeNum) : 0, tradingFeeDir)
+  const normalizedFundingFee = signedAmount(!isNaN(fundingFeeNum) ? Math.abs(fundingFeeNum) : 0, fundingFeeDir)
 
   let pnlPreview: number | null = null
   let closingPnlPreview: number | null = null
@@ -141,7 +167,7 @@ export function TradeForm({
         ? (extNum - entNum) / entNum
         : (entNum - extNum) / entNum
     closingPnlPreview = positionSize! * ratio
-    pnlPreview = closingPnlPreview - normalizedTradingFee + normalizedFundingFee
+    pnlPreview = closingPnlPreview + normalizedTradingFee + normalizedFundingFee
     returnPct = ratio * 100
     priceChange =
       direction === 'LONG' ? extNum - entNum : entNum - extNum
@@ -625,21 +651,74 @@ export function TradeForm({
             />
           </div>
           <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1 mt-3">
-            <Input
-              label="Trading Fee (USDT)"
-              type="number"
-              placeholder="0.00"
-              value={tradingFee}
-              onChange={(e) => setTradingFee(e.target.value)}
-            />
-            <Input
-              label="Funding Fee (USDT)"
-              hint="받으면 +, 내면 -"
-              type="number"
-              placeholder="예: -6.77 또는 4.20"
-              value={fundingFee}
-              onChange={(e) => setFundingFee(e.target.value)}
-            />
+            <div className="flex flex-col gap-sp-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[12px] font-medium text-content-secondary tracking-[0.1px]">
+                  Trading Fee (USDT)
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant={tradingFeeDir === 'paid' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setTradingFeeDir('paid')}
+                    className="px-2 py-1"
+                  >
+                    지불
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={tradingFeeDir === 'rebate' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setTradingFeeDir('rebate')}
+                    className="px-2 py-1"
+                  >
+                    환급
+                  </Button>
+                </div>
+              </div>
+              <Input
+                type="number"
+                min="0"
+                placeholder="0.00"
+                value={tradingFee}
+                onChange={(e) => setTradingFee(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-sp-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[12px] font-medium text-content-secondary tracking-[0.1px]">
+                  Funding Fee (USDT)
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant={fundingFeeDir === 'paid' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFundingFeeDir('paid')}
+                    className="px-2 py-1"
+                  >
+                    지불
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={fundingFeeDir === 'received' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFundingFeeDir('received')}
+                    className="px-2 py-1"
+                  >
+                    받음
+                  </Button>
+                </div>
+              </div>
+              <Input
+                type="number"
+                min="0"
+                placeholder="0.00"
+                value={fundingFee}
+                onChange={(e) => setFundingFee(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -707,8 +786,8 @@ export function TradeForm({
               <span className="text-[11px] text-content-muted font-medium uppercase tracking-[0.3px]">
                 Trading Fee
               </span>
-              <span className="text-[13px] font-mono font-medium text-loss">
-                {normalizedTradingFee > 0 ? '-' : ''}${formatNumber(normalizedTradingFee)}
+              <span className={`text-[13px] font-mono font-medium ${pnlColorClass(normalizedTradingFee)}`}>
+                {formatPnl(normalizedTradingFee)}
               </span>
             </div>
             <div className="flex flex-col gap-[2px]">
