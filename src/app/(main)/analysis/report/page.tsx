@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAutoWeeklyReport } from '@/hooks/useAutoWeeklyReport'
 import { AutoReportToast } from '@/components/ui/AutoReportToast'
@@ -59,6 +59,7 @@ export default function AIReportPage() {
   const [activeReportPeriod, setActiveReportPeriod] = useState<ReportPeriodSelection>('monthly')
   const [latestReport, setLatestReport] = useState<MonthlyReportRow | null>(null)
   const [loadingReport, setLoadingReport] = useState(true)
+  const reportRequestIdRef = useRef(0)
   const { isGenerating: autoGenerating, error: autoError } = useAutoWeeklyReport()
 
   const closedTrades = useMemo(
@@ -77,17 +78,26 @@ export default function AIReportPage() {
   )
 
   const loadLatestReport = useCallback(async () => {
+    const requestId = reportRequestIdRef.current + 1
+    reportRequestIdRef.current = requestId
     setLoadingReport(true)
-    const res = await fetchReportsByType(activeReportPeriod)
-    if (res.success && res.data.length > 0) {
-      setLatestReport(selectLatestReport(activeReportPeriod, res.data))
-    } else {
-      setLatestReport(null)
-      if (!res.success) {
-        // 에러는 autoError로 표시
+    try {
+      const res = await fetchReportsByType(activeReportPeriod)
+      if (requestId !== reportRequestIdRef.current) return
+
+      if (res.success && res.data.length > 0) {
+        setLatestReport(selectLatestReport(activeReportPeriod, res.data))
+      } else {
+        setLatestReport(null)
+        if (!res.success) {
+          // 에러는 autoError로 표시
+        }
+      }
+    } finally {
+      if (requestId === reportRequestIdRef.current) {
+        setLoadingReport(false)
       }
     }
-    setLoadingReport(false)
   }, [activeReportPeriod])
 
   useEffect(() => {
