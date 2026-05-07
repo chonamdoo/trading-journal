@@ -142,6 +142,17 @@ describe('SPEC-002 utility route boundaries', () => {
     expect(mocks.reorderTargets).not.toHaveBeenCalled();
   });
 
+  it('rejects malformed target reorder JSON bodies', async () => {
+    const response = await targetReorderRoute.POST(new NextRequest('http://localhost/api/targets/reorder', {
+      method: 'POST',
+      body: '{',
+    }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Invalid JSON body' });
+    expect(mocks.reorderTargets).not.toHaveBeenCalled();
+  });
+
   it('propagates upstream failures', async () => {
     mocks.getDepositTotal.mockResolvedValueOnce({ success: false, error: 'total failed' } as never);
     mocks.updateUserProfile.mockRejectedValueOnce(new Error('capital failed'));

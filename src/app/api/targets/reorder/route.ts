@@ -4,7 +4,13 @@ import { reorderTargets } from '@/lib/api/targets';
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
-    const body = await req.json() as { targetIds?: string[] };
+    let body: { targetIds?: string[] };
+    try {
+      body = await req.json() as { targetIds?: string[] };
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
     if (
       !Array.isArray(body.targetIds) ||
       body.targetIds.some((targetId) => typeof targetId !== 'string' || targetId.length === 0)
