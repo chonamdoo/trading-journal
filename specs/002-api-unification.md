@@ -4,13 +4,25 @@
 웹 클라이언트가 Supabase anon key로 직접 DB를 호출하는 현재 구조를 `/api/*` Route Handler 경유로 전환하여, 모바일과 동일한 서버 인증 경로를 사용하고 클라이언트에서 Supabase SDK 의존성을 제거한다.
 
 ## 완료 조건
-- [ ] 통합 인증 미들웨어(`src/lib/api/auth.ts`)가 Bearer token과 쿠키 방식을 자동 감지
-- [ ] 모든 데이터 CRUD가 `/api/*` Route Handler를 경유
-- [ ] 기존 `/api/mobile/*` 엔드포인트가 `/api/*`로 redirect (하위 호환)
-- [ ] `useTrades.ts`(Zustand 스토어)에서 `createClient()` 직접 호출 제거
-- [ ] `src/lib/api/*.ts`가 Supabase 클라이언트 파라미터 대신 fetch 기반
-- [ ] Rate Limit이 통합 경로에서도 동일 적용
-- [ ] 빌드/타입체크/린트 통과
+- [x] 통합 인증 미들웨어(`src/lib/api/auth.ts`)가 Bearer token과 쿠키 방식을 자동 감지
+- [x] 모든 데이터 CRUD가 `/api/*` Route Handler를 경유
+- [x] 기존 `/api/mobile/*` 엔드포인트가 `/api/*`로 redirect (하위 호환)
+- [x] `useTrades.ts`(Zustand 스토어)에서 `createClient()` 직접 호출 제거
+- [x] `src/lib/api/*.ts`가 Supabase 클라이언트 파라미터 대신 fetch 기반
+- [x] Rate Limit이 통합 경로에서도 동일 적용
+- [x] 빌드/타입체크/린트 통과
+
+## 구현 완료 근거
+
+- PR #19: 기존 `/api/mobile/*` 데이터 라우트를 `/api/*` 경로로 redirect.
+- PR #20: `apiFetch`, `apiFetchFormData`, `apiFetchBlob` 클라이언트 fetch wrapper 경계 강화.
+- PR #29: Trading Plans route/client API 경계 추가.
+- PR #30: Trade query route adapter 추가.
+- PR #31: Deposit/Profile/Target utility route adapter 추가.
+- PR #32: utility client fetch wrapper 추가 및 `useTrades.ts` 초기 자본 저장 경로 전환.
+- `tests/api/auth-boundary.behavior.test.ts`: Bearer/cookie 통합 인증과 rate limit 경계 검증.
+- `tests/api/mobile-redirects.behavior.test.ts`: `/api/mobile/*` 하위 호환 redirect 검증.
+- `tests/api/utility-client-fetch.behavior.test.ts`: utility wrapper가 `/api/*`를 호출하는지 검증.
 
 ## 파일 변경
 
