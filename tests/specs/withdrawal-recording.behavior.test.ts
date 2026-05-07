@@ -72,4 +72,17 @@ describe('withdrawal recording', () => {
     expect(kpiGrid).toContain("colorClass={tdep >= 0 ? 'text-info' : 'text-loss'}");
     expect(kpiGrid).not.toContain('value={`+${formatNumber(tdep)} USDT`}');
   });
+
+  it('paginates only visible capital movement rows in settings', () => {
+    const settingsPage = readFileSync('src/app/(main)/settings/page.tsx', 'utf8');
+
+    expect(settingsPage).toContain('const CAPITAL_MOVEMENT_PAGE_SIZE = 5');
+    expect(settingsPage).toContain('const [capitalMovementPage, setCapitalMovementPage] = useState(1)');
+    expect(settingsPage).toContain('const sortedCapitalMovements = [...deposits].sort');
+    expect(settingsPage).toContain('const visibleCapitalMovements = sortedCapitalMovements.slice');
+    expect(settingsPage).toContain('capitalMovementPageCount');
+    expect(settingsPage).toContain('이전');
+    expect(settingsPage).toContain('다음');
+    expect(settingsPage).toContain('setCapitalMovementPage(1)');
+  });
 });
