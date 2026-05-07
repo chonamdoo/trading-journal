@@ -2,11 +2,11 @@
   "run_id": "20260507102351-29b8d4b9",
   "workflow": "full-feature",
   "task": "SPEC-005 Slice 5: Analysis Page Auto Generation Wiring",
-  "phase_index": 16,
-  "phase": "commit",
+  "phase_index": 17,
+  "phase": "push-pr",
   "status": "running",
   "run_dir": "/Users/namdoo/Downloads/Aiproject/trading-journal-spec-005-analysis-auto-wiring/.agent-flow/runs/full-feature/20260507102351-29b8d4b9",
   "started_at": "2026-05-07T10:23:51.365Z",
-  "phase_entered_at": "2026-05-07T10:31:52.311Z",
-  "updated_at": "2026-05-07T10:31:52.311Z"
+  "phase_entered_at": "2026-05-07T10:32:37.441Z",
+  "updated_at": "2026-05-07T10:32:37.441Z"
 }
