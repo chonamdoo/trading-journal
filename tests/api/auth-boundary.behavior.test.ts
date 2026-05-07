@@ -85,12 +85,4 @@ describe('unified auth boundary', () => {
     expect(body).toEqual({ userId: 'cookie-user-1' });
   });
 
-  it('keeps mobile-auth as a compatibility re-export', async () => {
-    const auth = await import('@/lib/api/auth');
-    const mobileAuth = await import('@/lib/api/mobile-auth');
-
-    expect(mobileAuth.withAuth).toBe(auth.withAuth);
-    expect(mobileAuth.withRateLimit).toBe(auth.withRateLimit);
-    expect(mobileAuth.RATE_LIMITS).toBe(auth.RATE_LIMITS);
-  });
 });

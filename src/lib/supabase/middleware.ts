@@ -72,11 +72,6 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 모바일 인증 API는 자체 Bearer 토큰 인증 사용 — 미들웨어 스킵
-  if (pathname.startsWith('/api/mobile/auth/')) {
-    return supabaseResponse;
-  }
-
   // 공개 마켓 데이터 API — 인증 불필요, 미들웨어 스킵
   if (pathname.startsWith('/api/market/')) {
     return supabaseResponse;

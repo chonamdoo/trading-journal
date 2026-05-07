@@ -74,9 +74,8 @@
 | `/api/report/auto-check` | GET | 주간 리포트 자동 생성 체크 |
 | `/api/reports`, `/api/reports/[id]` | GET / POST / DELETE | 저장 리포트 CRUD |
 
-### 인증 / 모바일
+### 인증
 - `/api/auth/logout` — 세션 종료
-- `/api/mobile/{auth,profile,deposits,trades,trades/[id]/...}` — 모바일 전용 REST (JWT 기반)
 
 ---
 
@@ -88,10 +87,8 @@
 | `trades.ts` | `getTrades`, `createTrade`, `updateTrade`, `deleteTrade`, `closeTrade` |
 | `tradeCloses.ts` | 분할 청산 — 100% 도달 시 자동 `status='closed'` |
 | `tradeScaleIns.ts` | 추가 진입 — 가중평균진입가(WAP)·총 증거금 재계산 |
-| `deposits.ts`, `targets.ts`, `assets.ts` | 단순 CRUD |
-| `favorites.ts` | `setFavorite(boolean)` 멱등 (upsert/delete) |
-| `profile.ts` | 프로필 / 초기자본 / 구독 정보 |
-| `reports.ts` | 월간·주간 AI 리포트 |
+| `deposits.ts` | 입금 CRUD |
+| `trades.ts`, `tradeCloses.ts`, `tradeScaleIns.ts`, `screenshots.ts`, `plans.ts` | 아직 feature boundary로 완전 이전되지 않은 legacy helper |
 | `screenshots.ts` | Supabase Storage 업로드 |
 | `ai-report.ts` | `getLatestReport`, `calcEmotionWinRates`, `calcTimeHeatmap`, `parseReportStats` |
 | `rate-limit.ts` | 인메모리 슬라이딩 윈도우 (Redis 교체 권장) |
@@ -100,7 +97,7 @@
 
 ### 클라이언트 측
 - `src/lib/api/client.ts` — `apiFetch<T>(method, endpoint, body?)` Bearer 인증 + 401 자동 재시도(세션 갱신)
-- `src/lib/api/client-api.ts` — 도메인별 `fetchXxx` 래퍼 (trades, closes, scale-ins, screenshots, deposits, targets, profile, customAssets, favorites, 거래소 5종, reports …)
+- `src/lib/api/client-api.ts` — 도메인별 `fetchXxx` 래퍼 (trades, closes, scale-ins, screenshots, deposits, targets, profile, customAssets, favorites, 거래소 4종, reports …)
 
 ### 전역 상태 (`src/hooks/useTrades.ts`, Zustand)
 `trades`, `tradeCloses`, `tradeScaleIns`, `screenshots`, `deposits`, `targets`, `profile`, `customAssets` + `reloadData()`, `invalidateAnalysisCache()` (거래 변경 시 자동)
@@ -194,7 +191,7 @@
   └─ Zustand(useTrades) / 분석 훅(useFullAnalytics)
        └─ client-api.ts (fetchXxx)
             └─ /api/* Route Handler
-                 └─ src/lib/api/*.ts (Supabase CRUD)
+                 └─ src/features/* 또는 남은 legacy helper (Supabase CRUD)
                       └─ Supabase (Postgres + Storage)
 ```
 

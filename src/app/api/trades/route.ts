@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/auth';
 import { getTrades, createTrade } from '@/lib/api/trades';
 import type { TradeFilterParams, TradeInsert, TradeDirection, TradeStatus } from '@/lib/supabase/types';
-import { isMobileCompatibilityRequest } from '@/lib/api/mobile-redirect';
 
 export async function GET(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
@@ -33,9 +32,6 @@ export async function GET(req: NextRequest) {
     if (!apiResult.success) {
       return NextResponse.json({ error: apiResult.error }, { status: 400 });
     }
-    if (isMobileCompatibilityRequest(req)) {
-      return NextResponse.json(apiResult.data);
-    }
     return NextResponse.json({ success: true, data: apiResult.data });
   });
 }
@@ -46,9 +42,6 @@ export async function POST(req: NextRequest) {
     const result = await createTrade(supabase, { ...body, user_id: userId });
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
-    }
-    if (isMobileCompatibilityRequest(req)) {
-      return NextResponse.json(result.data, { status: 201 });
     }
     return NextResponse.json({ success: true, data: result.data }, { status: 201 });
   });

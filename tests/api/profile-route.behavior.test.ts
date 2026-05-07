@@ -90,33 +90,4 @@ describe('/api/profile Route Adapter', () => {
     expect(body.data.initial_capital).toBe(2000);
   });
 
-  it('keeps the plain mobile Profile response shape after redirect follow', async () => {
-    getUserProfile.mockResolvedValue({
-      authUserId: 'auth-user-1',
-      email: 'local-user@example.test',
-      displayName: 'Local User',
-      initialCapital: 1000,
-      currency: 'USD',
-      subscriptionTier: 'free',
-      subscriptionExpiresAt: null,
-      createdAt: '2026-05-06T00:00:00Z',
-      updatedAt: '2026-05-06T00:00:00Z',
-    });
-
-    const response = await GET(new NextRequest('http://localhost/api/profile?__mobile_compat=1'));
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body).toEqual({
-      id: 'auth-user-1',
-      email: 'local-user@example.test',
-      display_name: 'Local User',
-      initial_capital: 1000,
-      currency: 'USD',
-      subscription_tier: 'free',
-      subscription_expires_at: null,
-      created_at: '2026-05-06T00:00:00Z',
-      updated_at: '2026-05-06T00:00:00Z',
-    });
-  });
 });

@@ -70,6 +70,20 @@ export class SupabaseCapitalTargetRepository implements CapitalTargetRepository 
     return mapTargetRowToCapitalTarget(data as CapitalTargetRowDto);
   }
 
+  async reorder(userId: string, targetIds: string[]): Promise<void> {
+    const updates = targetIds.map((id, index) => (
+      this.supabase
+        .from('targets')
+        .update({ sort_order: index })
+        .eq('id', id)
+        .eq('user_id', userId)
+    ));
+
+    const results = await Promise.all(updates);
+    const failed = results.find((result) => result.error);
+    if (failed?.error) throw new Error(failed.error.message);
+  }
+
   async delete(targetId: string): Promise<void> {
     const { error } = await this.supabase
       .from('targets')

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/auth';
-import { reorderTargets } from '@/lib/api/targets';
+import { createCapitalTargetsCompositionRoot } from '@/features/capital-targets/di.server';
 
 export async function POST(req: NextRequest) {
   return withAuth(req, async (supabase, userId) => {
@@ -18,9 +18,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'targetIds must be an array' }, { status: 400 });
     }
 
-    const result = await reorderTargets(supabase, body.targetIds, userId);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+    try {
+      await createCapitalTargetsCompositionRoot(supabase).reorderCapitalTargets.execute({
+        userId,
+        targetIds: body.targetIds,
+      });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : '알 수 없는 오류' },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ success: true, data: null });
   });

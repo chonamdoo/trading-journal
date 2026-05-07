@@ -26,7 +26,7 @@ const mocks = vi.hoisted(() => ({
     createdAt: '2026-05-07T00:00:00.000Z',
     updatedAt: '2026-05-07T00:00:00.000Z',
   })),
-  reorderTargets: vi.fn(async () => ({ success: true, data: undefined })),
+  reorderTargets: vi.fn(async () => undefined),
 }));
 
 vi.mock('@/lib/api/auth', () => ({
@@ -48,8 +48,12 @@ vi.mock('@/features/user-profile/di.server', () => ({
   }),
 }));
 
-vi.mock('@/lib/api/targets', () => ({
-  reorderTargets: mocks.reorderTargets,
+vi.mock('@/features/capital-targets/di.server', () => ({
+  createCapitalTargetsCompositionRoot: () => ({
+    reorderCapitalTargets: {
+      execute: mocks.reorderTargets,
+    },
+  }),
 }));
 
 import * as depositTotalRoute from '@/app/api/deposits/total/route';
@@ -84,7 +88,7 @@ describe('SPEC-002 utility route boundaries', () => {
       createdAt: '2026-05-07T00:00:00.000Z',
       updatedAt: '2026-05-07T00:00:00.000Z',
     });
-    mocks.reorderTargets.mockResolvedValue({ success: true, data: undefined });
+    mocks.reorderTargets.mockResolvedValue(undefined);
   });
 
   it('returns the authenticated user deposit total', async () => {
@@ -139,7 +143,10 @@ describe('SPEC-002 utility route boundaries', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true, data: null });
-    expect(mocks.reorderTargets).toHaveBeenCalledWith(expect.anything(), ['target-2', 'target-1'], 'user-1');
+    expect(mocks.reorderTargets).toHaveBeenCalledWith({
+      userId: 'user-1',
+      targetIds: ['target-2', 'target-1'],
+    });
   });
 
   it('rejects malformed target reorder payloads', async () => {
@@ -168,7 +175,7 @@ describe('SPEC-002 utility route boundaries', () => {
     mocks.getDepositTotal.mockResolvedValueOnce({ success: false, error: 'total failed' } as never);
     mocks.updateUserProfile.mockRejectedValueOnce(new Error('capital failed'));
     mocks.getUserProfile.mockRejectedValueOnce(new Error('onboarding failed'));
-    mocks.reorderTargets.mockResolvedValueOnce({ success: false, error: 'reorder failed' } as never);
+    mocks.reorderTargets.mockRejectedValueOnce(new Error('reorder failed'));
 
     const depositResponse = await depositTotalRoute.GET(new NextRequest('http://localhost/api/deposits/total'));
     const capitalResponse = await initialCapitalRoute.PUT(new NextRequest('http://localhost/api/profile/initial-capital', {
