@@ -140,16 +140,22 @@ export async function deleteTarget(
  */
 export async function reorderTargets(
   supabase: Client,
-  targetIds: string[]
+  targetIds: string[],
+  userId?: string
 ): Promise<ApiResult<void>> {
   try {
-    // 각 목표의 sort_order를 배열 인덱스로 업데이트
-    const updates = targetIds.map((id, index) =>
-      supabase
+    const updates = targetIds.map((id, index) => {
+      let query = supabase
         .from('targets')
         .update({ sort_order: index })
-        .eq('id', id)
-    );
+        .eq('id', id);
+
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+
+      return query;
+    });
 
     const results = await Promise.all(updates);
     const failed = results.find((r) => r.error);
