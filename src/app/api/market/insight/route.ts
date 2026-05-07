@@ -7,11 +7,27 @@ export interface MarketInsight {
   btcPrice: number;
   btcChange24h: number;
   totalMarketCap: number;
+  derivatives: {
+    symbol: string;
+    fundingRate: number;
+    fundingPaymentSide: 'long' | 'short' | 'neutral';
+    longShortRatio: {
+      longAccount: number;
+      shortAccount: number;
+      ratio: number;
+    };
+    openInterest: {
+      baseAsset: number;
+      notionalUsd: number;
+    };
+  };
 }
 
 /** 인메모리 캐시 (5분) */
 let cache: { data: MarketInsight; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000;
+const BTC_SYMBOL = 'BTCUSDT';
+const BINANCE_FUTURES_BASE_URL = 'https://fapi.binance.com';
 
 function assertFiniteNumber(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -29,6 +45,17 @@ function assertNumericString(value: unknown): number {
     throw new Error('Invalid market insight payload');
   }
   return parsed;
+}
+
+function fundingPaymentSide(rate: number): MarketInsight['derivatives']['fundingPaymentSide'] {
+  if (rate > 0) return 'long';
+  if (rate < 0) return 'short';
+  return 'neutral';
+}
+
+function round(value: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
 }
 
 /** 마켓 인사이트 API — 인증 불필요, IP Rate Limit만 적용 (분당 30회) */
@@ -58,16 +85,32 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [fgRes, globalRes, btcRes] = await Promise.all([
+    const [fgRes, globalRes, btcRes, premiumRes, openInterestRes, longShortRes] = await Promise.all([
       fetch('https://api.alternative.me/fng/?limit=1', { next: { revalidate: 300 } }),
       fetch('https://api.coingecko.com/api/v3/global', { next: { revalidate: 300 } }),
       fetch(
         'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
         { next: { revalidate: 300 } }
       ),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${BTC_SYMBOL}`, {
+        next: { revalidate: 300 },
+      }),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/openInterest?symbol=${BTC_SYMBOL}`, {
+        next: { revalidate: 300 },
+      }),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/futures/data/topLongShortAccountRatio?symbol=${BTC_SYMBOL}&period=1h&limit=1`, {
+        next: { revalidate: 300 },
+      }),
     ]);
 
-    if (!fgRes.ok || !globalRes.ok || !btcRes.ok) {
+    if (
+      !fgRes.ok
+      || !globalRes.ok
+      || !btcRes.ok
+      || !premiumRes.ok
+      || !openInterestRes.ok
+      || !longShortRes.ok
+    ) {
       throw new Error('External API error');
     }
 
@@ -83,11 +126,32 @@ export async function GET(req: NextRequest) {
     const btcData = await btcRes.json() as {
       bitcoin?: { usd?: number; usd_24h_change?: number };
     };
+    const premiumData = await premiumRes.json() as {
+      symbol?: string;
+      lastFundingRate?: string;
+      markPrice?: string;
+    };
+    const openInterestData = await openInterestRes.json() as {
+      openInterest?: string;
+    };
+    const longShortData = await longShortRes.json() as Array<{
+      longAccount?: string;
+      shortAccount?: string;
+      longShortRatio?: string;
+    }>;
 
     const fearGreedItem = fgData.data?.[0];
     if (!fearGreedItem?.value_classification) {
       throw new Error('Invalid market insight payload');
     }
+    const longShortItem = longShortData[0];
+    if (!premiumData.symbol || !longShortItem) {
+      throw new Error('Invalid market insight payload');
+    }
+
+    const fundingRate = round(assertNumericString(premiumData.lastFundingRate) * 100, 4);
+    const markPrice = assertNumericString(premiumData.markPrice);
+    const openInterest = assertNumericString(openInterestData.openInterest);
 
     const insight: MarketInsight = {
       fearGreed: {
@@ -98,6 +162,20 @@ export async function GET(req: NextRequest) {
       btcPrice: assertFiniteNumber(btcData.bitcoin?.usd),
       btcChange24h: assertFiniteNumber(btcData.bitcoin?.usd_24h_change),
       totalMarketCap: assertFiniteNumber(globalData.data?.total_market_cap?.usd),
+      derivatives: {
+        symbol: premiumData.symbol,
+        fundingRate,
+        fundingPaymentSide: fundingPaymentSide(fundingRate),
+        longShortRatio: {
+          longAccount: round(assertNumericString(longShortItem.longAccount) * 100, 1),
+          shortAccount: round(assertNumericString(longShortItem.shortAccount) * 100, 1),
+          ratio: assertNumericString(longShortItem.longShortRatio),
+        },
+        openInterest: {
+          baseAsset: openInterest,
+          notionalUsd: Math.round(openInterest * markPrice),
+        },
+      },
     };
 
     cache = { data: insight, timestamp: Date.now() };

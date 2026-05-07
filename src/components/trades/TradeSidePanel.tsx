@@ -24,6 +24,25 @@ function fearGreedColor(value: number): string {
   return 'text-profit'
 }
 
+function formatCompactUsd(value: number): string {
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000_000) return `$${formatNumber(value / 1_000_000_000, 2)}B`
+  if (abs >= 1_000_000) return `$${formatNumber(value / 1_000_000, 2)}M`
+  return `$${formatNumber(value, 0)}`
+}
+
+function fundingRateColor(side: MarketInsight['derivatives']['fundingPaymentSide']): string {
+  if (side === 'long') return 'text-loss'
+  if (side === 'short') return 'text-profit'
+  return 'text-content-secondary'
+}
+
+function fundingSideLabel(side: MarketInsight['derivatives']['fundingPaymentSide']): string {
+  if (side === 'long') return '롱 지불'
+  if (side === 'short') return '숏 지불'
+  return '중립'
+}
+
 /**
  * 거래 입력 페이지 — 데스크탑 우측 매매 통계 사이드 패널
  * lg: 브레이크포인트 이상에서만 렌더링됨 (숨김은 page.tsx에서 hidden lg:block으로 처리)
@@ -159,6 +178,70 @@ export function TradeSidePanel() {
               ) : (
                 <span className={`font-mono text-sm font-semibold ${fearGreedColor(insight!.fearGreed.value)}`}>
                   {insight!.fearGreed.value} {insight!.fearGreed.classification}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="h-px bg-border my-4" />
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
+            파생상품 데이터
+          </h2>
+
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <span className="text-sm text-content-secondary">펀딩비</span>
+              {insightLoading ? (
+                <span className="font-mono text-sm text-content-muted">-</span>
+              ) : (
+                <span
+                  className={`font-mono text-sm font-semibold ${
+                    fundingRateColor(insight!.derivatives.fundingPaymentSide)
+                  }`}
+                >
+                  {insight!.derivatives.fundingRate.toFixed(4)}%{' '}
+                  {fundingSideLabel(insight!.derivatives.fundingPaymentSide)}
+                </span>
+              )}
+            </div>
+
+            <div className="py-3 border-b border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-content-secondary">롱숏 비율</span>
+                {insightLoading ? (
+                  <span className="font-mono text-sm text-content-muted">-</span>
+                ) : (
+                  <span className="font-mono text-sm font-semibold text-content">
+                    롱 {insight!.derivatives.longShortRatio.longAccount.toFixed(0)}% / 숏{' '}
+                    {insight!.derivatives.longShortRatio.shortAccount.toFixed(0)}%
+                  </span>
+                )}
+              </div>
+              {!insightLoading && (
+                <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="bg-profit"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, insight!.derivatives.longShortRatio.longAccount))}%`,
+                    }}
+                  />
+                  <div
+                    className="bg-loss"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, insight!.derivatives.longShortRatio.shortAccount))}%`,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-content-secondary">미체결 약정</span>
+              {insightLoading ? (
+                <span className="font-mono text-sm text-content-muted">-</span>
+              ) : (
+                <span className="font-mono text-sm font-semibold text-content">
+                  {formatCompactUsd(insight!.derivatives.openInterest.notionalUsd)}
                 </span>
               )}
             </div>
