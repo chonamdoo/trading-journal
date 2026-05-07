@@ -4,13 +4,21 @@
 거래 일지의 데스크탑 레이아웃을 사이드바 기반으로 전환하고, 감정 태그/요약 바/인라인 상세/동기부여 명언 4가지 UX 개선을 추가하여 트레이더의 기록 효율과 자기 분석 경험을 높인다.
 
 ## 완료 조건
-- [ ] 기능 1: lg: 이상에서 좌측 사이드바(축소/확장 토글), lg: 미만에서 하단 BottomNav
-- [ ] 기능 2: trades 테이블에 emotion 컬럼 추가 + TradeForm 감정 칩 + TradeTable 감정 표시 + 분석 감정별 승률 차트
-- [ ] 기능 3: 거래 내역 하단 sticky 요약 바 (순손익/승률/평균R배수/거래수)
-- [ ] 기능 4: 거래 행 클릭 시 인라인 아코디언 펼침 (모달 제거)
-- [ ] 기능 5: TradeForm 하단 트레이딩 명언 랜덤 배너
-- [ ] 기존 기능 깨뜨리지 않음 (빌드/타입체크/린트 통과)
-- [ ] 모바일 반응형 정상 동작
+- [x] 기능 1: lg: 이상에서 좌측 사이드바(축소/확장 토글), lg: 미만에서 하단 BottomNav
+- [x] 기능 2: Trade Emotion 저장 계약 유지 + TradeForm 복기 태그 선택 + TradeTable 복기 표시 + 분석 복기 태그별 승률 차트
+- [x] 기능 3: 거래 내역 하단 sticky 요약 바 (순손익/승률/평균R배수/거래수)
+- [x] 기능 4: 거래 행 클릭 시 인라인 아코디언 펼침 (모달 제거)
+- [x] 기능 5: TradeForm 하단 트레이딩 명언 랜덤 배너
+- [x] 기존 기능 깨뜨리지 않음 (빌드/타입체크/린트 통과)
+- [x] 모바일 반응형 정상 동작
+
+## 구현 상태 (2026-05-07)
+- 기능 1: `src/components/layout/AppShell.tsx`, `src/components/layout/Sidebar.tsx`, `src/components/layout/BottomNav.tsx`에 반영됨.
+- 기능 2: `trades.emotion` 저장 계약은 `supabase/migrations/20260411000100_add_emotion_column.sql`, `src/types/index.ts`, `src/hooks/useTrades.ts`에 남아 있음. 단, 5개 emotion chip UI는 현재 복기 태그 시스템으로 대체되어 `Trade.tags`, `REVIEW_TAGS`, TradeForm 복기 선택, TradeTable 복기 표시, 분석 페이지 복기 태그별 승률로 운영됨.
+- 기능 3: `src/components/trades/TradeSummaryBar.tsx`와 `src/components/trades/TradeTable.tsx` 하단 렌더링에 반영됨.
+- 기능 4: `src/components/trades/TradeTable.tsx`의 `expandedTradeId` 기반 인라인 상세 행에 반영됨.
+- 기능 5: `src/components/trades/MotivationBanner.tsx`와 `src/app/(main)/trades/new/page.tsx`에 반영됨.
+- 현재 UI/디자인 시스템을 변경하지 않고, 기존 구현 상태를 문서와 인덱스에 정렬함.
 
 ---
 
