@@ -82,6 +82,21 @@ describe('/api/trades query routes', () => {
     expect(mocks.getRecentTrades).toHaveBeenCalledWith(expect.anything(), 'user-1', 3);
   });
 
+  it('rejects malformed recent trade limits', async () => {
+    const response = await recentTradesRoute.GET(new NextRequest('http://localhost/api/trades/recent?limit=not-a-number'));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Invalid limit' });
+    expect(mocks.getRecentTrades).not.toHaveBeenCalled();
+  });
+
+  it('bounds recent trade limits', async () => {
+    const response = await recentTradesRoute.GET(new NextRequest('http://localhost/api/trades/recent?limit=101'));
+
+    expect(response.status).toBe(200);
+    expect(mocks.getRecentTrades).toHaveBeenCalledWith(expect.anything(), 'user-1', 100);
+  });
+
   it('returns closed trades through the shared trade query', async () => {
     const response = await closedTradesRoute.GET(new NextRequest('http://localhost/api/trades/closed?pageSize=100'));
 
@@ -91,6 +106,30 @@ describe('/api/trades query routes', () => {
       status: 'closed',
       pageSize: 100,
     });
+  });
+
+  it('rejects malformed closed trade pagination', async () => {
+    const pageResponse = await closedTradesRoute.GET(new NextRequest('http://localhost/api/trades/closed?page=-1'));
+    const pageSizeResponse = await closedTradesRoute.GET(new NextRequest('http://localhost/api/trades/closed?pageSize=0'));
+
+    expect(pageResponse.status).toBe(400);
+    expect(await pageResponse.json()).toEqual({ error: 'Invalid page' });
+    expect(pageSizeResponse.status).toBe(400);
+    expect(await pageSizeResponse.json()).toEqual({ error: 'Invalid pageSize' });
+    expect(mocks.getTrades).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed closed trade enum filters', async () => {
+    const directionResponse = await closedTradesRoute.GET(
+      new NextRequest('http://localhost/api/trades/closed?direction=UNKNOWN')
+    );
+    const resultResponse = await closedTradesRoute.GET(new NextRequest('http://localhost/api/trades/closed?result=flat'));
+
+    expect(directionResponse.status).toBe(400);
+    expect(await directionResponse.json()).toEqual({ error: 'Invalid direction' });
+    expect(resultResponse.status).toBe(400);
+    expect(await resultResponse.json()).toEqual({ error: 'Invalid result' });
+    expect(mocks.getTrades).not.toHaveBeenCalled();
   });
 
   it('propagates upstream failures', async () => {
