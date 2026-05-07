@@ -1,7 +1,7 @@
 /**
- * 입금(Deposits) API 레이어
+ * 입출금(Deposits) API 레이어
  *
- * 추가 입금 기록의 CRUD를 담당한다.
+ * 입출금 기록의 CRUD를 담당한다.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -17,7 +17,7 @@ import { getErrorMessage } from './utils';
 type Client = SupabaseClient<Database>;
 
 /**
- * 사용자의 전체 입금 목록을 조회한다.
+ * 사용자의 전체 입출금 목록을 조회한다.
  */
 export async function getDeposits(
   supabase: Client,

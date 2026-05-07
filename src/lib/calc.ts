@@ -151,12 +151,12 @@ export function totalPnL(trades: Trade[]): number {
     .reduce((sum, t) => sum + (t.pnl ?? 0), 0)
 }
 
-/** 총 추가 입금액 */
+/** 입출금 순합계 */
 export function totalDeposits(deposits: Deposit[]): number {
   return deposits.reduce((sum, d) => sum + (d.amount ?? 0), 0)
 }
 
-/** 현재 자산 = 초기자산 + 추가입금 + 거래손익 */
+/** 현재 자산 = 초기자산 + 입출금 순합계 + 거래손익 */
 export function curCapital(
   initialCapital: number,
   deposits: Deposit[],
@@ -165,7 +165,7 @@ export function curCapital(
   return initialCapital + totalDeposits(deposits) + totalPnL(trades)
 }
 
-/** 펀딩 자본 = 초기자산 + 추가입금 (거래손익 제외) */
+/** 펀딩 자본 = 초기자산 + 입출금 순합계 (거래손익 제외) */
 export function tradingBase(initialCapital: number, deposits: Deposit[]): number {
   return initialCapital + totalDeposits(deposits)
 }
@@ -532,7 +532,7 @@ const METRIC_NAMES: Record<MetricScore['key'], string> = {
  * 6개 메트릭의 가중 평균.
  *
  * @param trades - 거래 목록
- * @param deposits - 입금 목록
+ * @param deposits - 입출금 목록
  * @param initialCapital - 초기 자본
  */
 export function tradingScore(

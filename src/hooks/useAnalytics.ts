@@ -135,7 +135,7 @@ export function useFullAnalytics() {
   const fundingData = useMemo(
     () => [
       { label: '초기 시드', value: initialCapital },
-      { label: '추가 입금', value: dashboard.tdep },
+      { label: '입출금 합계', value: dashboard.tdep },
       { label: '거래 손익', value: dashboard.pnl },
     ],
     [initialCapital, dashboard.tdep, dashboard.pnl]

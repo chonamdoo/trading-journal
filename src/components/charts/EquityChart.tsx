@@ -20,7 +20,7 @@ interface EquityCurveProps {
 
 /**
  * 에쿼티 커브 차트 (자산 추이)
- * - 거래 손익과 입금+초기자산을 스택형 영역 차트로 표시
+ * - 거래 손익과 입출금+초기자산을 스택형 영역 차트로 표시
  * - 다크 모드 시 CSS 변수 기반으로 색상 자동 전환
  */
 export function EquityCurve({ data }: EquityCurveProps) {
@@ -41,7 +41,7 @@ export function EquityCurve({ data }: EquityCurveProps) {
           className="w-2 h-2 rounded-[2px] inline-block"
           style={{ background: colors.blue }}
         />
-        입금+초기자산
+        입출금+초기자산
       </span>
     </div>
   )
@@ -68,11 +68,11 @@ export function EquityCurve({ data }: EquityCurveProps) {
               }
             />
             <Tooltip content={<ChartTooltip />} />
-            {/* 입금+초기자산 (하단) */}
+            {/* 입출금+초기자산 (하단) */}
             <Area
               type="monotone"
               dataKey="funded"
-              name="입금+초기자산"
+              name="입출금+초기자산"
               stroke={colors.blue}
               fill={colors.blueFill}
               strokeWidth={1.5}

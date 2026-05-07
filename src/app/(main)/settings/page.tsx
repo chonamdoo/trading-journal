@@ -82,7 +82,7 @@ const EXCHANGE_FORM_OPTIONS: Record<ExchangeFormValue, {
  * - 초기 자산 변경
  * - 코인 목록 관리
  * - 목표 자산 관리
- * - 추가 입금 관리
+ * - 입출금 기록 관리
  * - 데이터 관리 (JSON 가져오기 등)
  */
 export default function SettingsPage() {
@@ -103,7 +103,8 @@ export default function SettingsPage() {
   const [editCapital, setEditCapital] = useState(false)
   const [newCapital, setNewCapital] = useState(initialCapital.toString())
 
-  // 입금 추가 상태
+  // 입출금 기록 상태
+  const [capitalEventType, setCapitalEventType] = useState<'deposit' | 'withdrawal'>('deposit')
   const [depositDate, setDepositDate] = useState(today())
   const [depositAmount, setDepositAmount] = useState('')
   const [depositMemo, setDepositMemo] = useState('')
@@ -357,10 +358,11 @@ export default function SettingsPage() {
       showToast('error', '유효한 금액을 입력해주세요.')
       return
     }
-    await addDeposit(depositDate, amount, depositMemo || undefined)
+    const signedAmount = capitalEventType === 'withdrawal' ? -amount : amount
+    await addDeposit(depositDate, signedAmount, depositMemo || undefined)
     setDepositAmount('')
     setDepositMemo('')
-    showToast('success', '입금이 추가되었습니다.')
+    showToast('success', capitalEventType === 'withdrawal' ? '출금이 추가되었습니다.' : '입금이 추가되었습니다.')
   }
 
   // 칩의 × 버튼 → 해제. AssetCombobox(picker 모드)는 자체적으로 toggleFavorite 호출
@@ -1121,55 +1123,82 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* 추가 입금 */}
+      {/* 입출금 기록 */}
       <Card className="mb-3">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] m-0">
-            추가 입금
+            입출금 기록
           </h2>
-          <span className="font-mono text-sm text-info font-semibold">
-            합계: +${formatNumber(tdep)}
+          <span className={`font-mono text-sm font-semibold ${tdep >= 0 ? 'text-info' : 'text-loss'}`}>
+            입출금 합계: {tdep >= 0 ? '+' : '-'}${formatNumber(Math.abs(tdep))}
           </span>
         </div>
 
-        {/* 기존 입금 목록 */}
+        {/* 기존 입출금 목록 */}
         {deposits.length > 0 && (
           <div className="flex flex-col gap-1 mb-4">
             {deposits
               .sort((a, b) => b.date.localeCompare(a.date))
-              .map((dep) => (
-                <div
-                  key={dep.id}
-                  className="flex justify-between items-center py-2 border-b border-border last:border-0 group"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-[12px] text-content-muted">
-                      {dep.date}
-                    </span>
-                    <span className="font-mono text-sm font-semibold text-info">
-                      +${formatNumber(dep.amount)}
-                    </span>
-                    {dep.memo && (
-                      <span className="text-[12px] text-content-muted">
-                        {dep.memo}
-                      </span>
-                    )}
-                  </div>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => deleteDeposit(dep.id)}
+              .map((dep) => {
+                const isWithdrawal = dep.amount < 0
+                return (
+                  <div
+                    key={dep.id}
+                    className="flex justify-between items-center py-2 border-b border-border last:border-0 group"
                   >
-                    삭제
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-[12px] text-content-muted">
+                        {dep.date}
+                      </span>
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-badge ${isWithdrawal ? 'text-loss bg-loss-bg' : 'text-info bg-info-bg'}`}>
+                        {isWithdrawal ? '출금' : '입금'}
+                      </span>
+                      <span className={`font-mono text-sm font-semibold ${isWithdrawal ? 'text-loss' : 'text-info'}`}>
+                        {isWithdrawal ? '-' : '+'}${formatNumber(Math.abs(dep.amount))}
+                      </span>
+                      {dep.memo && (
+                        <span className="text-[12px] text-content-muted">
+                          {dep.memo}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => deleteDeposit(dep.id)}
+                    >
+                      삭제
+                    </Button>
+                  </div>
+                )
+              })}
           </div>
         )}
 
-        {/* 입금 추가 폼 */}
+        {/* 입출금 추가 폼 */}
         <div className="flex gap-2 items-end flex-wrap">
+          <div>
+            <label className="block text-[12px] text-content-secondary mb-1.5">
+              구분
+            </label>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={capitalEventType === 'deposit' ? 'primary' : 'ghost'}
+                onClick={() => setCapitalEventType('deposit')}
+              >
+                입금
+              </Button>
+              <Button
+                size="sm"
+                variant={capitalEventType === 'withdrawal' ? 'primary' : 'ghost'}
+                onClick={() => setCapitalEventType('withdrawal')}
+              >
+                출금
+              </Button>
+            </div>
+          </div>
           <div className="w-36">
             <Input
               label="날짜"
@@ -1190,13 +1219,13 @@ export default function SettingsPage() {
           <div className="flex-1 min-w-[120px]">
             <Input
               label="메모"
-              placeholder="입금 사유"
+              placeholder={capitalEventType === 'withdrawal' ? '출금 사유' : '입금 사유'}
               value={depositMemo}
               onChange={(e) => setDepositMemo(e.target.value)}
             />
           </div>
           <Button size="sm" onClick={handleAddDeposit}>
-            추가
+            {capitalEventType === 'withdrawal' ? '출금 추가' : '입금 추가'}
           </Button>
         </div>
       </Card>
