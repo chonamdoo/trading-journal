@@ -28,6 +28,32 @@ const successPayloads = [
       },
     }),
   },
+  {
+    ok: true,
+    json: async () => ({
+      symbol: 'BTCUSDT',
+      lastFundingRate: '-0.000028',
+      markPrice: '91500.00',
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ({
+      symbol: 'BTCUSDT',
+      openInterest: '104890.25',
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ([
+      {
+        symbol: 'BTCUSDT',
+        longAccount: '0.424',
+        shortAccount: '0.576',
+        longShortRatio: '0.7361',
+      },
+    ]),
+  },
 ];
 
 function mockFetchSequence(...responses: Array<{ ok: boolean; json: () => Promise<unknown> }>) {
@@ -65,13 +91,27 @@ describe('GET /api/market/insight', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
     expect(body).toEqual({
       fearGreed: { value: 40, classification: 'Fear' },
       btcDominance: 51.25,
       btcPrice: 91_500,
       btcChange24h: -2.35,
       totalMarketCap: 2_700_000_000_000,
+      derivatives: {
+        symbol: 'BTCUSDT',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+        openInterest: {
+          baseAsset: 104_890.25,
+          notionalUsd: 9_597_457_875,
+        },
+      },
     });
   });
 
