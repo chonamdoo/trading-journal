@@ -5,12 +5,18 @@ import { useEffect, useState } from 'react'
 interface AutoReportToastProps {
   isGenerating: boolean
   error: string | null
+  generatedType?: 'weekly' | 'monthly' | null
 }
 
-export function AutoReportToast({ isGenerating, error }: AutoReportToastProps) {
+export function AutoReportToast({ isGenerating, error, generatedType = null }: AutoReportToastProps) {
   const [wasGenerating, setWasGenerating] = useState(false)
   const [showDone, setShowDone] = useState(false)
   const [showError, setShowError] = useState(false)
+  const reportLabel = generatedType === 'weekly'
+    ? '주간 리포트'
+    : generatedType === 'monthly'
+      ? '월간 리포트'
+      : 'AI 리포트'
 
   useEffect(() => {
     if (isGenerating) {
@@ -45,13 +51,13 @@ export function AutoReportToast({ isGenerating, error }: AutoReportToastProps) {
             className="inline-block w-3 h-3 rounded-full border-2 border-info border-t-transparent animate-spin"
             aria-hidden="true"
           />
-          <span>AI 리포트 생성 중...</span>
+          <span>{reportLabel} 생성 중...</span>
         </>
       )}
       {showDone && !isGenerating && (
         <>
           <span className="text-profit font-bold" aria-hidden="true">✓</span>
-          <span>리포트가 생성되었습니다</span>
+          <span>{reportLabel}가 생성되었습니다</span>
         </>
       )}
       {showError && !isGenerating && (
