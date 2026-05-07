@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useAutoWeeklyReport } from '@/hooks/useAutoWeeklyReport'
 import { AutoReportToast } from '@/components/ui/AutoReportToast'
 import { Skeleton, SkeletonKpi, SkeletonCard, SkeletonBarRows } from '@/components/ui/Skeleton'
@@ -34,6 +33,12 @@ import {
   parseReportStats,
 } from '@/lib/api/ai-report'
 import { fetchReportsByType } from '@/lib/api/client-api'
+import {
+  formatReportPeriodLabel,
+  getEmptyReportMessage,
+  selectLatestReport,
+  type ReportPeriodSelection,
+} from '@/lib/report-period-presentation'
 import type { MonthlyReportRow } from '@/lib/supabase/types'
 import type { AIReportData } from '@/types/ai-report'
 
@@ -50,8 +55,8 @@ export default function AIReportPage() {
   const { trades, profile } = useTrades()
   const analytics = useFullAnalytics()
   const colors = useChartColors()
-  const router = useRouter()
 
+  const [activeReportPeriod, setActiveReportPeriod] = useState<ReportPeriodSelection>('monthly')
   const [latestReport, setLatestReport] = useState<MonthlyReportRow | null>(null)
   const [loadingReport, setLoadingReport] = useState(true)
   const { isGenerating: autoGenerating, error: autoError } = useAutoWeeklyReport()
@@ -73,9 +78,9 @@ export default function AIReportPage() {
 
   const loadLatestReport = useCallback(async () => {
     setLoadingReport(true)
-    const res = await fetchReportsByType('monthly')
+    const res = await fetchReportsByType(activeReportPeriod)
     if (res.success && res.data.length > 0) {
-      setLatestReport(res.data[0])
+      setLatestReport(selectLatestReport(activeReportPeriod, res.data))
     } else {
       setLatestReport(null)
       if (!res.success) {
@@ -83,7 +88,7 @@ export default function AIReportPage() {
       }
     }
     setLoadingReport(false)
-  }, [])
+  }, [activeReportPeriod])
 
   useEffect(() => {
     loadLatestReport()
@@ -127,9 +132,8 @@ export default function AIReportPage() {
     )
   }
 
-  const reportPeriodLabel = latestReport
-    ? `${latestReport.year}년 ${latestReport.month}월`
-    : `${currentYear}년 ${currentMonth}월`
+  const reportPeriodLabel = formatReportPeriodLabel(latestReport)
+    ?? (activeReportPeriod === 'weekly' ? `${currentYear}년 주간` : `${currentYear}년 ${currentMonth}월`)
 
   const isLoading = loadingReport || autoGenerating
 
@@ -157,6 +161,24 @@ export default function AIReportPage() {
         <span className="text-[11px] font-medium uppercase tracking-wider text-content-muted">
           {reportPeriodLabel}
         </span>
+      </div>
+
+      <div className="flex items-center gap-2" aria-label="리포트 기간 선택">
+        {(['monthly', 'weekly'] as const).map((period) => (
+          <button
+            key={period}
+            type="button"
+            onClick={() => setActiveReportPeriod(period)}
+            className={[
+              'rounded-input px-4 py-2 text-sm font-semibold transition-colors',
+              activeReportPeriod === period
+                ? 'bg-content text-bg'
+                : 'bg-surface text-content-secondary hover:text-content',
+            ].join(' ')}
+          >
+            {period === 'monthly' ? '월간' : '주간'}
+          </button>
+        ))}
       </div>
 
       {/* 히어로 + Master Score */}
@@ -200,7 +222,7 @@ export default function AIReportPage() {
           ) : (
             <>
               <h1 className="font-headline text-4xl font-bold text-content-muted leading-tight max-w-[580px] mb-3">
-                AI 분석이 아직 생성되지 않았습니다
+                {getEmptyReportMessage(activeReportPeriod)}
               </h1>
               <p className="text-sm text-content-secondary leading-relaxed max-w-[520px]">
                 거래 데이터가 충분해지면 자동으로 리포트가 생성됩니다.
