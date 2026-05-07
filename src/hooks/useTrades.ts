@@ -30,7 +30,7 @@ import {
   fetchCreateTarget,
   fetchDeleteTarget,
   fetchProfile,
-  fetchUpdateProfile,
+  fetchSetInitialCapital,
   fetchCustomAssets,
   fetchFavorites,
   fetchToggleFavorite,
@@ -539,7 +539,7 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         showToast('error', '초기 자산은 0 이상이어야 합니다.')
         return false
       }
-      const res = await fetchUpdateProfile({ initial_capital: amount })
+      const res = await fetchSetInitialCapital(amount)
       if (!res.success) {
         showToast('error', res.error)
         return false
