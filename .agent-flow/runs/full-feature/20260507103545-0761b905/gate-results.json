@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "commands": [
+    {
+      "command": "npm test -- tests/specs/spec-005-completion-docs.behavior.test.ts",
+      "status": "passed",
+      "summary": "1 file passed, 2 tests passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed",
+      "summary": "no whitespace errors"
+    }
+  ]
+}

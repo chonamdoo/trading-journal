@@ -4,16 +4,23 @@
 분석 페이지 방문 시 주간 리포트를 자동 생성하여 매매 피드백 주기를 월→주 단위로 단축한다. Gemini Flash 저비용 모델로 간소 요약만 생성해 월 15,000원 예산 내 운용.
 
 ## 완료 조건
-- [ ] 분석 페이지 접속 시 주간 리포트 자동 생성 조건 체크 (마지막 생성일 7일+ 경과 AND 해당 주 closed trade 1건+)
-- [ ] `monthly_reports` 테이블에 `period_type`, `week` 컬럼 추가 마이그레이션
-- [ ] UNIQUE 제약 `(user_id, year, month, week, period_type)`으로 교체
-- [ ] `/api/report/generate` Route Handler에 `periodType: 'weekly' | 'monthly'` 분기
-- [ ] 주간 리포트용 간소 Gemini 프롬프트 (KPI 변화 + 감정 패턴 + 인사이트 1-2줄)
-- [ ] 주간: `gemini-2.5-flash-lite` 유지, 월간: `gemini-2.5-flash-lite` 유지 (현재 동일)
-- [ ] 자동 생성 중 토스트/배너 UI
-- [ ] AI 리포트 페이지에서 주간/월간 리포트 분리 표시
-- [ ] RLS 기존 패턴 유지 (`auth.uid() = user_id`)
-- [ ] Rate Limit 기존 `RATE_LIMITS.ai` (시간당 5회) 적용
+- [x] 분석 페이지 접속 시 주간 리포트 자동 생성 조건 체크 (마지막 생성일 7일+ 경과 AND 해당 주 closed trade 1건+)
+- [x] `monthly_reports` 테이블에 `period_type`, `week` 컬럼 추가 마이그레이션
+- [x] 월간/주간 Report Period 중복 방지 제약 적용 (월간 `user_id/year/month`, 주간 `user_id/year/week`)
+- [x] `/api/report/generate` Route Handler에 `periodType: 'weekly' | 'monthly'` 분기
+- [x] 주간 리포트용 간소 Gemini 프롬프트 (KPI 변화 + 감정 패턴 + 인사이트 1-2줄)
+- [x] 주간: `gemini-2.5-flash-lite` 유지, 월간: `gemini-2.5-flash-lite` 유지 (현재 동일)
+- [x] 자동 생성 중 토스트/배너 UI
+- [x] AI 리포트 페이지에서 주간/월간 리포트 분리 표시
+- [x] RLS 기존 패턴 유지 (`auth.uid() = user_id`)
+- [x] Rate Limit 기존 `RATE_LIMITS.ai` (시간당 5회) 적용
+
+## 구현 증거
+- PR #22: 주간/월간 Report Period 스키마와 NULL-safe uniqueness 보정.
+- PR #23: 주간 리포트 생성 API의 ISO week identity 충돌 키 보정.
+- PR #24: `/api/report/auto-check` 대상 주차 중복 생성 방지.
+- PR #25: AI 리포트 페이지 주간/월간 분리 표시.
+- PR #26: 분석 페이지 자동 생성 토스트 wiring 보강.
 
 ## 파일 변경
 | 경로 | 작업 | 비고 |

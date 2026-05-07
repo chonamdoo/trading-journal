@@ -1,0 +1,13 @@
+
+> trading-journal@0.1.0 test
+> vitest run tests/specs/spec-005-completion-docs.behavior.test.ts
+
+
+ RUN  v4.1.5 /Users/namdoo/Downloads/Aiproject/trading-journal-spec-005-completion-docs
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  19:37:22
+   Duration  189ms (transform 17ms, setup 0ms, import 23ms, tests 2ms, environment 0ms)
+
