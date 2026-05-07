@@ -10,7 +10,7 @@
 | 006 | favorites-toggle (코인 즐겨찾기 토글 + API 분리) | completed | 2026-04-23 |
 | 007 | onboarding-page (라우팅 게이트 + 초기 자산 저장 연결) | completed | 2026-04-27 |
 | 008 | csv-export (거래 기록 CSV 다운로드) | completed | 2026-04-27 |
-| 009 | flipster-sync (체결 동기화) | deferred | 2026-04-27 — 공식 API 문서 부재로 스코프 아웃 |
+| 009 | flipster-sync (체결 동기화) | discarded | 2026-04-27 — Flipster 미지원 확정으로 스펙 폐기 |
 | 010 | json-import (레거시 v4 데이터 가져오기) | completed | 2026-04-27 |
 | 011 | data-reset (전체 데이터 초기화 + Storage 정리) | completed | 2026-04-27 |
 | 012 | report-period-fix (AI 리포트 시점/조건/주차 표시 정정) | completed | 2026-04-27 |

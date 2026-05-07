@@ -32,6 +32,9 @@ describe('Capital Targets feature module', () => {
       async update() {
         throw new Error('not used');
       },
+      async reorder() {
+        throw new Error('not used');
+      },
       async delete() {},
     });
 

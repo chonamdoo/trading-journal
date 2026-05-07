@@ -61,11 +61,11 @@
 | `/api/favorites`, `/api/favorites/set` | GET / POST | 즐겨찾기 (멱등 토글) |
 | `/api/profile` | GET, PATCH | 프로필 / 초기자본 |
 
-### 거래소 (5종)
+### 거래소 (4종)
 | 엔드포인트 | 메소드 | 비고 |
 |------------|--------|------|
-| `/api/exchange/{bybit\|binance\|okx\|bitget\|flipster}/connection` | GET, POST, DELETE | API 키 암호화 저장 |
-| `/api/exchange/{bybit\|binance\|okx\|bitget}/sync` | POST | 7일 단위 배치, 중복 차단 (Flipster 제외) |
+| `/api/exchange/{bybit\|binance\|okx\|bitget}/connection` | GET, POST, DELETE | API 키 암호화 저장 |
+| `/api/exchange/{bybit\|binance\|okx\|bitget}/sync` | POST | 7일 단위 배치, 중복 차단 |
 
 ### AI 리포트
 | 엔드포인트 | 메소드 | 비고 |
@@ -74,9 +74,8 @@
 | `/api/report/auto-check` | GET | 주간 리포트 자동 생성 체크 |
 | `/api/reports`, `/api/reports/[id]` | GET / POST / DELETE | 저장 리포트 CRUD |
 
-### 인증 / 모바일
+### 인증
 - `/api/auth/logout` — 세션 종료
-- `/api/mobile/{auth,profile,deposits,trades,trades/[id]/...}` — 모바일 전용 REST (JWT 기반)
 
 ---
 
@@ -88,10 +87,8 @@
 | `trades.ts` | `getTrades`, `createTrade`, `updateTrade`, `deleteTrade`, `closeTrade` |
 | `tradeCloses.ts` | 분할 청산 — 100% 도달 시 자동 `status='closed'` |
 | `tradeScaleIns.ts` | 추가 진입 — 가중평균진입가(WAP)·총 증거금 재계산 |
-| `deposits.ts`, `targets.ts`, `assets.ts` | 단순 CRUD |
-| `favorites.ts` | `setFavorite(boolean)` 멱등 (upsert/delete) |
-| `profile.ts` | 프로필 / 초기자본 / 구독 정보 |
-| `reports.ts` | 월간·주간 AI 리포트 |
+| `deposits.ts` | 입금 CRUD |
+| `trades.ts`, `tradeCloses.ts`, `tradeScaleIns.ts`, `screenshots.ts`, `plans.ts` | 아직 feature boundary로 완전 이전되지 않은 legacy helper |
 | `screenshots.ts` | Supabase Storage 업로드 |
 | `ai-report.ts` | `getLatestReport`, `calcEmotionWinRates`, `calcTimeHeatmap`, `parseReportStats` |
 | `rate-limit.ts` | 인메모리 슬라이딩 윈도우 (Redis 교체 권장) |
@@ -100,7 +97,7 @@
 
 ### 클라이언트 측
 - `src/lib/api/client.ts` — `apiFetch<T>(method, endpoint, body?)` Bearer 인증 + 401 자동 재시도(세션 갱신)
-- `src/lib/api/client-api.ts` — 도메인별 `fetchXxx` 래퍼 (trades, closes, scale-ins, screenshots, deposits, targets, profile, customAssets, favorites, 거래소 5종, reports …)
+- `src/lib/api/client-api.ts` — 도메인별 `fetchXxx` 래퍼 (trades, closes, scale-ins, screenshots, deposits, targets, profile, customAssets, favorites, 거래소 4종, reports …)
 
 ### 전역 상태 (`src/hooks/useTrades.ts`, Zustand)
 `trades`, `tradeCloses`, `tradeScaleIns`, `screenshots`, `deposits`, `targets`, `profile`, `customAssets` + `reloadData()`, `invalidateAnalysisCache()` (거래 변경 시 자동)
@@ -147,14 +144,13 @@
 - Rate Limit: 사용자별 + IP별 시간당 5회
 - 환경변수: `GEMINI_API_KEY` (서버 전용)
 
-### 거래소 (5종, `src/lib/exchange/`)
+### 거래소 (4종, `src/lib/exchange/`)
 | 거래소 | 특이사항 |
 |--------|----------|
 | Bybit | Read-only + Futures 읽기 권한 |
 | Binance | USD-M Futures. 과거 레버리지 미제공 → x1 초안 입력 |
 | OKX | API v5, Passphrase 필수, `fills-history` 사용, SWAP |
 | Bitget | USDT Futures, Read-only + Passphrase |
-| Flipster | Private Launch — 권한 검증만, 동기화 미지원 |
 
 공통: API 키 서버 검증 후 암호화 저장 / 7일 배치 / `external_id` 기반 중복 차단 / `import_status: draft → confirmed` 검토 흐름
 
@@ -183,7 +179,6 @@
 | JSON 가져오기 | `src/app/(main)/settings/page.tsx:1318` | 버튼만 |
 | 데이터 초기화 | `src/app/(main)/settings/page.tsx:1397` | 모달만 |
 | 온보딩 페이지 | `src/app/(main)/onboarding/page.tsx` | 빈 파일 |
-| Flipster 동기화 | `/api/exchange/flipster/sync` | 권한 검증만 |
 | 시장 인사이트 | `/api/market/insight` | 라우트만 |
 
 ---
@@ -196,7 +191,7 @@
   └─ Zustand(useTrades) / 분석 훅(useFullAnalytics)
        └─ client-api.ts (fetchXxx)
             └─ /api/* Route Handler
-                 └─ src/lib/api/*.ts (Supabase CRUD)
+                 └─ src/features/* 또는 남은 legacy helper (Supabase CRUD)
                       └─ Supabase (Postgres + Storage)
 ```
 
@@ -375,5 +370,5 @@
 - API 라우트: 40+ (모바일 별도 포함 50+)
 - 컴포넌트: 60+ (ui 13 + dashboard 5 + charts 5 + trades 11 + analysis 6 + ai-report 5 + layout 6 + 기타)
 - DB 마이그레이션: 18종
-- 거래소 통합: 5종 (Bybit / Binance / OKX / Bitget / Flipster)
+- 거래소 통합: 4종 (Bybit / Binance / OKX / Bitget)
 - 디자인 토큰: 색상 30+ · 간격 10단계 · 폰트 3종

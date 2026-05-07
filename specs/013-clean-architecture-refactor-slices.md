@@ -19,7 +19,6 @@ Acceptance criteria:
 - Vercel Preview deploys are skipped for `codex/refactor-*` branches.
 - Vitest or equivalent test runner is available through `npm test`.
 - A first **Behavior Test** can run locally.
-- Local Supabase test setup path is documented or scripted without using production data.
 - Existing UI and runtime behavior are unchanged.
 - Project gates are documented for this repo.
 
@@ -106,7 +105,6 @@ Acceptance criteria:
 - Auth/session access is server-only.
 - User Profile use cases do not depend on Next route handlers.
 - Production demo account is not used by automated tests.
-- Local Supabase path supports auth-related testing.
 
 Verification:
 
@@ -150,6 +148,5 @@ Verification:
 - Do not split by technical layer alone.
 - Do not change UI or design system.
 - Do not automate writes against production Supabase.
-- Use local Supabase for automated persistence/auth tests.
 - Run review-fix loop before commit.
 - Record handoff in `.agent-flow/handoffs/`.

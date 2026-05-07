@@ -29,7 +29,7 @@ import type {
 
 export interface ExchangeConnectionPublic {
   id: string;
-  exchange: 'binance' | 'bybit' | 'okx' | 'bitget' | 'flipster';
+  exchange: 'binance' | 'bybit' | 'okx' | 'bitget';
   label: string | null;
   permissions_verified: boolean;
   is_active: boolean;
@@ -52,14 +52,6 @@ export interface BybitConnectionResponse extends ExchangeConnectionPublic {
     derivativesEnabled: boolean;
     ipRestricted: boolean;
     unifiedTradingAccount: boolean;
-  };
-}
-
-export interface FlipsterConnectionResponse extends ExchangeConnectionPublic {
-  permissions?: {
-    canRead: boolean;
-    totalMarginBalance: string;
-    availableBalance: string;
   };
 }
 
@@ -286,36 +278,6 @@ export async function fetchSyncBinanceTrades(params: { days?: number; from?: str
   );
   if (!result.success) return result;
   return { success: true, data: result.data.data };
-}
-
-export async function fetchFlipsterConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {
-  const result = await apiFetch<{ success: boolean; data: ExchangeConnectionPublic | null }>(
-    '/api/exchange/flipster/connection',
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchSaveFlipsterConnection(params: {
-  apiKey: string;
-  apiSecret: string;
-  label?: string;
-}): Promise<ApiResult<FlipsterConnectionResponse>> {
-  const result = await apiFetch<{ success: boolean; data: FlipsterConnectionResponse }>(
-    '/api/exchange/flipster/connection',
-    { method: 'POST', body: JSON.stringify(params) },
-  );
-  if (!result.success) return result;
-  return { success: true, data: result.data.data };
-}
-
-export async function fetchDeleteFlipsterConnection(): Promise<ApiResult<void>> {
-  const result = await apiFetch<{ success: boolean }>(
-    '/api/exchange/flipster/connection',
-    { method: 'DELETE' },
-  );
-  if (!result.success) return result;
-  return { success: true, data: undefined };
 }
 
 export async function fetchBybitConnection(): Promise<ApiResult<ExchangeConnectionPublic | null>> {

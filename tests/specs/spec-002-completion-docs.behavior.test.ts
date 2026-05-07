@@ -15,7 +15,7 @@ describe('SPEC-002 completion docs', () => {
     for (const criterion of [
       '통합 인증 미들웨어(`src/lib/api/auth.ts`)가 Bearer token과 쿠키 방식을 자동 감지',
       '모든 데이터 CRUD가 `/api/*` Route Handler를 경유',
-      '기존 `/api/mobile/*` 엔드포인트가 `/api/*`로 redirect (하위 호환)',
+      '이전 `/api/mobile/*` 엔드포인트 제거 후 `/api/*`를 단일 지원 API 표면으로 유지',
       '`useTrades.ts`(Zustand 스토어)에서 `createClient()` 직접 호출 제거',
       '`src/lib/api/*.ts`가 Supabase 클라이언트 파라미터 대신 fetch 기반',
       'Rate Limit이 통합 경로에서도 동일 적용',
@@ -32,7 +32,7 @@ describe('SPEC-002 completion docs', () => {
       'PR #31',
       'PR #32',
       'tests/api/auth-boundary.behavior.test.ts',
-      'tests/api/mobile-redirects.behavior.test.ts',
+      'tests/specs/post-refactor-legacy-cleanup.behavior.test.ts',
       'tests/api/utility-client-fetch.behavior.test.ts',
     ]) {
       expect(spec).toContain(evidence);

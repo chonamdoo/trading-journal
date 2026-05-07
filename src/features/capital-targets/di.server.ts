@@ -7,6 +7,7 @@ import { SupabaseCapitalTargetRepository } from './data/repositories/supabase-ca
 import { createCreateCapitalTargetUseCase } from './domain/usecases/create-capital-target.usecase';
 import { createDeleteCapitalTargetUseCase } from './domain/usecases/delete-capital-target.usecase';
 import { createListCapitalTargetsUseCase } from './domain/usecases/list-capital-targets.usecase';
+import { createReorderCapitalTargetsUseCase } from './domain/usecases/reorder-capital-targets.usecase';
 import { createUpdateCapitalTargetUseCase } from './domain/usecases/update-capital-target.usecase';
 
 export function createCapitalTargetsCompositionRoot(supabase: SupabaseClient<Database>) {
@@ -16,6 +17,7 @@ export function createCapitalTargetsCompositionRoot(supabase: SupabaseClient<Dat
     createCapitalTarget: createCreateCapitalTargetUseCase(capitalTargetRepository),
     deleteCapitalTarget: createDeleteCapitalTargetUseCase(capitalTargetRepository),
     listCapitalTargets: createListCapitalTargetsUseCase(capitalTargetRepository),
+    reorderCapitalTargets: createReorderCapitalTargetsUseCase(capitalTargetRepository),
     updateCapitalTarget: createUpdateCapitalTargetUseCase(capitalTargetRepository),
   };
 }

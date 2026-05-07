@@ -1,4 +1,4 @@
-export type ExchangeName = 'binance' | 'bybit' | 'okx' | 'bitget' | 'flipster';
+export type ExchangeName = 'binance' | 'bybit' | 'okx' | 'bitget';
 
 export type ImportedTradeSource = 'exchange';
 

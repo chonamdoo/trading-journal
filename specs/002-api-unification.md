@@ -6,7 +6,7 @@
 ## 완료 조건
 - [x] 통합 인증 미들웨어(`src/lib/api/auth.ts`)가 Bearer token과 쿠키 방식을 자동 감지
 - [x] 모든 데이터 CRUD가 `/api/*` Route Handler를 경유
-- [x] 기존 `/api/mobile/*` 엔드포인트가 `/api/*`로 redirect (하위 호환)
+- [x] 이전 `/api/mobile/*` 엔드포인트 제거 후 `/api/*`를 단일 지원 API 표면으로 유지
 - [x] `useTrades.ts`(Zustand 스토어)에서 `createClient()` 직접 호출 제거
 - [x] `src/lib/api/*.ts`가 Supabase 클라이언트 파라미터 대신 fetch 기반
 - [x] Rate Limit이 통합 경로에서도 동일 적용
@@ -14,14 +14,14 @@
 
 ## 구현 완료 근거
 
-- PR #19: 기존 `/api/mobile/*` 데이터 라우트를 `/api/*` 경로로 redirect.
+- PR #19: `/api/*` 데이터 라우트 경계 추가.
 - PR #20: `apiFetch`, `apiFetchFormData`, `apiFetchBlob` 클라이언트 fetch wrapper 경계 강화.
 - PR #29: Trading Plans route/client API 경계 추가.
 - PR #30: Trade query route adapter 추가.
 - PR #31: Deposit/Profile/Target utility route adapter 추가.
 - PR #32: utility client fetch wrapper 추가 및 `useTrades.ts` 초기 자본 저장 경로 전환.
 - `tests/api/auth-boundary.behavior.test.ts`: Bearer/cookie 통합 인증과 rate limit 경계 검증.
-- `tests/api/mobile-redirects.behavior.test.ts`: `/api/mobile/*` 하위 호환 redirect 검증.
+- `tests/specs/post-refactor-legacy-cleanup.behavior.test.ts`: `/api/mobile/*` 호환 표면 제거 검증.
 - `tests/api/utility-client-fetch.behavior.test.ts`: utility wrapper가 `/api/*`를 호출하는지 검증.
 
 ## 파일 변경
@@ -30,7 +30,6 @@
 | 경로 | 작업 | 비고 |
 |------|------|------|
 | `src/lib/api/auth.ts` | 신규 | 통합 인증 미들웨어 (Bearer + 쿠키 감지) |
-| `src/lib/api/mobile-auth.ts` | 수정 | `auth.ts`를 re-export하거나 deprecated 표시 |
 
 ### Phase 2: /api/* Route Handler 생성
 | 경로 | 작업 | 비고 |
@@ -91,19 +90,12 @@
 | `src/hooks/useTrades.ts` | 수정 | `getSupabase()`, `getCurrentUserId()` 제거. 새 client API 함수만 호출 |
 | `src/hooks/useDataLoader.ts` | 수정 | 변경 없을 가능성 높음 (loadData 내부만 바뀜) |
 
-### Phase 6: /api/mobile/* redirect + 미들웨어 업데이트
+### Phase 6: legacy mobile API 제거 + 미들웨어 업데이트
 | 경로 | 작업 | 비고 |
 |------|------|------|
-| `src/app/api/mobile/trades/route.ts` | 수정 | `/api/trades`로 redirect (308) |
-| `src/app/api/mobile/trades/[id]/route.ts` | 수정 | `/api/trades/[id]`로 redirect |
-| `src/app/api/mobile/trades/[id]/closes/route.ts` | 수정 | redirect |
-| `src/app/api/mobile/trades/[id]/scale-ins/route.ts` | 수정 | redirect |
-| `src/app/api/mobile/deposits/route.ts` | 수정 | redirect |
-| `src/app/api/mobile/profile/route.ts` | 수정 | redirect |
-| `src/app/api/mobile/auth/login/route.ts` | 유지 | 인증은 redirect 대상 아님 (별도 흐름) |
-| `src/app/api/mobile/auth/signup/route.ts` | 유지 | 동일 |
-| `src/app/api/mobile/auth/refresh/route.ts` | 유지 | 동일 |
-| `src/app/api/mobile/auth/logout/route.ts` | 유지 | 동일 |
+| `src/app/api/mobile/**` | 삭제 | `/api/*`가 단일 지원 API 표면 |
+| `src/lib/api/mobile-auth.ts` | 삭제 | `src/lib/api/auth.ts`로 통합 |
+| `src/lib/api/mobile-redirect.ts` | 삭제 | mobile compatibility redirect 제거 |
 | `src/lib/supabase/middleware.ts` | 수정 | `/api/` 경로의 인증 처리 로직 업데이트 (Bearer 감지 시 세션 갱신 스킵) |
 
 ## 데이터/API 계약
@@ -206,15 +198,9 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 ### 미들웨어 업데이트 (`src/lib/supabase/middleware.ts`)
 
-현재 `pathname.startsWith('/api/mobile/')` 일 때 스킵하는 로직을, `/api/` 전체에서 Bearer 토큰 감지 시 세션 갱신 스킵하도록 변경:
+`/api/` 전체에서 Bearer 토큰 감지 시 세션 갱신을 스킵하도록 변경:
 
 ```typescript
-// 현재
-if (pathname.startsWith('/api/mobile/')) {
-  return supabaseResponse;
-}
-
-// 변경
 const authHeader = request.headers.get('authorization');
 if (pathname.startsWith('/api/') && authHeader?.startsWith('Bearer ')) {
   // Bearer 인증 API 요청 — 미들웨어 세션 갱신 불필요
@@ -237,10 +223,9 @@ if (pathname.startsWith('/api/') && authHeader?.startsWith('Bearer ')) {
 - 대용량 파일 업로드 시 Route Handler 메모리 → Next.js/Vercel의 body size limit (기본 4.5MB, Vercel Serverless) 확인 필요. 현재 `MAX_FILE_SIZE = 5MB`이므로 Vercel Pro에서는 OK, Hobby에서는 4.5MB 제한 주의
 - 스크린샷 public URL 조회 → 서버에서 `getPublicUrl()` 호출하여 URL 반환. 클라이언트에서 `supabase.storage` 직접 호출 제거
 
-### 하위 호환
-- `/api/mobile/*` → `/api/*` redirect는 HTTP 308 (Permanent Redirect, 메서드 유지)
-- 모바일 앱이 `/api/mobile/*`를 계속 호출해도 redirect로 정상 동작
-- 모바일 인증 관련 라우트 (`/api/mobile/auth/*`)는 redirect 대상이 아님 — 그대로 유지
+### API 표면
+- `/api/*`가 단일 지원 API 표면이다.
+- 이전 `/api/mobile/*` compatibility surface는 post-refactor cleanup에서 제거되었다.
 
 ### Race Condition
 - `closeTrade`의 `WHERE status='open'` 패턴은 Route Handler에서도 동일하게 적용 (기존 `src/lib/api/trades.ts` 재사용)
@@ -283,9 +268,9 @@ if (pathname.startsWith('/api/') && authHeader?.startsWith('Bearer ')) {
 17. 거래 생성/수정/삭제 → 로컬 스토어 즉시 갱신 + API 호출
 18. 분할 청산 추가 (100% 도달) → 부모 거래 자동 closed → 로컬 갱신
 
-### Phase 6: 하위 호환
-19. `/api/mobile/trades` GET (Bearer) → 308 → `/api/trades` → 200
-20. `/api/mobile/auth/login` POST → 기존 그대로 동작 (redirect 아님)
+### Phase 6: legacy mobile API 제거
+19. `src/app/api/mobile` 경로 없음
+20. `src/lib/api/mobile-auth.ts`, `src/lib/api/mobile-redirect.ts` 경로 없음
 
 ### 빌드 검증
 21. `npx next build --no-lint` PASS
@@ -293,13 +278,6 @@ if (pathname.startsWith('/api/') && authHeader?.startsWith('Bearer ')) {
 23. `npm run lint` PASS
 
 ## 관련 기존 파일 (패턴 참조용)
-- `src/app/api/mobile/trades/route.ts` — Route Handler + withAuth 패턴 (이 파일의 패턴을 `/api/trades/route.ts`에 그대로 적용)
-- `src/app/api/mobile/trades/[id]/route.ts` — 동적 라우트 + Params 타입 패턴
-- `src/app/api/mobile/trades/[id]/closes/route.ts` — 분할청산 Route Handler 패턴
-- `src/app/api/mobile/trades/[id]/scale-ins/route.ts` — 추가진입 Route Handler 패턴
-- `src/app/api/mobile/deposits/route.ts` — deposits Route Handler 패턴
-- `src/app/api/mobile/profile/route.ts` — profile Route Handler 패턴
-- `src/lib/api/mobile-auth.ts` — 현재 withAuth 구현 (통합 auth의 기반)
 - `src/lib/api/rate-limit.ts` — 인메모리 Rate Limiter (그대로 사용)
 - `src/app/api/report/generate/route.ts` — 서버에서 `createClient()` 쿠키 방식으로 Supabase 호출하는 기존 패턴 (이 라우트는 이미 서버 인증이므로 변경 불필요)
 - `src/app/api/auth/logout/route.ts` — 서버 쿠키 방식 API 라우트 패턴 (변경 불필요)
@@ -307,16 +285,16 @@ if (pathname.startsWith('/api/') && authHeader?.startsWith('Bearer ')) {
 ## 구현 순서 (Phase별)
 
 1. **Phase 1**: `src/lib/api/auth.ts` 통합 인증 미들웨어 — Bearer/쿠키 자동 감지
-2. **Phase 2**: `/api/*` Route Handler 생성 — `/api/mobile/*` 코드를 복사하고 `withAuth` import를 `auth.ts`로 변경
+2. **Phase 2**: `/api/*` Route Handler 생성
 3. **Phase 3**: `src/lib/api/client.ts` 클라이언트 fetch 래퍼
 4. **Phase 4**: `src/lib/api/*.ts`에 `fetchX` 클라이언트 함수 추가 (기존 서버용 함수 유지)
 5. **Phase 5**: `src/hooks/useTrades.ts` 전환 — `getSupabase()` 제거, `fetchX` 함수 사용
-6. **Phase 6**: `/api/mobile/*` → 308 redirect + 미들웨어 업데이트
+6. **Phase 6**: legacy mobile API 제거 + 미들웨어 업데이트
 7. **Phase 7**: 빌드/타입체크/린트 검증
 
 ## 보안 고려사항
 
 - **RLS는 최종 방어선으로 유지**: Route Handler에서 `createMobileClient(token)` 또는 `createServerClient()`를 사용하면 anon key + RLS가 여전히 적용됨. 서버에서 service_role을 사용하지 않음
-- **Rate Limit 동일 적용**: 기존 `mobile-auth.ts`의 IP+사용자 이중 제한을 통합 auth에서도 동일 적용
+- **Rate Limit 동일 적용**: 통합 auth에서 IP+사용자 이중 제한을 동일 적용
 - **토큰 노출 없음**: Bearer 토큰은 `Authorization` 헤더로만 전송, URL 파라미터 금지
 - **CORS**: Next.js API Route는 기본적으로 same-origin. 모바일에서 cross-origin 접근 시 기존과 동일 동작

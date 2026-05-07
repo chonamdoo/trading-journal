@@ -19,14 +19,11 @@ import {
   fetchDeleteBinanceConnection,
   fetchDeleteBitgetConnection,
   fetchDeleteBybitConnection,
-  fetchDeleteFlipsterConnection,
   fetchDeleteOkxConnection,
-  fetchFlipsterConnection,
   fetchOkxConnection,
   fetchSaveBinanceConnection,
   fetchSaveBitgetConnection,
   fetchSaveBybitConnection,
-  fetchSaveFlipsterConnection,
   fetchSaveOkxConnection,
   fetchSyncBinanceTrades,
   fetchSyncBitgetTrades,
@@ -37,12 +34,12 @@ import {
   type ExchangeConnectionPublic,
   type ImportPayload,
 } from '@/lib/api/client-api'
-import { curCapital, totalPnL, totalReturnPct, totalDeposits } from '@/lib/calc'
-import { formatNumber, formatPnl, toKrw, today, genId } from '@/lib/format'
+import { curCapital, totalDeposits } from '@/lib/calc'
+import { formatNumber, today } from '@/lib/format'
 import { downloadCsv, tradesToCsv } from '@/lib/csv-export'
 import { TARGET_COLORS } from '@/lib/constants'
 
-type ExchangeFormValue = 'bybit' | 'binance' | 'okx' | 'bitget' | 'flipster'
+type ExchangeFormValue = 'bybit' | 'binance' | 'okx' | 'bitget'
 
 const EXCHANGE_FORM_OPTIONS: Record<ExchangeFormValue, {
   label: string
@@ -76,12 +73,6 @@ const EXCHANGE_FORM_OPTIONS: Record<ExchangeFormValue, {
     apiPlaceholder: 'Bitget API Key',
     secretPlaceholder: 'Bitget Secret Key',
     passphrasePlaceholder: 'Bitget Passphrase',
-  },
-  flipster: {
-    label: 'Flipster',
-    defaultName: 'Flipster',
-    apiPlaceholder: 'Flipster API Key',
-    secretPlaceholder: 'Flipster Secret Key',
   },
 }
 
@@ -142,20 +133,14 @@ export default function SettingsPage() {
   const [binanceConnection, setBinanceConnection] = useState<ExchangeConnectionPublic | null>(null)
   const [okxConnection, setOkxConnection] = useState<ExchangeConnectionPublic | null>(null)
   const [bitgetConnection, setBitgetConnection] = useState<ExchangeConnectionPublic | null>(null)
-  const [flipsterConnection, setFlipsterConnection] = useState<ExchangeConnectionPublic | null>(null)
   const [bybitLoading, setBybitLoading] = useState(true)
   const [binanceLoading, setBinanceLoading] = useState(true)
   const [okxLoading, setOkxLoading] = useState(true)
   const [bitgetLoading, setBitgetLoading] = useState(true)
-  const [flipsterLoading, setFlipsterLoading] = useState(true)
-  const [bybitSaving, setBybitSaving] = useState(false)
-  const [binanceSaving, setBinanceSaving] = useState(false)
-  const [flipsterSaving, setFlipsterSaving] = useState(false)
   const [bybitDeleting, setBybitDeleting] = useState(false)
   const [binanceDeleting, setBinanceDeleting] = useState(false)
   const [okxDeleting, setOkxDeleting] = useState(false)
   const [bitgetDeleting, setBitgetDeleting] = useState(false)
-  const [flipsterDeleting, setFlipsterDeleting] = useState(false)
   const [bybitSyncing, setBybitSyncing] = useState(false)
   const [binanceSyncing, setBinanceSyncing] = useState(false)
   const [okxSyncing, setOkxSyncing] = useState(false)
@@ -166,18 +151,12 @@ export default function SettingsPage() {
   const [exchangePassphrase, setExchangePassphrase] = useState('')
   const [exchangeLabel, setExchangeLabel] = useState(EXCHANGE_FORM_OPTIONS.bybit.defaultName)
   const [exchangeSaving, setExchangeSaving] = useState(false)
-  const [bybitLabel, setBybitLabel] = useState('Bybit Derivatives')
-  const [bybitApiKey, setBybitApiKey] = useState('')
-  const [bybitApiSecret, setBybitApiSecret] = useState('')
   const [bybitSyncFrom, setBybitSyncFrom] = useState(() => {
     const date = new Date()
     date.setDate(date.getDate() - 6)
     return date.toISOString().slice(0, 10)
   })
   const [bybitSyncTo, setBybitSyncTo] = useState(today())
-  const [binanceLabel, setBinanceLabel] = useState('Binance USD-M Futures')
-  const [binanceApiKey, setBinanceApiKey] = useState('')
-  const [binanceApiSecret, setBinanceApiSecret] = useState('')
   const [binanceSyncFrom, setBinanceSyncFrom] = useState(() => {
     const date = new Date()
     date.setDate(date.getDate() - 6)
@@ -196,10 +175,6 @@ export default function SettingsPage() {
     return date.toISOString().slice(0, 10)
   })
   const [bitgetSyncTo, setBitgetSyncTo] = useState(today())
-  const [flipsterLabel, setFlipsterLabel] = useState('Flipster')
-  const [flipsterApiKey, setFlipsterApiKey] = useState('')
-  const [flipsterApiSecret, setFlipsterApiSecret] = useState('')
-
   const selectedExchangeConfig = EXCHANGE_FORM_OPTIONS[selectedExchange]
   const selectedExchangeConnection =
     selectedExchange === 'bybit'
@@ -208,26 +183,22 @@ export default function SettingsPage() {
         ? binanceConnection
         : selectedExchange === 'okx'
           ? okxConnection
-          : selectedExchange === 'bitget'
-            ? bitgetConnection
-            : flipsterConnection
+          : bitgetConnection
 
   useEffect(() => {
     let mounted = true
 
     async function loadExchangeConnections() {
-      const [bybitResult, binanceResult, okxResult, bitgetResult, flipsterResult] = await Promise.all([
+      const [bybitResult, binanceResult, okxResult, bitgetResult] = await Promise.all([
         fetchBybitConnection(),
         fetchBinanceConnection(),
         fetchOkxConnection(),
         fetchBitgetConnection(),
-        fetchFlipsterConnection(),
       ])
       if (!mounted) return
 
       if (bybitResult.success) {
         setBybitConnection(bybitResult.data)
-        if (bybitResult.data?.label) setBybitLabel(bybitResult.data.label)
         if (bybitResult.data?.label && selectedExchange === 'bybit') setExchangeLabel(bybitResult.data.label)
       } else {
         showToast('error', bybitResult.error)
@@ -235,7 +206,6 @@ export default function SettingsPage() {
 
       if (binanceResult.success) {
         setBinanceConnection(binanceResult.data)
-        if (binanceResult.data?.label) setBinanceLabel(binanceResult.data.label)
         if (binanceResult.data?.label && selectedExchange === 'binance') setExchangeLabel(binanceResult.data.label)
       } else {
         showToast('error', binanceResult.error)
@@ -255,19 +225,10 @@ export default function SettingsPage() {
         showToast('error', bitgetResult.error)
       }
 
-      if (flipsterResult.success) {
-        setFlipsterConnection(flipsterResult.data)
-        if (flipsterResult.data?.label) setFlipsterLabel(flipsterResult.data.label)
-        if (flipsterResult.data?.label && selectedExchange === 'flipster') setExchangeLabel(flipsterResult.data.label)
-      } else {
-        showToast('error', flipsterResult.error)
-      }
-
       setBybitLoading(false)
       setBinanceLoading(false)
       setOkxLoading(false)
       setBitgetLoading(false)
-      setFlipsterLoading(false)
     }
 
     loadExchangeConnections()
@@ -285,9 +246,7 @@ export default function SettingsPage() {
           ? binanceConnection
           : value === 'okx'
             ? okxConnection
-            : value === 'bitget'
-              ? bitgetConnection
-              : flipsterConnection
+            : bitgetConnection
     setExchangeLabel(connection?.label ?? EXCHANGE_FORM_OPTIONS[value].defaultName)
     setExchangeApiKey('')
     setExchangeApiSecret('')
@@ -452,9 +411,7 @@ export default function SettingsPage() {
           ? await fetchSaveBinanceConnection(params)
           : selectedExchange === 'okx'
             ? await fetchSaveOkxConnection({ ...params, passphrase: exchangePassphrase.trim() })
-            : selectedExchange === 'bitget'
-              ? await fetchSaveBitgetConnection({ ...params, passphrase: exchangePassphrase.trim() })
-              : await fetchSaveFlipsterConnection(params)
+            : await fetchSaveBitgetConnection({ ...params, passphrase: exchangePassphrase.trim() })
     setExchangeSaving(false)
 
     if (!result.success) {
@@ -464,98 +421,18 @@ export default function SettingsPage() {
 
     if (selectedExchange === 'bybit') {
       setBybitConnection(result.data)
-      if (result.data.label) setBybitLabel(result.data.label)
     } else if (selectedExchange === 'binance') {
       setBinanceConnection(result.data)
-      if (result.data.label) setBinanceLabel(result.data.label)
     } else if (selectedExchange === 'okx') {
       setOkxConnection(result.data)
     } else if (selectedExchange === 'bitget') {
       setBitgetConnection(result.data)
-    } else {
-      setFlipsterConnection(result.data)
-      if (result.data.label) setFlipsterLabel(result.data.label)
     }
 
     setExchangeApiKey('')
     setExchangeApiSecret('')
     setExchangePassphrase('')
     showToast('success', `${selectedExchangeConfig.label} 연결이 저장되었습니다.`)
-  }
-
-  const handleSaveBybitConnection = async () => {
-    if (!bybitApiKey.trim() || !bybitApiSecret.trim()) {
-      showToast('error', 'Bybit API Key와 Secret을 입력해주세요.')
-      return
-    }
-
-    setBybitSaving(true)
-    const result = await fetchSaveBybitConnection({
-      apiKey: bybitApiKey.trim(),
-      apiSecret: bybitApiSecret.trim(),
-      label: bybitLabel.trim() || undefined,
-    })
-    setBybitSaving(false)
-
-    if (!result.success) {
-      showToast('error', result.error)
-      return
-    }
-
-    setBybitConnection(result.data)
-    setBybitApiKey('')
-    setBybitApiSecret('')
-    showToast('success', 'Bybit 연결이 저장되었습니다.')
-  }
-
-  const handleSaveBinanceConnection = async () => {
-    if (!binanceApiKey.trim() || !binanceApiSecret.trim()) {
-      showToast('error', 'Binance API Key와 Secret을 입력해주세요.')
-      return
-    }
-
-    setBinanceSaving(true)
-    const result = await fetchSaveBinanceConnection({
-      apiKey: binanceApiKey.trim(),
-      apiSecret: binanceApiSecret.trim(),
-      label: binanceLabel.trim() || undefined,
-    })
-    setBinanceSaving(false)
-
-    if (!result.success) {
-      showToast('error', result.error)
-      return
-    }
-
-    setBinanceConnection(result.data)
-    setBinanceApiKey('')
-    setBinanceApiSecret('')
-    showToast('success', 'Binance 연결이 저장되었습니다.')
-  }
-
-  const handleSaveFlipsterConnection = async () => {
-    if (!flipsterApiKey.trim() || !flipsterApiSecret.trim()) {
-      showToast('error', 'Flipster API Key와 Secret을 입력해주세요.')
-      return
-    }
-
-    setFlipsterSaving(true)
-    const result = await fetchSaveFlipsterConnection({
-      apiKey: flipsterApiKey.trim(),
-      apiSecret: flipsterApiSecret.trim(),
-      label: flipsterLabel.trim() || undefined,
-    })
-    setFlipsterSaving(false)
-
-    if (!result.success) {
-      showToast('error', result.error)
-      return
-    }
-
-    setFlipsterConnection(result.data)
-    setFlipsterApiKey('')
-    setFlipsterApiSecret('')
-    showToast('success', 'Flipster 연결이 저장되었습니다.')
   }
 
   const handleDeleteBybitConnection = async () => {
@@ -569,8 +446,6 @@ export default function SettingsPage() {
     }
 
     setBybitConnection(null)
-    setBybitApiKey('')
-    setBybitApiSecret('')
     showToast('success', 'Bybit 연결이 삭제되었습니다.')
   }
 
@@ -585,8 +460,6 @@ export default function SettingsPage() {
     }
 
     setBinanceConnection(null)
-    setBinanceApiKey('')
-    setBinanceApiSecret('')
     showToast('success', 'Binance 연결이 삭제되었습니다.')
   }
 
@@ -616,22 +489,6 @@ export default function SettingsPage() {
 
     setBitgetConnection(null)
     showToast('success', 'Bitget 연결이 삭제되었습니다.')
-  }
-
-  const handleDeleteFlipsterConnection = async () => {
-    setFlipsterDeleting(true)
-    const result = await fetchDeleteFlipsterConnection()
-    setFlipsterDeleting(false)
-
-    if (!result.success) {
-      showToast('error', result.error)
-      return
-    }
-
-    setFlipsterConnection(null)
-    setFlipsterApiKey('')
-    setFlipsterApiSecret('')
-    showToast('success', 'Flipster 연결이 삭제되었습니다.')
   }
 
   const handleSyncBybitTrades = async () => {
@@ -1151,39 +1008,6 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-border">
-          <div className="flex justify-between items-start gap-4 mb-4">
-            <div>
-              <div className="text-sm font-medium">Flipster</div>
-              <div className="text-[12px] text-content-muted">
-                {flipsterLoading
-                  ? '연결 상태 확인 중...'
-                  : flipsterConnection
-                    ? `연결됨 · ${flipsterConnection.permissions_verified ? '권한 검증 완료' : '권한 미검증'}`
-                    : '연결되지 않음'}
-              </div>
-              {flipsterConnection?.last_synced_at && (
-                <div className="text-[11px] text-content-muted font-mono mt-1">
-                  마지막 동기화: {new Date(flipsterConnection.last_synced_at).toLocaleString()}
-                </div>
-              )}
-            </div>
-            {flipsterConnection && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDeleteFlipsterConnection}
-                disabled={flipsterDeleting}
-              >
-                {flipsterDeleting ? '삭제 중...' : '연결 삭제'}
-              </Button>
-            )}
-          </div>
-
-          <p className="text-[11px] text-content-muted mt-3">
-            Flipster 공식 API는 private launch 상태입니다. 현재는 공식 Account API로 Read 권한 연결 검증과 암호화 저장까지만 지원합니다.
-          </p>
-        </div>
       </Card>
 
       {/* 즐겨찾기 종목 관리 */}
