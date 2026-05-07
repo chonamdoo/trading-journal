@@ -6,6 +6,8 @@ import { winRate, streaks, avgHoldTime } from '@/lib/calc'
 import { fetchMarketInsight, type MarketInsight } from '@/lib/api/client-api'
 import { formatNumber, pnlColorClass } from '@/lib/format'
 
+type MarketDerivativesInsight = NonNullable<MarketInsight['derivatives']>
+
 /** avgHoldTime(분)을 "Xh Ym" 형태로 변환 */
 function formatMinutes(totalMin: number): string | null {
   if (totalMin <= 0) return null
@@ -31,13 +33,13 @@ function formatCompactUsd(value: number): string {
   return `$${formatNumber(value, 0)}`
 }
 
-function fundingRateColor(side: MarketInsight['derivatives']['fundingPaymentSide']): string {
+function fundingRateColor(side: MarketDerivativesInsight['fundingPaymentSide']): string {
   if (side === 'long') return 'text-loss'
   if (side === 'short') return 'text-profit'
   return 'text-content-secondary'
 }
 
-function fundingSideLabel(side: MarketInsight['derivatives']['fundingPaymentSide']): string {
+function fundingSideLabel(side: MarketDerivativesInsight['fundingPaymentSide']): string {
   if (side === 'long') return '롱 지불'
   if (side === 'short') return '숏 지불'
   return '중립'
@@ -78,6 +80,7 @@ export function TradeSidePanel() {
   }, [trades])
 
   const { recentWr, streakResult, holdStr, todayCount } = stats
+  const derivatives = insight?.derivatives
 
   const streakLabel =
     streakResult.current.count === 0
@@ -183,69 +186,73 @@ export function TradeSidePanel() {
             </div>
           </div>
 
-          <div className="h-px bg-border my-4" />
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
-            파생상품 데이터
-          </h2>
+          {(insightLoading || derivatives) && (
+            <>
+              <div className="h-px bg-border my-4" />
+              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
+                파생상품 데이터
+              </h2>
 
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm text-content-secondary">펀딩비</span>
-              {insightLoading ? (
-                <span className="font-mono text-sm text-content-muted">-</span>
-              ) : (
-                <span
-                  className={`font-mono text-sm font-semibold ${
-                    fundingRateColor(insight!.derivatives.fundingPaymentSide)
-                  }`}
-                >
-                  {insight!.derivatives.fundingRate.toFixed(4)}%{' '}
-                  {fundingSideLabel(insight!.derivatives.fundingPaymentSide)}
-                </span>
-              )}
-            </div>
-
-            <div className="py-3 border-b border-border">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-content-secondary">롱숏 비율</span>
-                {insightLoading ? (
-                  <span className="font-mono text-sm text-content-muted">-</span>
-                ) : (
-                  <span className="font-mono text-sm font-semibold text-content">
-                    롱 {insight!.derivatives.longShortRatio.longAccount.toFixed(0)}% / 숏{' '}
-                    {insight!.derivatives.longShortRatio.shortAccount.toFixed(0)}%
-                  </span>
-                )}
-              </div>
-              {!insightLoading && (
-                <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-border">
-                  <div
-                    className="bg-profit"
-                    style={{
-                      width: `${Math.max(0, Math.min(100, insight!.derivatives.longShortRatio.longAccount))}%`,
-                    }}
-                  />
-                  <div
-                    className="bg-loss"
-                    style={{
-                      width: `${Math.max(0, Math.min(100, insight!.derivatives.longShortRatio.shortAccount))}%`,
-                    }}
-                  />
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between py-3 border-b border-border">
+                  <span className="text-sm text-content-secondary">펀딩비</span>
+                  {insightLoading ? (
+                    <span className="font-mono text-sm text-content-muted">-</span>
+                  ) : (
+                    <span
+                      className={`font-mono text-sm font-semibold ${
+                        fundingRateColor(derivatives!.fundingPaymentSide)
+                      }`}
+                    >
+                      {derivatives!.fundingRate.toFixed(4)}%{' '}
+                      {fundingSideLabel(derivatives!.fundingPaymentSide)}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-content-secondary">미체결 약정</span>
-              {insightLoading ? (
-                <span className="font-mono text-sm text-content-muted">-</span>
-              ) : (
-                <span className="font-mono text-sm font-semibold text-content">
-                  {formatCompactUsd(insight!.derivatives.openInterest.notionalUsd)}
-                </span>
-              )}
-            </div>
-          </div>
+                <div className="py-3 border-b border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-content-secondary">롱숏 비율</span>
+                    {insightLoading ? (
+                      <span className="font-mono text-sm text-content-muted">-</span>
+                    ) : (
+                      <span className="font-mono text-sm font-semibold text-content">
+                        롱 {derivatives!.longShortRatio.longAccount.toFixed(0)}% / 숏{' '}
+                        {derivatives!.longShortRatio.shortAccount.toFixed(0)}%
+                      </span>
+                    )}
+                  </div>
+                  {!insightLoading && (
+                    <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-border">
+                      <div
+                        className="bg-profit"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, derivatives!.longShortRatio.longAccount))}%`,
+                        }}
+                      />
+                      <div
+                        className="bg-loss"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, derivatives!.longShortRatio.shortAccount))}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-sm text-content-secondary">미체결 약정</span>
+                  {insightLoading ? (
+                    <span className="font-mono text-sm text-content-muted">-</span>
+                  ) : (
+                    <span className="font-mono text-sm font-semibold text-content">
+                      {formatCompactUsd(derivatives!.openInterest.notionalUsd)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

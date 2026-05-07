@@ -759,7 +759,7 @@ export interface MarketInsight {
       baseAsset: number;
       notionalUsd: number;
     };
-  };
+  } | null;
 }
 
 export async function fetchMarketInsight(): Promise<MarketInsight | null> {
