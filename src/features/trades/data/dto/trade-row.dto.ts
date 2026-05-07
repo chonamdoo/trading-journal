@@ -29,6 +29,7 @@ export interface TradeRowDto {
   exchange?: string | null;
   external_id?: string | null;
   fee?: string | number | null;
+  funding_fee?: string | number | null;
   fee_asset?: string | null;
   synced_at?: string | null;
   import_status?: ImportStatus | null;

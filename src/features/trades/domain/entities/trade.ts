@@ -31,6 +31,7 @@ export interface Trade {
   exchange?: string | null;
   externalId?: string | null;
   fee?: number | null;
+  fundingFee?: number | null;
   feeAsset?: string | null;
   syncedAt?: string | null;
   importStatus?: ImportStatus | null;

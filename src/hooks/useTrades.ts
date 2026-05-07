@@ -66,6 +66,8 @@ function rowToTrade(row: Record<string, unknown>): Trade {
     margin: Number(row.margin),
     status: row.status as Trade['status'],
     pnl: row.pnl != null ? Number(row.pnl) : null,
+    fee: row.fee != null ? Number(row.fee) : null,
+    funding_fee: row.funding_fee != null ? Number(row.funding_fee) : 0,
     reason: row.reason as string | null,
     notes: row.notes as string | null,
     tags: row.tags as string[] | null,
@@ -311,6 +313,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
           margin: data.margin,
           status: 'closed',
           pnl: null,
+          fee: data.fee ?? null,
+          funding_fee: data.funding_fee ?? 0,
         }
         pnl = calcPnL(tempTrade)
       }
@@ -328,6 +332,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
         margin: data.margin,
         status,
         pnl,
+        fee: data.fee ?? null,
+        funding_fee: data.funding_fee ?? 0,
         reason: data.reason || null,
         notes: data.notes || null,
         tags: data.tags || null,
@@ -362,6 +368,8 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       if (data.entry_price !== undefined) updates.entry_price = data.entry_price
       if (data.exit_price !== undefined) updates.exit_price = data.exit_price || null
       if (data.margin !== undefined) updates.margin = data.margin
+      if (data.fee !== undefined) updates.fee = data.fee ?? null
+      if (data.funding_fee !== undefined) updates.funding_fee = data.funding_fee ?? 0
       if (data.entry_datetime !== undefined) {
         updates.entry_datetime = dtLocalToUTC(data.entry_datetime)
         updates.date = dtLocalToDate(data.entry_datetime)

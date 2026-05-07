@@ -497,6 +497,7 @@ export type TradeRow = {
   external_id: string | null;
   source: TradeSource | null;
   fee: number | null;
+  funding_fee: number | null;
   fee_asset: string | null;
   synced_at: string | null;
   import_status: TradeImportStatus | null;
@@ -528,6 +529,7 @@ export type TradeInsert = {
   external_id?: string | null;
   source?: TradeSource | null;
   fee?: number | null;
+  funding_fee?: number | null;
   fee_asset?: string | null;
   synced_at?: string | null;
   import_status?: TradeImportStatus | null;
@@ -555,6 +557,7 @@ export type TradeUpdate = {
   external_id?: string | null;
   source?: TradeSource | null;
   fee?: number | null;
+  funding_fee?: number | null;
   fee_asset?: string | null;
   synced_at?: string | null;
   import_status?: TradeImportStatus | null;

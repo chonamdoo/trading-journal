@@ -29,6 +29,7 @@ export function mapTradeToLegacyResponse(trade: Trade) {
     external_id: trade.externalId,
     source: mapTradeSourceToLegacy(trade.tradeSource),
     fee: trade.fee,
+    funding_fee: trade.fundingFee ?? 0,
     fee_asset: trade.feeAsset,
     synced_at: trade.syncedAt,
     import_status: trade.importStatus,

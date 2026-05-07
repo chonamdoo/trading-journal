@@ -82,6 +82,8 @@ function mappedFields(trade: Trade): { label: string; value: string }[] {
     { label: '청산가', value: trade.exit_price != null ? formatPrice(trade.exit_price) : '—' },
     { label: '증거금', value: formatNumber(trade.margin) },
     { label: '손익', value: trade.pnl != null ? formatPnl(trade.pnl) : '—' },
+    { label: '트레이딩피', value: trade.fee != null ? `-${formatNumber(Math.abs(trade.fee))}` : '—' },
+    { label: '펀딩피', value: formatPnl(trade.funding_fee ?? 0) },
     { label: '상태', value: trade.import_status === 'draft' ? '초안' : '확정' },
   ]
 }

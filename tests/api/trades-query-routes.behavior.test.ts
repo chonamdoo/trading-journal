@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
     exchange: null,
     external_id: null,
     fee: null,
+    funding_fee: 0,
     fee_asset: null,
     source: 'manual',
     import_status: null,

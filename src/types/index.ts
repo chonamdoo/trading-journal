@@ -25,6 +25,8 @@ export interface Trade {
   margin: number                  // 투입 증거금 (USDT)
   status: TradeStatus
   pnl?: number | null             // 실현 손익 (USDT)
+  fee?: number | null             // 트레이딩피 (USDT)
+  funding_fee?: number | null     // 펀딩피 (USDT, 받은 금액은 양수)
   reason?: string | null          // 진입 이유
   notes?: string | null           // 결과 메모
   tags?: string[] | null           // P2: 전략 태그 (DB에서 null 반환 가능, I-2)
@@ -47,6 +49,8 @@ export interface TradeFormData {
   entry_price: number
   exit_price?: number | null
   stop_loss_price?: number | null
+  fee?: number | null
+  funding_fee?: number | null
   entry_datetime: string
   exit_datetime?: string | null
   reason?: string
