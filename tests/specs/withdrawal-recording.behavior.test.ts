@@ -83,6 +83,8 @@ describe('withdrawal recording', () => {
     expect(settingsPage).toContain('capitalMovementPageCount');
     expect(settingsPage).toContain('이전');
     expect(settingsPage).toContain('다음');
+    expect(settingsPage).toContain('const result = await deleteDeposit(dep.id)');
+    expect(settingsPage).toContain('if (result.success)');
     expect(settingsPage).toContain('setCapitalMovementPage(1)');
   });
 });

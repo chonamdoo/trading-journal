@@ -1185,8 +1185,10 @@ export default function SettingsPage() {
                       size="sm"
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={async () => {
-                        await deleteDeposit(dep.id)
-                        setCapitalMovementPage(1)
+                        const result = await deleteDeposit(dep.id)
+                        if (result.success) {
+                          setCapitalMovementPage(1)
+                        }
                       }}
                     >
                       삭제
