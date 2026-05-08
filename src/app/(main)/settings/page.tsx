@@ -117,6 +117,13 @@ export default function SettingsPage() {
     return (b.created_at ?? '').localeCompare(a.created_at ?? '')
   })
   const capitalMovementPageCount = Math.max(1, Math.ceil(sortedCapitalMovements.length / CAPITAL_MOVEMENT_PAGE_SIZE))
+  const capitalMovementStart = sortedCapitalMovements.length === 0
+    ? 0
+    : (capitalMovementPage - 1) * CAPITAL_MOVEMENT_PAGE_SIZE + 1
+  const capitalMovementEnd = Math.min(
+    capitalMovementPage * CAPITAL_MOVEMENT_PAGE_SIZE,
+    sortedCapitalMovements.length,
+  )
   const visibleCapitalMovements = sortedCapitalMovements.slice(
     (capitalMovementPage - 1) * CAPITAL_MOVEMENT_PAGE_SIZE,
     capitalMovementPage * CAPITAL_MOVEMENT_PAGE_SIZE,
@@ -1153,11 +1160,10 @@ export default function SettingsPage() {
           </span>
         </div>
 
-        {/* 기존 입출금 목록 */}
-        {deposits.length > 0 && (
-          <div className="flex flex-col gap-1 mb-4">
-            {visibleCapitalMovements
-              .map((dep) => {
+        <div className="flex flex-col gap-1 mb-4">
+          {/* 기존 입출금 목록 */}
+          {deposits.length > 0 && visibleCapitalMovements
+            .map((dep) => {
                 const isWithdrawal = dep.amount < 0
                 return (
                   <div
@@ -1195,9 +1201,13 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 )
-              })}
+            })}
+          <div className="flex items-center justify-between gap-2 pt-3">
+            <span className="font-mono text-[12px] text-content-muted">
+              {capitalMovementStart}-{capitalMovementEnd} / {sortedCapitalMovements.length}
+            </span>
             {capitalMovementPageCount > 1 && (
-              <div className="flex items-center justify-end gap-2 pt-3">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1220,7 +1230,7 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* 입출금 추가 폼 */}
         <div className="flex gap-2 items-end flex-wrap">

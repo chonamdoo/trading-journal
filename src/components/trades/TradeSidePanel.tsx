@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, type ReactNode } from 'react'
 import { useTradeStore } from '@/hooks/useTrades'
 import { winRate, streaks, avgHoldTime } from '@/lib/calc'
 import { fetchMarketInsight, type MarketInsight } from '@/lib/api/client-api'
@@ -45,6 +45,10 @@ function fundingSideLabel(side: MarketDerivativesInsight['fundingPaymentSide']):
   return '중립'
 }
 
+function unavailableValue(): ReactNode {
+  return <span className="font-mono text-sm text-content-muted">수집 대기</span>
+}
+
 /**
  * 거래 입력 페이지 — 데스크탑 우측 매매 통계 사이드 패널
  * lg: 브레이크포인트 이상에서만 렌더링됨 (숨김은 page.tsx에서 hidden lg:block으로 처리)
@@ -81,6 +85,7 @@ export function TradeSidePanel() {
 
   const { recentWr, streakResult, holdStr, todayCount } = stats
   const derivatives = insight?.derivatives
+  const showDerivatives = insightLoading || insight?.derivativesStatus
 
   const streakLabel =
     streakResult.current.count === 0
@@ -186,7 +191,7 @@ export function TradeSidePanel() {
             </div>
           </div>
 
-          {(insightLoading || derivatives) && (
+          {showDerivatives && (
             <>
               <div className="h-px bg-border my-4" />
               <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
@@ -198,14 +203,16 @@ export function TradeSidePanel() {
                   <span className="text-sm text-content-secondary">펀딩비</span>
                   {insightLoading ? (
                     <span className="font-mono text-sm text-content-muted">-</span>
+                  ) : !derivatives ? (
+                    unavailableValue()
                   ) : (
                     <span
                       className={`font-mono text-sm font-semibold ${
-                        fundingRateColor(derivatives!.fundingPaymentSide)
+                        fundingRateColor(derivatives.fundingPaymentSide)
                       }`}
                     >
-                      {derivatives!.fundingRate.toFixed(4)}%{' '}
-                      {fundingSideLabel(derivatives!.fundingPaymentSide)}
+                      {derivatives.fundingRate.toFixed(4)}%{' '}
+                      {fundingSideLabel(derivatives.fundingPaymentSide)}
                     </span>
                   )}
                 </div>
@@ -215,25 +222,27 @@ export function TradeSidePanel() {
                     <span className="text-sm text-content-secondary">롱숏 비율</span>
                     {insightLoading ? (
                       <span className="font-mono text-sm text-content-muted">-</span>
+                    ) : !derivatives ? (
+                      unavailableValue()
                     ) : (
                       <span className="font-mono text-sm font-semibold text-content">
-                        롱 {derivatives!.longShortRatio.longAccount.toFixed(0)}% / 숏{' '}
-                        {derivatives!.longShortRatio.shortAccount.toFixed(0)}%
+                        롱 {derivatives.longShortRatio.longAccount.toFixed(0)}% / 숏{' '}
+                        {derivatives.longShortRatio.shortAccount.toFixed(0)}%
                       </span>
                     )}
                   </div>
-                  {!insightLoading && (
+                  {!insightLoading && derivatives && (
                     <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-border">
                       <div
                         className="bg-profit"
                         style={{
-                          width: `${Math.max(0, Math.min(100, derivatives!.longShortRatio.longAccount))}%`,
+                          width: `${Math.max(0, Math.min(100, derivatives.longShortRatio.longAccount))}%`,
                         }}
                       />
                       <div
                         className="bg-loss"
                         style={{
-                          width: `${Math.max(0, Math.min(100, derivatives!.longShortRatio.shortAccount))}%`,
+                          width: `${Math.max(0, Math.min(100, derivatives.longShortRatio.shortAccount))}%`,
                         }}
                       />
                     </div>
@@ -244,9 +253,11 @@ export function TradeSidePanel() {
                   <span className="text-sm text-content-secondary">미체결 약정</span>
                   {insightLoading ? (
                     <span className="font-mono text-sm text-content-muted">-</span>
+                  ) : !derivatives ? (
+                    unavailableValue()
                   ) : (
                     <span className="font-mono text-sm font-semibold text-content">
-                      {formatCompactUsd(derivatives!.openInterest.notionalUsd)}
+                      {formatCompactUsd(derivatives.openInterest.notionalUsd)}
                     </span>
                   )}
                 </div>

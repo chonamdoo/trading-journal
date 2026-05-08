@@ -760,6 +760,11 @@ export interface MarketInsight {
       notionalUsd: number;
     };
   } | null;
+  derivativesStatus: {
+    state: 'ready' | 'unavailable';
+    source: 'binance-futures';
+    reason?: string;
+  };
 }
 
 export async function fetchMarketInsight(): Promise<MarketInsight | null> {
