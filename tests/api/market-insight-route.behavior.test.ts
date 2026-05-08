@@ -168,7 +168,11 @@ describe('GET /api/market/insight', () => {
 
     expect(response.status).toBe(200);
     expect(body.derivatives).toBeNull();
-    expect(body.derivativesStatus.reason).toBe('invalid-payload');
+    expect(body.derivativesStatus).toEqual({
+      state: 'unavailable',
+      source: 'binance-futures',
+      reason: 'invalid-payload',
+    });
   });
 
   it('returns stale cache when providers fail after the cache ttl', async () => {
