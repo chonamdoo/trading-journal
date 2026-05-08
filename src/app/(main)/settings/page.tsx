@@ -41,6 +41,8 @@ import { TARGET_COLORS } from '@/lib/constants'
 
 type ExchangeFormValue = 'bybit' | 'binance' | 'okx' | 'bitget'
 
+const CAPITAL_MOVEMENT_PAGE_SIZE = 5
+
 const EXCHANGE_FORM_OPTIONS: Record<ExchangeFormValue, {
   label: string
   defaultName: string
@@ -108,6 +110,17 @@ export default function SettingsPage() {
   const [depositDate, setDepositDate] = useState(today())
   const [depositAmount, setDepositAmount] = useState('')
   const [depositMemo, setDepositMemo] = useState('')
+  const [capitalMovementPage, setCapitalMovementPage] = useState(1)
+  const sortedCapitalMovements = [...deposits].sort((a, b) => {
+    const dateOrder = b.date.localeCompare(a.date)
+    if (dateOrder !== 0) return dateOrder
+    return (b.created_at ?? '').localeCompare(a.created_at ?? '')
+  })
+  const capitalMovementPageCount = Math.max(1, Math.ceil(sortedCapitalMovements.length / CAPITAL_MOVEMENT_PAGE_SIZE))
+  const visibleCapitalMovements = sortedCapitalMovements.slice(
+    (capitalMovementPage - 1) * CAPITAL_MOVEMENT_PAGE_SIZE,
+    capitalMovementPage * CAPITAL_MOVEMENT_PAGE_SIZE,
+  )
 
   // 목표 추가 상태
   const [targetLabel, setTargetLabel] = useState('')
@@ -238,6 +251,10 @@ export default function SettingsPage() {
     }
   }, [])
 
+  useEffect(() => {
+    setCapitalMovementPage((page) => Math.min(page, capitalMovementPageCount))
+  }, [capitalMovementPageCount])
+
   const handleSelectExchange = (value: ExchangeFormValue) => {
     setSelectedExchange(value)
     const connection =
@@ -361,6 +378,7 @@ export default function SettingsPage() {
     const signedAmount = capitalEventType === 'withdrawal' ? -amount : amount
     const result = await addDeposit(depositDate, signedAmount, depositMemo || undefined)
     if (!result.success) return
+    setCapitalMovementPage(1)
     setDepositAmount('')
     setDepositMemo('')
     showToast('success', capitalEventType === 'withdrawal' ? '출금이 추가되었습니다.' : '입금이 추가되었습니다.')
@@ -1138,8 +1156,7 @@ export default function SettingsPage() {
         {/* 기존 입출금 목록 */}
         {deposits.length > 0 && (
           <div className="flex flex-col gap-1 mb-4">
-            {deposits
-              .sort((a, b) => b.date.localeCompare(a.date))
+            {visibleCapitalMovements
               .map((dep) => {
                 const isWithdrawal = dep.amount < 0
                 return (
@@ -1167,13 +1184,41 @@ export default function SettingsPage() {
                       variant="danger"
                       size="sm"
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => deleteDeposit(dep.id)}
+                      onClick={async () => {
+                        const result = await deleteDeposit(dep.id)
+                        if (result.success) {
+                          setCapitalMovementPage(1)
+                        }
+                      }}
                     >
                       삭제
                     </Button>
                   </div>
                 )
               })}
+            {capitalMovementPageCount > 1 && (
+              <div className="flex items-center justify-end gap-2 pt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={capitalMovementPage === 1}
+                  onClick={() => setCapitalMovementPage((page) => Math.max(1, page - 1))}
+                >
+                  이전
+                </Button>
+                <span className="font-mono text-[12px] text-content-muted">
+                  {capitalMovementPage} / {capitalMovementPageCount}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={capitalMovementPage === capitalMovementPageCount}
+                  onClick={() => setCapitalMovementPage((page) => Math.min(capitalMovementPageCount, page + 1))}
+                >
+                  다음
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

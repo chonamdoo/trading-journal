@@ -162,7 +162,7 @@ interface TradeStore {
   closeTrade: (id: string, exitPrice: number, exitDatetime: string) => Promise<{ success: boolean; error?: string }>
   // 입금 CRUD
   addDeposit: (date: string, amount: number, memo?: string) => Promise<ApiResult<Deposit>>
-  deleteDeposit: (id: string) => Promise<void>
+  deleteDeposit: (id: string) => Promise<{ success: boolean; error?: string }>
   // 목표 CRUD
   addTarget: (label: string, amount: number) => Promise<void>
   deleteTarget: (id: string) => Promise<void>
@@ -501,13 +501,15 @@ const useTradeStore = create<TradeStore>((set, get) => ({
       const res = await fetchDeleteDeposit(id)
       if (!res.success) {
         showToast('error', res.error)
-        return
+        return { success: false, error: res.error }
       }
       set((state) => ({ deposits: state.deposits.filter((d) => d.id !== id) }))
       invalidateAnalysisCache()
+      return { success: true }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '입금 삭제 중 오류 발생'
       showToast('error', msg)
+      return { success: false, error: msg }
     }
   },
 
