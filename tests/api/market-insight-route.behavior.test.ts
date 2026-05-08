@@ -146,6 +146,31 @@ describe('GET /api/market/insight', () => {
     expect(body.btcPrice).toBe(91_500);
   });
 
+  it('normalizes derivatives parsing failures to stable reason codes', async () => {
+    mockFetchSequence(
+      ...successPayloads.slice(0, 3),
+      {
+        ok: true,
+        json: async () => ({
+          symbol: 'BTCUSDT',
+          lastFundingRate: '',
+          markPrice: '91500.00',
+        }),
+      },
+      ...successPayloads.slice(4, 6),
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.15' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivatives).toBeNull();
+    expect(body.derivativesStatus.reason).toBe('invalid-payload');
+  });
+
   it('returns stale cache when providers fail after the cache ttl', async () => {
     mockFetchSequence(
       ...successPayloads,

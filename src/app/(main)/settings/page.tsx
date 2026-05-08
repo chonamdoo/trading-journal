@@ -1160,11 +1160,10 @@ export default function SettingsPage() {
           </span>
         </div>
 
-        {/* 기존 입출금 목록 */}
-        {deposits.length > 0 && (
-          <div className="flex flex-col gap-1 mb-4">
-            {visibleCapitalMovements
-              .map((dep) => {
+        <div className="flex flex-col gap-1 mb-4">
+          {/* 기존 입출금 목록 */}
+          {deposits.length > 0 && visibleCapitalMovements
+            .map((dep) => {
                 const isWithdrawal = dep.amount < 0
                 return (
                   <div
@@ -1202,37 +1201,36 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 )
-              })}
-            <div className="flex items-center justify-between gap-2 pt-3">
-              <span className="font-mono text-[12px] text-content-muted">
-                {capitalMovementStart}-{capitalMovementEnd} / {sortedCapitalMovements.length}
-              </span>
-              {capitalMovementPageCount > 1 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={capitalMovementPage === 1}
-                    onClick={() => setCapitalMovementPage((page) => Math.max(1, page - 1))}
-                  >
-                    이전
-                  </Button>
-                  <span className="font-mono text-[12px] text-content-muted">
-                    {capitalMovementPage} / {capitalMovementPageCount}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={capitalMovementPage === capitalMovementPageCount}
-                    onClick={() => setCapitalMovementPage((page) => Math.min(capitalMovementPageCount, page + 1))}
-                  >
-                    다음
-                  </Button>
-                </div>
-              )}
-            </div>
+            })}
+          <div className="flex items-center justify-between gap-2 pt-3">
+            <span className="font-mono text-[12px] text-content-muted">
+              {capitalMovementStart}-{capitalMovementEnd} / {sortedCapitalMovements.length}
+            </span>
+            {capitalMovementPageCount > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={capitalMovementPage === 1}
+                  onClick={() => setCapitalMovementPage((page) => Math.max(1, page - 1))}
+                >
+                  이전
+                </Button>
+                <span className="font-mono text-[12px] text-content-muted">
+                  {capitalMovementPage} / {capitalMovementPageCount}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={capitalMovementPage === capitalMovementPageCount}
+                  onClick={() => setCapitalMovementPage((page) => Math.min(capitalMovementPageCount, page + 1))}
+                >
+                  다음
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* 입출금 추가 폼 */}
         <div className="flex gap-2 items-end flex-wrap">

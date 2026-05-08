@@ -67,6 +67,7 @@ function round(value: number, decimals: number): number {
   return Math.round(value * factor) / factor;
 }
 
+/** Binance Futures 응답 실패를 공개 가능한 안정 코드로 요약한다. */
 function providerFailureReason(
   premiumRes: Response,
   openInterestRes: Response,
@@ -83,6 +84,7 @@ function providerFailureReason(
   return failed.length > 0 ? failed.join(',') : null;
 }
 
+/** Binance Futures 파생상품 데이터를 조회하고 실패 사유를 정규화한다. */
 async function fetchDerivativesInsight(): Promise<{
   data: MarketDerivativesInsight | null;
   status: MarketDerivativesStatus;
@@ -163,12 +165,16 @@ async function fetchDerivativesInsight(): Promise<{
       },
     };
   } catch (error) {
+    const reason = error instanceof Error && error.message === 'Invalid market insight payload'
+      ? 'invalid-payload'
+      : 'request-exception';
+
     return {
       data: null,
       status: {
         state: 'unavailable',
         source: 'binance-futures',
-        reason: error instanceof Error ? error.message : 'unknown-error',
+        reason,
       },
     };
   }
