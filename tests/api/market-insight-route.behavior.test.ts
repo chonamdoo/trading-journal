@@ -112,7 +112,38 @@ describe('GET /api/market/insight', () => {
           notionalUsd: 9_597_457_875,
         },
       },
+      derivativesStatus: {
+        state: 'ready',
+        source: 'binance-futures',
+      },
     });
+  });
+
+  it('keeps market insight visible when derivatives provider fails', async () => {
+    const failedLongShort = {
+      ok: false,
+      status: 451,
+      json: async () => ({}),
+    };
+    mockFetchSequence(
+      ...successPayloads.slice(0, 5),
+      failedLongShort,
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.14' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivatives).toBeNull();
+    expect(body.derivativesStatus).toEqual({
+      state: 'unavailable',
+      source: 'binance-futures',
+      reason: 'topLongShortAccountRatio:451',
+    });
+    expect(body.btcPrice).toBe(91_500);
   });
 
   it('returns stale cache when providers fail after the cache ttl', async () => {

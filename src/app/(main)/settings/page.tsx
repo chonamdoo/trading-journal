@@ -117,6 +117,13 @@ export default function SettingsPage() {
     return (b.created_at ?? '').localeCompare(a.created_at ?? '')
   })
   const capitalMovementPageCount = Math.max(1, Math.ceil(sortedCapitalMovements.length / CAPITAL_MOVEMENT_PAGE_SIZE))
+  const capitalMovementStart = sortedCapitalMovements.length === 0
+    ? 0
+    : (capitalMovementPage - 1) * CAPITAL_MOVEMENT_PAGE_SIZE + 1
+  const capitalMovementEnd = Math.min(
+    capitalMovementPage * CAPITAL_MOVEMENT_PAGE_SIZE,
+    sortedCapitalMovements.length,
+  )
   const visibleCapitalMovements = sortedCapitalMovements.slice(
     (capitalMovementPage - 1) * CAPITAL_MOVEMENT_PAGE_SIZE,
     capitalMovementPage * CAPITAL_MOVEMENT_PAGE_SIZE,
@@ -1196,29 +1203,34 @@ export default function SettingsPage() {
                   </div>
                 )
               })}
-            {capitalMovementPageCount > 1 && (
-              <div className="flex items-center justify-end gap-2 pt-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={capitalMovementPage === 1}
-                  onClick={() => setCapitalMovementPage((page) => Math.max(1, page - 1))}
-                >
-                  이전
-                </Button>
-                <span className="font-mono text-[12px] text-content-muted">
-                  {capitalMovementPage} / {capitalMovementPageCount}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={capitalMovementPage === capitalMovementPageCount}
-                  onClick={() => setCapitalMovementPage((page) => Math.min(capitalMovementPageCount, page + 1))}
-                >
-                  다음
-                </Button>
-              </div>
-            )}
+            <div className="flex items-center justify-between gap-2 pt-3">
+              <span className="font-mono text-[12px] text-content-muted">
+                {capitalMovementStart}-{capitalMovementEnd} / {sortedCapitalMovements.length}
+              </span>
+              {capitalMovementPageCount > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={capitalMovementPage === 1}
+                    onClick={() => setCapitalMovementPage((page) => Math.max(1, page - 1))}
+                  >
+                    이전
+                  </Button>
+                  <span className="font-mono text-[12px] text-content-muted">
+                    {capitalMovementPage} / {capitalMovementPageCount}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={capitalMovementPage === capitalMovementPageCount}
+                    onClick={() => setCapitalMovementPage((page) => Math.min(capitalMovementPageCount, page + 1))}
+                  >
+                    다음
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

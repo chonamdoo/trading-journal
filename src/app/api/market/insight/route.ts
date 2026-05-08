@@ -16,6 +16,12 @@ interface MarketDerivativesInsight {
   };
 }
 
+interface MarketDerivativesStatus {
+  state: 'ready' | 'unavailable';
+  source: 'binance-futures';
+  reason?: string;
+}
+
 export interface MarketInsight {
   fearGreed: { value: number; classification: string };
   btcDominance: number;
@@ -23,6 +29,7 @@ export interface MarketInsight {
   btcChange24h: number;
   totalMarketCap: number;
   derivatives: MarketDerivativesInsight | null;
+  derivativesStatus: MarketDerivativesStatus;
 }
 
 /** 인메모리 캐시 (5분) */
@@ -60,7 +67,26 @@ function round(value: number, decimals: number): number {
   return Math.round(value * factor) / factor;
 }
 
-async function fetchDerivativesInsight(): Promise<MarketDerivativesInsight | null> {
+function providerFailureReason(
+  premiumRes: Response,
+  openInterestRes: Response,
+  longShortRes: Response
+): string | null {
+  const failed = [
+    ['premiumIndex', premiumRes],
+    ['openInterest', openInterestRes],
+    ['topLongShortAccountRatio', longShortRes],
+  ]
+    .filter(([, response]) => !(response as Response).ok)
+    .map(([name, response]) => `${name}:${(response as Response).status}`);
+
+  return failed.length > 0 ? failed.join(',') : null;
+}
+
+async function fetchDerivativesInsight(): Promise<{
+  data: MarketDerivativesInsight | null;
+  status: MarketDerivativesStatus;
+}> {
   try {
     const [premiumRes, openInterestRes, longShortRes] = await Promise.all([
       fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${BTC_SYMBOL}`, {
@@ -74,8 +100,16 @@ async function fetchDerivativesInsight(): Promise<MarketDerivativesInsight | nul
       }),
     ]);
 
-    if (!premiumRes.ok || !openInterestRes.ok || !longShortRes.ok) {
-      return null;
+    const failureReason = providerFailureReason(premiumRes, openInterestRes, longShortRes);
+    if (failureReason) {
+      return {
+        data: null,
+        status: {
+          state: 'unavailable',
+          source: 'binance-futures',
+          reason: failureReason,
+        },
+      };
     }
 
     const premiumData = await premiumRes.json() as {
@@ -94,7 +128,14 @@ async function fetchDerivativesInsight(): Promise<MarketDerivativesInsight | nul
 
     const longShortItem = longShortData[0];
     if (!premiumData.symbol || !longShortItem) {
-      return null;
+      return {
+        data: null,
+        status: {
+          state: 'unavailable',
+          source: 'binance-futures',
+          reason: 'empty-payload',
+        },
+      };
     }
 
     const fundingRate = round(assertNumericString(premiumData.lastFundingRate) * 100, 4);
@@ -102,21 +143,34 @@ async function fetchDerivativesInsight(): Promise<MarketDerivativesInsight | nul
     const openInterest = assertNumericString(openInterestData.openInterest);
 
     return {
-      symbol: premiumData.symbol,
-      fundingRate,
-      fundingPaymentSide: fundingPaymentSide(fundingRate),
-      longShortRatio: {
-        longAccount: round(assertNumericString(longShortItem.longAccount) * 100, 1),
-        shortAccount: round(assertNumericString(longShortItem.shortAccount) * 100, 1),
-        ratio: assertNumericString(longShortItem.longShortRatio),
+      data: {
+        symbol: premiumData.symbol,
+        fundingRate,
+        fundingPaymentSide: fundingPaymentSide(fundingRate),
+        longShortRatio: {
+          longAccount: round(assertNumericString(longShortItem.longAccount) * 100, 1),
+          shortAccount: round(assertNumericString(longShortItem.shortAccount) * 100, 1),
+          ratio: assertNumericString(longShortItem.longShortRatio),
+        },
+        openInterest: {
+          baseAsset: openInterest,
+          notionalUsd: Math.round(openInterest * markPrice),
+        },
       },
-      openInterest: {
-        baseAsset: openInterest,
-        notionalUsd: Math.round(openInterest * markPrice),
+      status: {
+        state: 'ready',
+        source: 'binance-futures',
       },
     };
-  } catch {
-    return null;
+  } catch (error) {
+    return {
+      data: null,
+      status: {
+        state: 'unavailable',
+        source: 'binance-futures',
+        reason: error instanceof Error ? error.message : 'unknown-error',
+      },
+    };
   }
 }
 
@@ -147,7 +201,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [fgRes, globalRes, btcRes, derivatives] = await Promise.all([
+    const [fgRes, globalRes, btcRes, derivativesResult] = await Promise.all([
       fetch('https://api.alternative.me/fng/?limit=1', { next: { revalidate: 300 } }),
       fetch('https://api.coingecko.com/api/v3/global', { next: { revalidate: 300 } }),
       fetch(
@@ -191,7 +245,8 @@ export async function GET(req: NextRequest) {
       btcPrice: assertFiniteNumber(btcData.bitcoin?.usd),
       btcChange24h: assertFiniteNumber(btcData.bitcoin?.usd_24h_change),
       totalMarketCap: assertFiniteNumber(globalData.data?.total_market_cap?.usd),
-      derivatives,
+      derivatives: derivativesResult.data,
+      derivativesStatus: derivativesResult.status,
     };
 
     cache = { data: insight, timestamp: Date.now() };

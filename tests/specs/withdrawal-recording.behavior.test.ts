@@ -80,6 +80,9 @@ describe('withdrawal recording', () => {
     expect(settingsPage).toContain('const [capitalMovementPage, setCapitalMovementPage] = useState(1)');
     expect(settingsPage).toContain('const sortedCapitalMovements = [...deposits].sort');
     expect(settingsPage).toContain('const visibleCapitalMovements = sortedCapitalMovements.slice');
+    expect(settingsPage).toContain('capitalMovementStart');
+    expect(settingsPage).toContain('capitalMovementEnd');
+    expect(settingsPage).toContain('{capitalMovementStart}-{capitalMovementEnd} / {sortedCapitalMovements.length}');
     expect(settingsPage).toContain('capitalMovementPageCount');
     expect(settingsPage).toContain('이전');
     expect(settingsPage).toContain('다음');
