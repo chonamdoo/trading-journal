@@ -28,6 +28,32 @@ const successPayloads = [
       },
     }),
   },
+  {
+    ok: true,
+    json: async () => ({
+      symbol: 'BTCUSDT',
+      lastFundingRate: '-0.000028',
+      markPrice: '91500.00',
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ({
+      symbol: 'BTCUSDT',
+      openInterest: '104890.25',
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ([
+      {
+        symbol: 'BTCUSDT',
+        longAccount: '0.424',
+        shortAccount: '0.576',
+        longShortRatio: '0.7361',
+      },
+    ]),
+  },
 ];
 
 function mockFetchSequence(...responses: Array<{ ok: boolean; json: () => Promise<unknown> }>) {
@@ -65,13 +91,87 @@ describe('GET /api/market/insight', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
     expect(body).toEqual({
       fearGreed: { value: 40, classification: 'Fear' },
       btcDominance: 51.25,
       btcPrice: 91_500,
       btcChange24h: -2.35,
       totalMarketCap: 2_700_000_000_000,
+      derivatives: {
+        symbol: 'BTCUSDT',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+        openInterest: {
+          baseAsset: 104_890.25,
+          notionalUsd: 9_597_457_875,
+        },
+      },
+      derivativesStatus: {
+        state: 'ready',
+        source: 'binance-futures',
+      },
+    });
+  });
+
+  it('keeps market insight visible when derivatives provider fails', async () => {
+    const failedLongShort = {
+      ok: false,
+      status: 451,
+      json: async () => ({}),
+    };
+    mockFetchSequence(
+      ...successPayloads.slice(0, 5),
+      failedLongShort,
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.14' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivatives).toBeNull();
+    expect(body.derivativesStatus).toEqual({
+      state: 'unavailable',
+      source: 'binance-futures',
+      reason: 'topLongShortAccountRatio:451',
+    });
+    expect(body.btcPrice).toBe(91_500);
+  });
+
+  it('normalizes derivatives parsing failures to stable reason codes', async () => {
+    mockFetchSequence(
+      ...successPayloads.slice(0, 3),
+      {
+        ok: true,
+        json: async () => ({
+          symbol: 'BTCUSDT',
+          lastFundingRate: '',
+          markPrice: '91500.00',
+        }),
+      },
+      ...successPayloads.slice(4, 6),
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.15' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivatives).toBeNull();
+    expect(body.derivativesStatus).toEqual({
+      state: 'unavailable',
+      source: 'binance-futures',
+      reason: 'invalid-payload',
     });
   });
 

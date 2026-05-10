@@ -75,8 +75,8 @@ function isCloseFill(item: BitgetOrderFill): boolean {
 }
 
 function fillFee(item: BitgetOrderFill): number {
-  if (item.fee != null) return Math.abs(parseNumber(item.fee));
-  return (item.feeDetail ?? []).reduce((sum, fee) => sum + Math.abs(parseNumber(fee.totalFee)), 0);
+  if (item.fee != null) return parseNumber(item.fee);
+  return (item.feeDetail ?? []).reduce((sum, fee) => sum + parseNumber(fee.totalFee), 0);
 }
 
 interface BitgetCloseGroup {

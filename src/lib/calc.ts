@@ -127,7 +127,7 @@ export function calcRealizedPnl(closes: Pick<TradeClose, 'pnl'>[]): number {
 
 /**
  * 개별 거래의 실현 손익을 계산한다.
- * LONG/SHORT 가격 손익에서 트레이딩피를 비용으로 차감하고 펀딩피는 signed 값으로 더한다.
+ * LONG/SHORT 가격 손익에 거래소가 기록한 signed 수수료와 펀딩비를 더한다.
  */
 export function calcPnL(trade: Trade): number | null {
   if (!trade.exit_price || trade.status === 'open') return null
@@ -137,9 +137,9 @@ export function calcPnL(trade: Trade): number | null {
       ? (trade.exit_price - trade.entry_price) / trade.entry_price
       : (trade.entry_price - trade.exit_price) / trade.entry_price
   const closingPnl = positionValue * ratio
-  const tradingFee = Math.abs(trade.fee ?? 0)
+  const tradingFee = trade.fee ?? 0
   const fundingFee = trade.funding_fee ?? 0
-  return +(closingPnl - tradingFee + fundingFee).toFixed(2)
+  return +(closingPnl + tradingFee + fundingFee).toFixed(2)
 }
 
 // ── 집계 계산 ──
@@ -151,7 +151,7 @@ export function totalPnL(trades: Trade[]): number {
     .reduce((sum, t) => sum + (t.pnl ?? 0), 0)
 }
 
-/** 총 추가 입금액 */
+/** 입출금 순합계 */
 export function totalDeposits(deposits: Deposit[]): number {
   return deposits.reduce((sum, d) => sum + (d.amount ?? 0), 0)
 }
@@ -161,7 +161,7 @@ export function totalFundingDeposits(deposits: Deposit[]): number {
   return deposits.reduce((sum, d) => sum + Math.max(d.amount ?? 0, 0), 0)
 }
 
-/** 현재 자산 = 초기자산 + 추가입금 + 거래손익 */
+/** 현재 자산 = 초기자산 + 입출금 순합계 + 거래손익 */
 export function curCapital(
   initialCapital: number,
   deposits: Deposit[],
@@ -170,7 +170,7 @@ export function curCapital(
   return initialCapital + totalDeposits(deposits) + totalPnL(trades)
 }
 
-/** 펀딩 자본 = 초기자산 + 추가입금 (거래손익 제외) */
+/** 수익률 기준 자본 = 초기자산 + 양수 입금 합계 (거래손익/출금 제외) */
 export function tradingBase(initialCapital: number, deposits: Deposit[]): number {
   return initialCapital + totalFundingDeposits(deposits)
 }
@@ -537,7 +537,7 @@ const METRIC_NAMES: Record<MetricScore['key'], string> = {
  * 6개 메트릭의 가중 평균.
  *
  * @param trades - 거래 목록
- * @param deposits - 입금 목록
+ * @param deposits - 입출금 목록
  * @param initialCapital - 초기 자본
  */
 export function tradingScore(

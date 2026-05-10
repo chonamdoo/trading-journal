@@ -151,8 +151,8 @@ export function TradeDetailModal({
                   {duration}
                 </span>
               )}
-              <span className="text-content-muted font-mono">
-                Trading Fee -${formatNumber(Math.abs(trade.fee ?? 0))}
+              <span className={`font-mono ${pnlColorClass(trade.fee ?? 0)}`}>
+                Trading Fee {formatPnl(trade.fee ?? 0)}
               </span>
               <span className={`font-mono ${pnlColorClass(trade.funding_fee ?? 0)}`}>
                 Funding Fee {formatPnl(trade.funding_fee ?? 0)}

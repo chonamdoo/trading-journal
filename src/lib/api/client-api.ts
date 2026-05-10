@@ -746,6 +746,25 @@ export interface MarketInsight {
   btcPrice: number;
   btcChange24h: number;
   totalMarketCap: number;
+  derivatives: {
+    symbol: string;
+    fundingRate: number;
+    fundingPaymentSide: 'long' | 'short' | 'neutral';
+    longShortRatio: {
+      longAccount: number;
+      shortAccount: number;
+      ratio: number;
+    };
+    openInterest: {
+      baseAsset: number;
+      notionalUsd: number;
+    };
+  } | null;
+  derivativesStatus: {
+    state: 'ready' | 'unavailable';
+    source: 'binance-futures';
+    reason?: string;
+  };
 }
 
 export async function fetchMarketInsight(): Promise<MarketInsight | null> {
