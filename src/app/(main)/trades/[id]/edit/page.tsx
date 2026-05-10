@@ -74,6 +74,8 @@ export default function EditTradePage() {
         entry_price: trade.entry_price,
         exit_price: trade.exit_price,
         stop_loss_price: trade.stop_loss_price,
+        fee: trade.fee,
+        funding_fee: trade.funding_fee,
         entry_datetime: trade.entry_datetime ?? undefined,
         exit_datetime: trade.exit_datetime ?? undefined,
         reason: trade.reason ?? undefined,

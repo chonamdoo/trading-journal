@@ -156,6 +156,11 @@ export function totalDeposits(deposits: Deposit[]): number {
   return deposits.reduce((sum, d) => sum + (d.amount ?? 0), 0)
 }
 
+/** 수익률 기준 입금액: 출금(음수)은 투자 성과 분모에서 제외 */
+export function totalFundingDeposits(deposits: Deposit[]): number {
+  return deposits.reduce((sum, d) => sum + Math.max(d.amount ?? 0, 0), 0)
+}
+
 /** 현재 자산 = 초기자산 + 입출금 순합계 + 거래손익 */
 export function curCapital(
   initialCapital: number,
@@ -165,9 +170,9 @@ export function curCapital(
   return initialCapital + totalDeposits(deposits) + totalPnL(trades)
 }
 
-/** 펀딩 자본 = 초기자산 + 입출금 순합계 (거래손익 제외) */
+/** 수익률 기준 자본 = 초기자산 + 양수 입금 합계 (거래손익/출금 제외) */
 export function tradingBase(initialCapital: number, deposits: Deposit[]): number {
-  return initialCapital + totalDeposits(deposits)
+  return initialCapital + totalFundingDeposits(deposits)
 }
 
 // ── 승률 계산 ──

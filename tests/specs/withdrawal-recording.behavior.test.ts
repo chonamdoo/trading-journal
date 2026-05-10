@@ -5,14 +5,14 @@ import { curCapital, getEquityCurve, tradingBase } from '@/lib/calc';
 import type { Deposit } from '@/types';
 
 describe('withdrawal recording', () => {
-  it('subtracts withdrawals from current capital and trading base', () => {
+  it('subtracts withdrawals from current capital but not the return base', () => {
     const capitalMovements: Deposit[] = [
       { id: 'deposit-1', date: '2026-05-01', amount: 500 },
       { id: 'withdrawal-1', date: '2026-05-02', amount: -100 },
     ];
 
     expect(curCapital(1000, capitalMovements, [])).toBe(1400);
-    expect(tradingBase(1000, capitalMovements)).toBe(1400);
+    expect(tradingBase(1000, capitalMovements)).toBe(1500);
   });
 
   it('applies withdrawals to the equity curve', () => {
