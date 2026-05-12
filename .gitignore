@@ -45,3 +45,17 @@ CODE_REVIEW.md
 DESIGN_REVIEW.md
 SECURITY_REPORT.md
 QA_REPORT.md
+.agent-flow/
+.codex/
+.gemini/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+AGENTS/
+CLAUDE/
+GEMINI/
+scripts/check-context-docs.*
+graphify/
+agent-flow/
+graphify-out/manifest.json
+graphify-out/cost.json
