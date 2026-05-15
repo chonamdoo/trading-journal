@@ -42,6 +42,9 @@ describe('User Profile feature module', () => {
         displayName: 'Nandoo',
         initialCapital: 1000,
         currency: 'USD',
+        preTradeChecklistItems: [
+          { id: 'plan-entry', label: '진입 시나리오를 확인했는가?' },
+        ],
       },
     });
 
@@ -50,6 +53,9 @@ describe('User Profile feature module', () => {
         displayName: 'Nandoo',
         initialCapital: 1000,
         currency: 'USD',
+        preTradeChecklistItems: [
+          { id: 'plan-entry', label: '진입 시나리오를 확인했는가?' },
+        ],
       },
     ]);
   });
@@ -63,6 +69,9 @@ describe('User Profile feature module', () => {
       currency: 'USD',
       subscription_tier: 'free',
       subscription_expires_at: null,
+      pre_trade_checklist_items: [
+        { id: 'plan-entry', label: '진입 시나리오를 확인했는가?' },
+      ],
       created_at: '2026-05-06T00:00:00Z',
       updated_at: '2026-05-06T00:00:00Z',
     });
@@ -71,5 +80,8 @@ describe('User Profile feature module', () => {
     expect(profile.email).toBe('local-user@example.test');
     expect(profile.email).not.toBe('demo@mytradelog.app');
     expect(profile.initialCapital).toBe(1000);
+    expect(profile.preTradeChecklistItems).toEqual([
+      { id: 'plan-entry', label: '진입 시나리오를 확인했는가?' },
+    ]);
   });
 });

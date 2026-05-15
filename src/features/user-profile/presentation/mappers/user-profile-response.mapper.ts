@@ -11,6 +11,7 @@ export function mapUserProfileToProfileResponse(profile: UserProfile): ProfileRo
     currency: profile.currency,
     subscription_tier: profile.subscriptionTier,
     subscription_expires_at: profile.subscriptionExpiresAt,
+    pre_trade_checklist_items: profile.preTradeChecklistItems,
     created_at: profile.createdAt,
     updated_at: profile.updatedAt,
   };

@@ -122,6 +122,8 @@ function rowToProfile(row: Record<string, unknown>): Profile {
     initial_capital: Number(row.initial_capital),
     currency: row.currency as string,
     subscription_tier: (row.subscription_tier as SubscriptionTier) ?? 'free',
+    subscription_expires_at: row.subscription_expires_at as string | null | undefined,
+    pre_trade_checklist_items: row.pre_trade_checklist_items as Profile['pre_trade_checklist_items'],
     created_at: row.created_at as string | undefined,
     updated_at: row.updated_at as string | undefined,
   }
