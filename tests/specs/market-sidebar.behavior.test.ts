@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-describe('market sidebar derivatives visibility', () => {
-  it('keeps the derivatives section visible when provider data is unavailable', () => {
+describe('market sidebar economic calendar visibility', () => {
+  it('shows the economic calendar section in the market sidebar', () => {
     const sidePanel = readFileSync('src/components/trades/TradeSidePanel.tsx', 'utf8');
 
-    expect(sidePanel).toMatch(/showDerivatives\s*=\s*insightLoading[\s\S]*derivativesStatus/);
-    expect(sidePanel).toContain('수집 대기');
-    expect(sidePanel).toMatch(/showDerivatives\s*&&/);
-    expect(sidePanel).not.toContain('{(insightLoading || derivatives) && (');
+    expect(sidePanel).toContain('fetchEconomicCalendar');
+    expect(sidePanel).toContain('오늘 주요 경제 일정');
+    expect(sidePanel).toContain('calendarLoading');
+    expect(sidePanel).not.toContain('파생상품 데이터');
   });
 });

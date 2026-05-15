@@ -72,8 +72,8 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 공개 마켓 데이터 API — 인증 불필요, 미들웨어 스킵
-  if (pathname.startsWith('/api/market/')) {
+  // 공개 마켓/경제 캘린더 API — 인증 불필요, 미들웨어 스킵
+  if (pathname.startsWith('/api/market/') || pathname === '/api/calendar') {
     return supabaseResponse;
   }
 
