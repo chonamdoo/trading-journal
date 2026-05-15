@@ -17,6 +17,14 @@ import {
   type PreTradeChecklistState,
 } from './preTradeChecklist'
 import {
+  getTradeFormInputMode,
+  getTradeFormSetupForAsset,
+  setTradeFormInputMode,
+  saveTradeFormSetupForAsset,
+  type TradeFormAssetSetup,
+  type TradeFormInputMode,
+} from '@/lib/tradeFormPreferences'
+import {
   formatNumber,
   formatPnl,
   formatPercent,
@@ -104,7 +112,7 @@ export function TradeForm({
   const [asset, setAsset] = useState(initialData?.asset ?? 'BTC')
   const [leverageStr, setLeverageStr] = useState(String(initialData?.leverage ?? 10))
   const leverage = leverageStr === '' ? 0 : parseInt(leverageStr)
-  const [inputMode, setInputMode] = useState<'margin' | 'quantity'>('margin')
+  const [inputMode, setInputMode] = useState<TradeFormInputMode>('margin')
   const [margin, setMargin] = useState(initialData?.margin?.toString() ?? '')
   const [quantity, setQuantity] = useState('')
   const [entryPrice, setEntryPrice] = useState(
@@ -195,8 +203,28 @@ export function TradeForm({
       ? ((marNum / currentCapital) * 100).toFixed(1)
       : null
 
+  const applyTradeFormSetup = useCallback((setup: TradeFormAssetSetup | null) => {
+    const nextInputMode = setup?.inputMode ?? getTradeFormInputMode()
+    setLeverageStr(String(setup?.leverage ?? 10))
+    setInputMode(nextInputMode)
+
+    if (nextInputMode === 'quantity') {
+      setQuantity(setup?.quantity ?? '')
+      setMargin('')
+      return
+    }
+
+    setMargin(setup?.margin ?? '')
+    setQuantity('')
+  }, [])
+
+  useEffect(() => {
+    if (isEdit) return
+    applyTradeFormSetup(getTradeFormSetupForAsset(asset))
+  }, [applyTradeFormSetup, asset, isEdit])
+
   // ── 입력 모드 전환 핸들러 ──
-  const handleInputModeChange = (mode: 'margin' | 'quantity') => {
+  const handleInputModeChange = (mode: TradeFormInputMode) => {
     if (mode === inputMode) return
     const ep = parseFloat(entryPrice)
     const hasEp = !isNaN(ep) && ep > 0
@@ -222,6 +250,9 @@ export function TradeForm({
       setQuantity('')
     }
     setInputMode(mode)
+    if (!isEdit) {
+      setTradeFormInputMode(mode)
+    }
   }
 
   // ── 수량 변경 시 margin 자동 계산 ──
@@ -267,18 +298,23 @@ export function TradeForm({
   // ── 자산 선택 핸들러 ──
   const handleAssetChange = (value: string) => {
     setAsset(value)
+    if (!isEdit) {
+      applyTradeFormSetup(getTradeFormSetupForAsset(value))
+    }
   }
 
   // ── 폼 초기화 ──
   const resetForm = useCallback(() => {
+    const nextAsset = allAssetsProp[0] || 'BTC'
     setDirection('LONG')
-    setAsset(allAssetsProp[0] || 'BTC')
-    setLeverageStr('10')
-    setInputMode('margin')
-    setMargin('')
-    setQuantity('')
+    setAsset(nextAsset)
+    applyTradeFormSetup(getTradeFormSetupForAsset(nextAsset))
     setEntryPrice('')
     setExitPrice('')
+    setTradingFee('')
+    setTradingFeeDir('paid')
+    setFundingFee('')
+    setFundingFeeDir('paid')
     setEntryDatetime(nowDatetimeLocal())
     setExitDatetime(nowDatetimeLocal())
     setStopLossPrice('')
@@ -287,7 +323,7 @@ export function TradeForm({
     setSelectedTags([])
     setPendingFiles([])
     setPreTradeChecklist(createInitialPreTradeChecklistState(preTradeChecklistItems))
-  }, [allAssetsProp, preTradeChecklistItems])
+  }, [allAssetsProp, applyTradeFormSetup, preTradeChecklistItems])
 
   useEffect(() => {
     setPreTradeChecklist(createInitialPreTradeChecklistState(preTradeChecklistItems))
@@ -365,6 +401,13 @@ export function TradeForm({
       const result = await onSave(data)
       if (result.success) {
         if (!isEdit) {
+          saveTradeFormSetupForAsset(finalAsset, {
+            inputMode,
+            leverage,
+            margin: inputMode === 'margin' ? margin : undefined,
+            quantity: inputMode === 'quantity' ? quantity : undefined,
+          })
+          setTradeFormInputMode(inputMode)
           setPreTradeChecklist(createInitialPreTradeChecklistState())
         }
 

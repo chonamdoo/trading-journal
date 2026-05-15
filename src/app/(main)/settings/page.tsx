@@ -11,6 +11,10 @@ import { showToast } from '@/components/ui/Toast'
 import { useTrades } from '@/hooks/useTrades'
 import { useAssets } from '@/hooks/useAssets'
 import { useTheme } from '@/hooks/useTheme'
+import {
+  isTradeFormInputModeMemoryEnabled,
+  setTradeFormInputModeMemoryEnabled,
+} from '@/lib/tradeFormPreferences'
 import { createClient } from '@/lib/supabase/client'
 import {
   fetchBinanceConnection,
@@ -105,6 +109,9 @@ export default function SettingsPage() {
   const capital = curCapital(initialCapital, deposits, trades)
   const tdep = totalDeposits(deposits)
   const profileChecklistItems = profile?.pre_trade_checklist_items
+
+  // 거래 입력 선호 설정
+  const [rememberTradeInputModeByAsset, setRememberTradeInputModeByAsset] = useState(false)
 
   // 초기 자산 수정 상태
   const [editCapital, setEditCapital] = useState(false)
@@ -214,6 +221,10 @@ export default function SettingsPage() {
         : selectedExchange === 'okx'
           ? okxConnection
           : bitgetConnection
+
+  useEffect(() => {
+    setRememberTradeInputModeByAsset(isTradeFormInputModeMemoryEnabled())
+  }, [])
 
   useEffect(() => {
     setPreTradeChecklistItems(resolvePreTradeChecklistItems(profileChecklistItems))
@@ -387,6 +398,13 @@ export default function SettingsPage() {
     await setInitialCapital(val)
     setEditCapital(false)
     showToast('success', '초기 자산이 변경되었습니다.')
+  }
+
+  const handleToggleTradeInputModeMemory = () => {
+    const nextEnabled = !rememberTradeInputModeByAsset
+    setRememberTradeInputModeByAsset(nextEnabled)
+    setTradeFormInputModeMemoryEnabled(nextEnabled)
+    showToast('success', nextEnabled ? '코인별 입력값 기억을 켰습니다.' : '코인별 입력값 기억을 껐습니다.')
   }
 
   const handleAddPreTradeChecklistItem = () => {
@@ -708,6 +726,34 @@ export default function SettingsPage() {
           <Button variant="ghost" size="sm" onClick={toggleTheme}>
             {theme === 'dark' ? '라이트로 전환' : '다크로 전환'}
           </Button>
+        </div>
+
+        {/* 거래 입력 선호 */}
+        <div className="flex justify-between items-center mb-4 pb-4 border-b border-border">
+          <div>
+            <div className="text-sm font-medium">코인별 입력값 기억</div>
+            <div className="text-[12px] text-content-muted">
+              {rememberTradeInputModeByAsset ? '이전 레버리지와 증거금/수량 적용' : '기본값으로 새로 입력'}
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={rememberTradeInputModeByAsset}
+            aria-label="코인별 입력값 기억"
+            onClick={handleToggleTradeInputModeMemory}
+            className={`relative h-6 w-11 rounded-full border transition-colors duration-100 ${
+              rememberTradeInputModeByAsset
+                ? 'border-info bg-info/20'
+                : 'border-border-input bg-surface-muted'
+            }`}
+          >
+            <span
+              className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-content transition-transform duration-100 ${
+                rememberTradeInputModeByAsset ? 'translate-x-5' : 'translate-x-1'
+              }`}
+            />
+          </button>
         </div>
 
         {/* 초기 자산 */}
