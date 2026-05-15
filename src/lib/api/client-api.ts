@@ -776,3 +776,29 @@ export async function fetchMarketInsight(): Promise<MarketInsight | null> {
     return null;
   }
 }
+
+export interface EconomicCalendarEvent {
+  id: string;
+  title: string;
+  titleEn: string;
+  ts: string;
+  allDay: boolean;
+  dateKey: string;
+  impact: 'low' | 'medium' | 'high';
+  forecast: string | null;
+  previous: string | null;
+  actual: string | null;
+  url: string;
+}
+
+export async function fetchEconomicCalendar(): Promise<ApiResult<EconomicCalendarEvent[]>> {
+  try {
+    const res = await fetch('/api/calendar');
+    if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
+    const data = await res.json();
+    if (!Array.isArray(data)) return { success: false, error: 'Invalid calendar payload' };
+    return { success: true, data: data as EconomicCalendarEvent[] };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
+  }
+}

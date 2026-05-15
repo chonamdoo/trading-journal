@@ -1,12 +1,15 @@
 'use client'
 
-import { useMemo, useState, useEffect, type ReactNode } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useTradeStore } from '@/hooks/useTrades'
 import { winRate, streaks, avgHoldTime } from '@/lib/calc'
-import { fetchMarketInsight, type MarketInsight } from '@/lib/api/client-api'
+import {
+  fetchEconomicCalendar,
+  fetchMarketInsight,
+  type EconomicCalendarEvent,
+  type MarketInsight,
+} from '@/lib/api/client-api'
 import { formatNumber, pnlColorClass } from '@/lib/format'
-
-type MarketDerivativesInsight = NonNullable<MarketInsight['derivatives']>
 
 /** avgHoldTime(분)을 "Xh Ym" 형태로 변환 */
 function formatMinutes(totalMin: number): string | null {
@@ -26,27 +29,29 @@ function fearGreedColor(value: number): string {
   return 'text-profit'
 }
 
-function formatCompactUsd(value: number): string {
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `$${formatNumber(value / 1_000_000_000, 2)}B`
-  if (abs >= 1_000_000) return `$${formatNumber(value / 1_000_000, 2)}M`
-  return `$${formatNumber(value, 0)}`
+function calendarImpactLabel(impact: EconomicCalendarEvent['impact']): string {
+  if (impact === 'high') return '높음'
+  if (impact === 'medium') return '보통'
+  return '낮음'
 }
 
-function fundingRateColor(side: MarketDerivativesInsight['fundingPaymentSide']): string {
-  if (side === 'long') return 'text-loss'
-  if (side === 'short') return 'text-profit'
-  return 'text-content-secondary'
+function calendarImpactColor(impact: EconomicCalendarEvent['impact']): string {
+  if (impact === 'high') return 'text-warning'
+  if (impact === 'medium') return 'text-info'
+  return 'text-content-muted'
 }
 
-function fundingSideLabel(side: MarketDerivativesInsight['fundingPaymentSide']): string {
-  if (side === 'long') return '롱 지불'
-  if (side === 'short') return '숏 지불'
-  return '중립'
+function calendarTimeLabel(event: EconomicCalendarEvent): string {
+  if (event.allDay) return '종일'
+  return new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(event.ts))
 }
 
-function unavailableValue(): ReactNode {
-  return <span className="font-mono text-sm text-content-muted">수집 대기</span>
+function calendarPrimaryValue(event: EconomicCalendarEvent): string {
+  return event.actual ?? event.forecast ?? event.previous ?? '-'
 }
 
 /**
@@ -58,6 +63,8 @@ export function TradeSidePanel() {
 
   const [insight, setInsight] = useState<MarketInsight | null>(null)
   const [insightLoading, setInsightLoading] = useState(true)
+  const [calendarEvents, setCalendarEvents] = useState<EconomicCalendarEvent[]>([])
+  const [calendarLoading, setCalendarLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -66,6 +73,19 @@ export function TradeSidePanel() {
         setInsight(data)
         setInsightLoading(false)
       }
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchEconomicCalendar().then((result) => {
+      if (!cancelled) {
+        setCalendarEvents(result.success ? result.data : [])
+        setCalendarLoading(false)
+      }
+    }).catch(() => {
+      if (!cancelled) setCalendarLoading(false)
     })
     return () => { cancelled = true }
   }, [])
@@ -84,8 +104,7 @@ export function TradeSidePanel() {
   }, [trades])
 
   const { recentWr, streakResult, holdStr, todayCount } = stats
-  const derivatives = insight?.derivatives
-  const showDerivatives = insightLoading || insight?.derivativesStatus
+  const visibleCalendarEvents = calendarEvents.slice(0, 3)
 
   const streakLabel =
     streakResult.current.count === 0
@@ -190,82 +209,59 @@ export function TradeSidePanel() {
               )}
             </div>
           </div>
-
-          {showDerivatives && (
-            <>
-              <div className="h-px bg-border my-4" />
-              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
-                파생상품 데이터
-              </h2>
-
-              <div className="flex flex-col">
-                <div className="flex items-center justify-between py-3 border-b border-border">
-                  <span className="text-sm text-content-secondary">펀딩비</span>
-                  {insightLoading ? (
-                    <span className="font-mono text-sm text-content-muted">-</span>
-                  ) : !derivatives ? (
-                    unavailableValue()
-                  ) : (
-                    <span
-                      className={`font-mono text-sm font-semibold ${
-                        fundingRateColor(derivatives.fundingPaymentSide)
-                      }`}
-                    >
-                      {derivatives.fundingRate.toFixed(4)}%{' '}
-                      {fundingSideLabel(derivatives.fundingPaymentSide)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="py-3 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-content-secondary">롱숏 비율</span>
-                    {insightLoading ? (
-                      <span className="font-mono text-sm text-content-muted">-</span>
-                    ) : !derivatives ? (
-                      unavailableValue()
-                    ) : (
-                      <span className="font-mono text-sm font-semibold text-content">
-                        롱 {derivatives.longShortRatio.longAccount.toFixed(0)}% / 숏{' '}
-                        {derivatives.longShortRatio.shortAccount.toFixed(0)}%
-                      </span>
-                    )}
-                  </div>
-                  {!insightLoading && derivatives && (
-                    <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-border">
-                      <div
-                        className="bg-profit"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, derivatives.longShortRatio.longAccount))}%`,
-                        }}
-                      />
-                      <div
-                        className="bg-loss"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, derivatives.longShortRatio.shortAccount))}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-sm text-content-secondary">미체결 약정</span>
-                  {insightLoading ? (
-                    <span className="font-mono text-sm text-content-muted">-</span>
-                  ) : !derivatives ? (
-                    unavailableValue()
-                  ) : (
-                    <span className="font-mono text-sm font-semibold text-content">
-                      {formatCompactUsd(derivatives.openInterest.notionalUsd)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
         </>
       )}
+
+      <div className="h-px bg-border my-4" />
+      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-1">
+        오늘 주요 경제 일정
+      </h2>
+      <div className="text-[11px] text-content-muted mb-3">
+        데이터: kr.investing.com (US 한정) · 30분마다 갱신
+      </div>
+
+      <div className="flex flex-col">
+        {calendarLoading ? (
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm text-content-secondary">수집 중</span>
+            <span className="font-mono text-sm text-content-muted">-</span>
+          </div>
+        ) : visibleCalendarEvents.length === 0 ? (
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm text-content-secondary">예정된 발표</span>
+            <span className="font-mono text-sm text-content-muted">없음</span>
+          </div>
+        ) : (
+          visibleCalendarEvents.map((event, index) => (
+            <a
+              key={event.id}
+              href={event.url}
+              target="_blank"
+              rel="noreferrer"
+              className={`block py-3 ${
+                index < visibleCalendarEvents.length - 1 ? 'border-b border-border' : ''
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm text-content-secondary">
+                    {event.title}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-content-muted">
+                    <span className="font-mono">{calendarTimeLabel(event)}</span>
+                    <span className={calendarImpactColor(event.impact)}>
+                      {calendarImpactLabel(event.impact)}
+                    </span>
+                  </div>
+                </div>
+                <span className="shrink-0 font-mono text-sm font-semibold text-content">
+                  {calendarPrimaryValue(event)}
+                </span>
+              </div>
+            </a>
+          ))
+        )}
+      </div>
     </div>
   )
 }
