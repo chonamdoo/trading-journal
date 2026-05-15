@@ -62,6 +62,7 @@ describe('GET /api/calendar', () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
     expect(body).toEqual([
       {
         id: '545080',
@@ -77,5 +78,21 @@ describe('GET /api/calendar', () => {
         url: 'https://kr.investing.com/economic-calendar/atlanta-fed-gdpnow-2260',
       },
     ]);
+  });
+
+  it('does not return cached events for a different requested date after provider failure', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(calendarResponse(koreanCalendarHtml))
+      .mockResolvedValueOnce(calendarResponse(englishCalendarHtml))
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { GET } = await loadRoute();
+
+    await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-15'));
+    const failedResponse = await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-16'));
+    const failedBody = await failedResponse.json();
+
+    expect(failedResponse.status).toBe(200);
+    expect(failedBody).toEqual([]);
   });
 });

@@ -791,13 +791,14 @@ export interface EconomicCalendarEvent {
   url: string;
 }
 
-export async function fetchEconomicCalendar(): Promise<EconomicCalendarEvent[]> {
+export async function fetchEconomicCalendar(): Promise<ApiResult<EconomicCalendarEvent[]>> {
   try {
     const res = await fetch('/api/calendar');
-    if (!res.ok) return [];
+    if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
     const data = await res.json();
-    return Array.isArray(data) ? data as EconomicCalendarEvent[] : [];
-  } catch {
-    return [];
+    if (!Array.isArray(data)) return { success: false, error: 'Invalid calendar payload' };
+    return { success: true, data: data as EconomicCalendarEvent[] };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 }

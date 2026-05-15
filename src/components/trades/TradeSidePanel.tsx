@@ -79,9 +79,9 @@ export function TradeSidePanel() {
 
   useEffect(() => {
     let cancelled = false
-    fetchEconomicCalendar().then((events) => {
+    fetchEconomicCalendar().then((result) => {
       if (!cancelled) {
-        setCalendarEvents(events)
+        setCalendarEvents(result.success ? result.data : [])
         setCalendarLoading(false)
       }
     }).catch(() => {
@@ -209,59 +209,59 @@ export function TradeSidePanel() {
               )}
             </div>
           </div>
-
-          <div className="h-px bg-border my-4" />
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-1">
-            오늘 주요 경제 일정
-          </h2>
-          <div className="text-[11px] text-content-muted mb-3">
-            데이터: kr.investing.com (US 한정) · 30분마다 갱신
-          </div>
-
-          <div className="flex flex-col">
-            {calendarLoading ? (
-              <div className="flex items-center justify-between py-3">
-                <span className="text-sm text-content-secondary">수집 중</span>
-                <span className="font-mono text-sm text-content-muted">-</span>
-              </div>
-            ) : visibleCalendarEvents.length === 0 ? (
-              <div className="flex items-center justify-between py-3">
-                <span className="text-sm text-content-secondary">예정된 발표</span>
-                <span className="font-mono text-sm text-content-muted">없음</span>
-              </div>
-            ) : (
-              visibleCalendarEvents.map((event, index) => (
-                <a
-                  key={event.id}
-                  href={event.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`block py-3 ${
-                    index < visibleCalendarEvents.length - 1 ? 'border-b border-border' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm text-content-secondary">
-                        {event.title}
-                      </div>
-                      <div className="mt-1 flex items-center gap-2 text-[11px] text-content-muted">
-                        <span className="font-mono">{calendarTimeLabel(event)}</span>
-                        <span className={calendarImpactColor(event.impact)}>
-                          {calendarImpactLabel(event.impact)}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="shrink-0 font-mono text-sm font-semibold text-content">
-                      {calendarPrimaryValue(event)}
-                    </span>
-                  </div>
-                </a>
-              ))
-            )}
-          </div>
         </>
       )}
+
+      <div className="h-px bg-border my-4" />
+      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-1">
+        오늘 주요 경제 일정
+      </h2>
+      <div className="text-[11px] text-content-muted mb-3">
+        데이터: kr.investing.com (US 한정) · 30분마다 갱신
+      </div>
+
+      <div className="flex flex-col">
+        {calendarLoading ? (
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm text-content-secondary">수집 중</span>
+            <span className="font-mono text-sm text-content-muted">-</span>
+          </div>
+        ) : visibleCalendarEvents.length === 0 ? (
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm text-content-secondary">예정된 발표</span>
+            <span className="font-mono text-sm text-content-muted">없음</span>
+          </div>
+        ) : (
+          visibleCalendarEvents.map((event, index) => (
+            <a
+              key={event.id}
+              href={event.url}
+              target="_blank"
+              rel="noreferrer"
+              className={`block py-3 ${
+                index < visibleCalendarEvents.length - 1 ? 'border-b border-border' : ''
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm text-content-secondary">
+                    {event.title}
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-content-muted">
+                    <span className="font-mono">{calendarTimeLabel(event)}</span>
+                    <span className={calendarImpactColor(event.impact)}>
+                      {calendarImpactLabel(event.impact)}
+                    </span>
+                  </div>
+                </div>
+                <span className="shrink-0 font-mono text-sm font-semibold text-content">
+                  {calendarPrimaryValue(event)}
+                </span>
+              </div>
+            </a>
+          ))
+        )}
+      </div>
     </div>
   )
 }

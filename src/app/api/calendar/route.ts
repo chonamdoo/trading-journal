@@ -44,6 +44,7 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const US_COUNTRY_ID = '5';
 const MEDIUM_IMPORTANCE = '2';
 const HIGH_IMPORTANCE = '3';
+const INVESTING_FETCH_TIMEOUT_MS = 10_000;
 
 function kstDateKey(date = new Date()): string {
   return new Date(date.getTime() + KST_OFFSET_MS).toISOString().slice(0, 10);
@@ -145,25 +146,38 @@ function parseCalendarRows(html: string, baseUrl: string): ParsedCalendarEvent[]
 }
 
 async function fetchInvestingCalendar(url: string, dateKey: string): Promise<string> {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json, text/javascript, */*; q=0.01',
-      'content-type': 'application/x-www-form-urlencoded',
-      'x-requested-with': 'XMLHttpRequest',
-      referer: url.includes('kr.investing.com')
-        ? 'https://kr.investing.com/economic-calendar/'
-        : 'https://www.investing.com/economic-calendar/',
-      'user-agent': 'Mozilla/5.0',
-    },
-    body: calendarRequestBody(dateKey),
-    next: { revalidate: 900 },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), INVESTING_FETCH_TIMEOUT_MS);
 
-  if (!res.ok) throw new Error('calendar-provider-unavailable');
-  const payload = await res.json() as InvestingCalendarPayload;
-  if (typeof payload.data !== 'string') throw new Error('calendar-provider-invalid-payload');
-  return payload.data;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/javascript, */*; q=0.01',
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-requested-with': 'XMLHttpRequest',
+        referer: url.includes('kr.investing.com')
+          ? 'https://kr.investing.com/economic-calendar/'
+          : 'https://www.investing.com/economic-calendar/',
+        'user-agent': 'Mozilla/5.0',
+      },
+      body: calendarRequestBody(dateKey),
+      next: { revalidate: 900 },
+      signal: controller.signal,
+    });
+
+    if (!res.ok) throw new Error('calendar-provider-unavailable');
+    const payload = await res.json() as InvestingCalendarPayload;
+    if (typeof payload.data !== 'string') throw new Error('calendar-provider-invalid-payload');
+    return payload.data;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('calendar-provider-timeout');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function mergeCalendarEvents(koreanHtml: string, englishHtml: string): EconomicCalendarEvent[] {
@@ -208,7 +222,8 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 'public, max-age=1800' },
     });
   } catch {
-    return NextResponse.json(cache?.data ?? [], {
+    const fallback = cache?.dateKey === dateKey ? cache.data : [];
+    return NextResponse.json(fallback, {
       headers: { 'Cache-Control': 'no-store' },
     });
   }
