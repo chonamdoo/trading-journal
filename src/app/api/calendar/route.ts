@@ -38,6 +38,7 @@ export interface EconomicCalendarEvent {
 const cache = new Map<string, { data: EconomicCalendarEvent[]; timestamp: number }>();
 
 const CACHE_TTL = 30 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 100;
 const INVESTING_KR_URL = 'https://kr.investing.com/economic-calendar/Service/getCalendarFilteredData';
 const INVESTING_EN_URL = 'https://www.investing.com/economic-calendar/Service/getCalendarFilteredData';
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -54,6 +55,30 @@ function validDateKey(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00+09:00`);
   return !Number.isNaN(parsed.getTime()) && kstDateKey(parsed) === value;
+}
+
+function pruneCache(now: number, preserveKey?: string): void {
+  for (const [key, entry] of cache.entries()) {
+    if (key !== preserveKey && now - entry.timestamp >= CACHE_TTL) {
+      cache.delete(key);
+    }
+  }
+
+  while (cache.size > CACHE_MAX_ENTRIES) {
+    let oldestKey: string | null = null;
+    let oldestTimestamp = Infinity;
+
+    for (const [key, entry] of cache.entries()) {
+      if (key === preserveKey) continue;
+      if (entry.timestamp < oldestTimestamp) {
+        oldestKey = key;
+        oldestTimestamp = entry.timestamp;
+      }
+    }
+
+    if (!oldestKey) break;
+    cache.delete(oldestKey);
+  }
 }
 
 function calendarRequestBody(dateKey: string): URLSearchParams {
@@ -198,6 +223,7 @@ function mergeCalendarEvents(koreanHtml: string, englishHtml: string): EconomicC
 }
 
 export async function GET(req: NextRequest) {
+  const now = Date.now();
   const requestedDateKey = req.nextUrl.searchParams.get('date');
   if (requestedDateKey && !validDateKey(requestedDateKey)) {
     return NextResponse.json(
@@ -207,14 +233,14 @@ export async function GET(req: NextRequest) {
   }
 
   const dateKey = requestedDateKey ?? kstDateKey();
+  pruneCache(now, dateKey);
   const cached = cache.get(dateKey);
 
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && now - cached.timestamp < CACHE_TTL) {
     return NextResponse.json(cached.data, {
       headers: { 'Cache-Control': 'public, max-age=1800' },
     });
   }
-  if (cached) cache.delete(dateKey);
 
   try {
     const koreanHtml = await fetchInvestingCalendar(INVESTING_KR_URL, dateKey);
@@ -227,15 +253,22 @@ export async function GET(req: NextRequest) {
     }
 
     const data = mergeCalendarEvents(koreanHtml, englishHtml);
-    cache.set(dateKey, { data, timestamp: Date.now() });
+    cache.set(dateKey, { data, timestamp: now });
+    pruneCache(now);
 
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'public, max-age=1800' },
     });
   } catch {
-    const fallback = cache.get(dateKey)?.data ?? [];
-    return NextResponse.json(fallback, {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+    if (cached) {
+      return NextResponse.json(cached.data, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+
+    return NextResponse.json(
+      { error: 'calendar-provider-unavailable' },
+      { status: 502, headers: { 'Cache-Control': 'no-store' } }
+    );
   }
 }

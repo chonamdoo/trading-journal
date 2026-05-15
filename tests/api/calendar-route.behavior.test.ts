@@ -92,8 +92,8 @@ describe('GET /api/calendar', () => {
     const failedResponse = await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-16'));
     const failedBody = await failedResponse.json();
 
-    expect(failedResponse.status).toBe(200);
-    expect(failedBody).toEqual([]);
+    expect(failedResponse.status).toBe(502);
+    expect(failedBody).toEqual({ error: 'calendar-provider-unavailable' });
 
     const callsAfterFailedDate = fetchMock.mock.calls.length;
     const cachedResponse = await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-15'));
@@ -102,6 +102,30 @@ describe('GET /api/calendar', () => {
     expect(cachedResponse.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(callsAfterFailedDate);
     expect(cachedBody).toEqual([
+      expect.objectContaining({
+        id: '545080',
+        dateKey: '2026-05-15',
+      }),
+    ]);
+  });
+
+  it('returns stale same-date cached events when refresh fails after ttl', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(calendarResponse(koreanCalendarHtml))
+      .mockResolvedValueOnce(calendarResponse(englishCalendarHtml))
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { GET } = await loadRoute();
+
+    await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-15'));
+
+    vi.setSystemTime(new Date('2026-05-15T02:31:00+09:00'));
+    const staleResponse = await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-15'));
+    const staleBody = await staleResponse.json();
+
+    expect(staleResponse.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(staleBody).toEqual([
       expect.objectContaining({
         id: '545080',
         dateKey: '2026-05-15',
