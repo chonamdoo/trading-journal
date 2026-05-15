@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import type { Direction, TradeFormData, TradeScreenshot } from '@/types'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import type { Direction, PreTradeChecklistItem, TradeFormData, TradeScreenshot } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
@@ -11,9 +11,9 @@ import { AssetCombobox } from '@/components/ui/AssetCombobox'
 import { EmotionTag } from '@/components/ai-report/EmotionTag'
 import { REVIEW_CHOICES, REVIEW_TAGS } from '@/lib/constants'
 import {
-  PRE_TRADE_CHECKLIST_ITEMS,
   createInitialPreTradeChecklistState,
   getPreTradeChecklistWarning,
+  resolvePreTradeChecklistItems,
   type PreTradeChecklistState,
 } from './preTradeChecklist'
 import {
@@ -58,6 +58,8 @@ interface TradeFormProps {
   allAssets?: string[]
   /** 현재 자산 (증거금 비율 표시용) */
   currentCapital?: number
+  /** 사용자 설정 프리트레이드 체크리스트 */
+  preTradeChecklistItems?: PreTradeChecklistItem[] | null
   /** 저장 핸들러 (동기/비동기 모두 지원) */
   onSave: (data: TradeFormData) => { success: boolean; error?: string; tradeId?: string } | Promise<{ success: boolean; error?: string; tradeId?: string }>
   /** 수정 모드 시 기존 데이터 */
@@ -86,6 +88,7 @@ export function TradeForm({
   recentAssets = [],
   allAssets: allAssetsProp = [],
   currentCapital = 0,
+  preTradeChecklistItems: preTradeChecklistItemsProp,
   onSave,
   initialData,
   isEdit = false,
@@ -135,8 +138,12 @@ export function TradeForm({
   const [notes, setNotes] = useState(initialData?.notes ?? '')
   const [selectedTags, setSelectedTags] = useState<string[]>(initialData?.tags ?? [])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const preTradeChecklistItems = useMemo(
+    () => resolvePreTradeChecklistItems(preTradeChecklistItemsProp),
+    [preTradeChecklistItemsProp]
+  )
   const [preTradeChecklist, setPreTradeChecklist] = useState<PreTradeChecklistState>(
-    createInitialPreTradeChecklistState
+    () => createInitialPreTradeChecklistState(preTradeChecklistItems)
   )
 
   // ── P&L 미리보기 계산 ──
@@ -279,13 +286,17 @@ export function TradeForm({
     setNotes('')
     setSelectedTags([])
     setPendingFiles([])
-    setPreTradeChecklist(createInitialPreTradeChecklistState())
-  }, [allAssetsProp])
+    setPreTradeChecklist(createInitialPreTradeChecklistState(preTradeChecklistItems))
+  }, [allAssetsProp, preTradeChecklistItems])
 
-  const togglePreTradeChecklist = (key: keyof PreTradeChecklistState) => {
+  useEffect(() => {
+    setPreTradeChecklist(createInitialPreTradeChecklistState(preTradeChecklistItems))
+  }, [preTradeChecklistItems])
+
+  const togglePreTradeChecklist = (id: string) => {
     setPreTradeChecklist((current) => ({
       ...current,
-      [key]: !current[key],
+      [id]: !current[id],
     }))
   }
 
@@ -326,7 +337,7 @@ export function TradeForm({
     }
 
     if (!isEdit) {
-      const warning = getPreTradeChecklistWarning(preTradeChecklist)
+      const warning = getPreTradeChecklistWarning(preTradeChecklist, preTradeChecklistItems)
       if (warning) showToast('info', warning)
     }
 
@@ -850,21 +861,21 @@ export function TradeForm({
         />
       </div>
 
-      {!isEdit && (
+      {!isEdit && preTradeChecklistItems.length > 0 && (
         <div className="mb-sp-6 rounded-input border border-border bg-surface-muted px-4 py-4">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-content-muted mb-3">
             프리트레이드 체크리스트
           </div>
           <div className="flex flex-col gap-2">
-            {PRE_TRADE_CHECKLIST_ITEMS.map((item) => (
+            {preTradeChecklistItems.map((item) => (
               <label
-                key={item.key}
+                key={item.id}
                 className="flex items-center gap-2 text-[13px] font-medium text-content-secondary"
               >
                 <input
                   type="checkbox"
-                  checked={preTradeChecklist[item.key]}
-                  onChange={() => togglePreTradeChecklist(item.key)}
+                  checked={preTradeChecklist[item.id] ?? false}
+                  onChange={() => togglePreTradeChecklist(item.id)}
                   className="h-4 w-4 rounded border-border-input accent-accent-primary"
                 />
                 <span>{item.label}</span>
