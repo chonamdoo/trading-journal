@@ -11,5 +11,6 @@ export function mapProfileUpdateRequest(update: ProfileUpdate): UserProfileUpdat
     currency: update.currency,
     subscriptionTier: update.subscription_tier,
     subscriptionExpiresAt: update.subscription_expires_at,
+    preTradeChecklistItems: update.pre_trade_checklist_items,
   };
 }

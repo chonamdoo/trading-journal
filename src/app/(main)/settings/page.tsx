@@ -31,6 +31,7 @@ import {
   fetchSyncOkxTrades,
   fetchImportJson,
   fetchResetUserData,
+  fetchUpdateProfile,
   type ExchangeConnectionPublic,
   type ImportPayload,
 } from '@/lib/api/client-api'
@@ -38,10 +39,13 @@ import { curCapital, totalDeposits } from '@/lib/calc'
 import { formatNumber, today } from '@/lib/format'
 import { downloadCsv, tradesToCsv } from '@/lib/csv-export'
 import { TARGET_COLORS } from '@/lib/constants'
+import { resolvePreTradeChecklistItems } from '@/components/trades/preTradeChecklist'
+import type { PreTradeChecklistItem } from '@/types'
 
 type ExchangeFormValue = 'bybit' | 'binance' | 'okx' | 'bitget'
 
 const CAPITAL_MOVEMENT_PAGE_SIZE = 5
+const PRE_TRADE_CHECKLIST_LABEL_MAX_LENGTH = 120
 
 const EXCHANGE_FORM_OPTIONS: Record<ExchangeFormValue, {
   label: string
@@ -100,10 +104,15 @@ export default function SettingsPage() {
   const initialCapital = profile?.initial_capital ?? 0
   const capital = curCapital(initialCapital, deposits, trades)
   const tdep = totalDeposits(deposits)
+  const profileChecklistItems = profile?.pre_trade_checklist_items
 
   // 초기 자산 수정 상태
   const [editCapital, setEditCapital] = useState(false)
   const [newCapital, setNewCapital] = useState(initialCapital.toString())
+  const [preTradeChecklistItems, setPreTradeChecklistItems] = useState<PreTradeChecklistItem[]>(
+    () => resolvePreTradeChecklistItems(profileChecklistItems)
+  )
+  const [savingPreTradeChecklist, setSavingPreTradeChecklist] = useState(false)
 
   // 입출금 기록 상태
   const [capitalEventType, setCapitalEventType] = useState<'deposit' | 'withdrawal'>('deposit')
@@ -205,6 +214,10 @@ export default function SettingsPage() {
         : selectedExchange === 'okx'
           ? okxConnection
           : bitgetConnection
+
+  useEffect(() => {
+    setPreTradeChecklistItems(resolvePreTradeChecklistItems(profileChecklistItems))
+  }, [profileChecklistItems])
 
   useEffect(() => {
     let mounted = true
@@ -374,6 +387,49 @@ export default function SettingsPage() {
     await setInitialCapital(val)
     setEditCapital(false)
     showToast('success', '초기 자산이 변경되었습니다.')
+  }
+
+  const handleAddPreTradeChecklistItem = () => {
+    setPreTradeChecklistItems((items) => [
+      ...items,
+      { id: `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, label: '' },
+    ])
+  }
+
+  const handleChangePreTradeChecklistItem = (id: string, label: string) => {
+    setPreTradeChecklistItems((items) =>
+      items.map((item) => item.id === id ? { ...item, label } : item)
+    )
+  }
+
+  const handleDeletePreTradeChecklistItem = (id: string) => {
+    setPreTradeChecklistItems((items) => items.filter((item) => item.id !== id))
+  }
+
+  const handleClearPreTradeChecklistItems = () => {
+    setPreTradeChecklistItems([])
+  }
+
+  const handleSavePreTradeChecklist = async () => {
+    const items = preTradeChecklistItems
+      .map((item) => ({
+        id: item.id,
+        label: item.label.trim().slice(0, PRE_TRADE_CHECKLIST_LABEL_MAX_LENGTH),
+      }))
+      .filter((item) => item.label)
+
+    setSavingPreTradeChecklist(true)
+    const result = await fetchUpdateProfile({ pre_trade_checklist_items: items })
+    setSavingPreTradeChecklist(false)
+
+    if (!result.success) {
+      showToast('error', result.error)
+      return
+    }
+
+    setPreTradeChecklistItems(result.data.pre_trade_checklist_items ?? items)
+    await reloadData()
+    showToast('success', '프리트레이드 체크리스트가 저장되었습니다.')
   }
 
   const handleAddDeposit = async () => {
@@ -693,6 +749,55 @@ export default function SettingsPage() {
               변경
             </Button>
           )}
+        </div>
+      </Card>
+
+      {/* 프리트레이드 체크리스트 */}
+      <Card className="mb-3">
+        <h2 className="text-[13px] font-semibold text-content-secondary uppercase tracking-[0.5px] mb-4">
+          프리트레이드 체크리스트
+        </h2>
+
+        <div className="flex flex-col gap-2 mb-4">
+          {preTradeChecklistItems.length > 0 ? (
+            preTradeChecklistItems.map((item) => (
+              <div key={item.id} className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  aria-label="프리트레이드 체크리스트 항목"
+                  maxLength={PRE_TRADE_CHECKLIST_LABEL_MAX_LENGTH}
+                  className="flex-1 min-w-0 px-3 py-2 bg-surface border border-border-input rounded-input text-sm outline-none focus:border-info"
+                  value={item.label}
+                  onChange={(e) => handleChangePreTradeChecklistItem(item.id, e.target.value)}
+                />
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleDeletePreTradeChecklistItem(item.id)}
+                >
+                  삭제
+                </Button>
+              </div>
+            ))
+          ) : (
+            <div className="text-[12px] text-content-muted py-1">
+              체크리스트 항목이 없습니다.
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2">
+          {preTradeChecklistItems.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={handleClearPreTradeChecklistItems}>
+              전체 삭제
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={handleAddPreTradeChecklistItem}>
+            추가
+          </Button>
+          <Button size="sm" onClick={handleSavePreTradeChecklist} disabled={savingPreTradeChecklist}>
+            {savingPreTradeChecklist ? '저장 중...' : '저장'}
+          </Button>
         </div>
       </Card>
 

@@ -378,6 +378,11 @@ export type Database = {
 
 export type SubscriptionTier = 'free' | 'pro';
 
+export type PreTradeChecklistItem = {
+  id: string;
+  label: string;
+};
+
 export type ProfileRow = {
   id: string;
   email: string;
@@ -386,6 +391,7 @@ export type ProfileRow = {
   currency: string;
   subscription_tier: SubscriptionTier;
   subscription_expires_at: string | null;
+  pre_trade_checklist_items: PreTradeChecklistItem[];
   created_at: string;
   updated_at: string;
 }
@@ -398,6 +404,7 @@ export type ProfileInsert = {
   currency?: string;
   subscription_tier?: SubscriptionTier;
   subscription_expires_at?: string | null;
+  pre_trade_checklist_items?: PreTradeChecklistItem[];
   created_at?: string;
   updated_at?: string;
 }
@@ -410,6 +417,7 @@ export type ProfileUpdate = {
   currency?: string;
   subscription_tier?: SubscriptionTier;
   subscription_expires_at?: string | null;
+  pre_trade_checklist_items?: PreTradeChecklistItem[];
   updated_at?: string;
 }
 

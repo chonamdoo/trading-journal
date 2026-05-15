@@ -85,6 +85,11 @@ export interface Target {
 
 export type SubscriptionTier = 'free' | 'pro'
 
+export interface PreTradeChecklistItem {
+  id: string
+  label: string
+}
+
 export interface Profile {
   id: string
   email: string
@@ -93,6 +98,7 @@ export interface Profile {
   currency: string
   subscription_tier: SubscriptionTier
   subscription_expires_at?: string | null
+  pre_trade_checklist_items?: PreTradeChecklistItem[] | null
   created_at?: string
   updated_at?: string
 }

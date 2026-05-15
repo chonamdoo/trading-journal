@@ -12,6 +12,7 @@ export function mapProfileRowToUserProfile(row: UserProfileRowDto): UserProfile 
     currency: row.currency,
     subscriptionTier: row.subscription_tier,
     subscriptionExpiresAt: row.subscription_expires_at,
+    preTradeChecklistItems: row.pre_trade_checklist_items,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -24,6 +25,7 @@ export function mapUserProfileUpdateToProfileUpdate(update: UserProfileUpdate): 
     currency: update.currency,
     subscription_tier: update.subscriptionTier,
     subscription_expires_at: update.subscriptionExpiresAt,
+    pre_trade_checklist_items: update.preTradeChecklistItems,
   };
 
   return Object.fromEntries(

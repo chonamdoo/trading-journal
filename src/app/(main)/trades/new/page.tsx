@@ -27,6 +27,7 @@ export default function NewTradePage() {
           onToggleFavorite={(sym) => { void toggleFavorite(sym) }}
           recentAssets={recentAssets}
           allAssets={allAssets}
+          preTradeChecklistItems={profile?.pre_trade_checklist_items}
           onSave={addTrade}
           onUploadScreenshots={async (tradeId, files) => {
             await uploadScreenshots(tradeId, files)
