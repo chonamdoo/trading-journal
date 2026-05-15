@@ -133,6 +133,35 @@ describe('GET /api/calendar', () => {
     ]);
   });
 
+  it('uses the requested date when provider datetime is not parseable', async () => {
+    const koreanAllDayHtml = koreanCalendarHtml.replace(
+      'data-event-datetime="2026/05/15 00:30:00"',
+      'data-event-datetime="Tentative"'
+    );
+    const englishAllDayHtml = englishCalendarHtml.replace(
+      'data-event-datetime="2026/05/15 00:30:00"',
+      'data-event-datetime="Tentative"'
+    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(calendarResponse(koreanAllDayHtml))
+      .mockResolvedValueOnce(calendarResponse(englishAllDayHtml));
+    vi.stubGlobal('fetch', fetchMock);
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-16'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual([
+      expect.objectContaining({
+        id: '545080',
+        ts: '2026-05-16T00:00:00.000Z',
+        allDay: true,
+        dateKey: '2026-05-16',
+      }),
+    ]);
+  });
+
   it('rejects invalid requested dates', async () => {
     vi.stubGlobal('fetch', vi.fn());
     const { GET } = await loadRoute();

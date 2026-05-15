@@ -126,11 +126,13 @@ function parseImpact(row: string): EconomicCalendarImpact {
   return 'low';
 }
 
-function parseDateTime(dateTime: string): Pick<EconomicCalendarEvent, 'ts' | 'allDay' | 'dateKey'> {
+function parseDateTime(
+  dateTime: string,
+  fallbackDateKey: string
+): Pick<EconomicCalendarEvent, 'ts' | 'allDay' | 'dateKey'> {
   const match = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(dateTime);
   if (!match) {
-    const dateKey = kstDateKey();
-    return { ts: `${dateKey}T00:00:00.000Z`, allDay: true, dateKey };
+    return { ts: `${fallbackDateKey}T00:00:00.000Z`, allDay: true, dateKey: fallbackDateKey };
   }
 
   const [, year, month, day, hour, minute, second] = match;
@@ -142,7 +144,7 @@ function parseDateTime(dateTime: string): Pick<EconomicCalendarEvent, 'ts' | 'al
   };
 }
 
-function parseCalendarRows(html: string, baseUrl: string): ParsedCalendarEvent[] {
+function parseCalendarRows(html: string, baseUrl: string, fallbackDateKey: string): ParsedCalendarEvent[] {
   const rows = html.match(/<tr\b(?=[^>]*class="[^"]*\bjs-event-item\b)[\s\S]*?<\/tr>/g) ?? [];
 
   return rows.flatMap((row) => {
@@ -156,7 +158,7 @@ function parseCalendarRows(html: string, baseUrl: string): ParsedCalendarEvent[]
     const title = cleanHtml(eventMatch[2]);
     if (!title) return [];
 
-    const date = parseDateTime(dateTime);
+    const date = parseDateTime(dateTime, fallbackDateKey);
     return [{
       id: rowId,
       eventAttrId,
@@ -207,9 +209,13 @@ async function fetchInvestingCalendar(url: string, dateKey: string): Promise<str
   }
 }
 
-function mergeCalendarEvents(koreanHtml: string, englishHtml: string): EconomicCalendarEvent[] {
-  const koreanEvents = parseCalendarRows(koreanHtml, 'https://kr.investing.com');
-  const englishEvents = parseCalendarRows(englishHtml, 'https://www.investing.com');
+function mergeCalendarEvents(
+  koreanHtml: string,
+  englishHtml: string,
+  fallbackDateKey: string
+): EconomicCalendarEvent[] {
+  const koreanEvents = parseCalendarRows(koreanHtml, 'https://kr.investing.com', fallbackDateKey);
+  const englishEvents = parseCalendarRows(englishHtml, 'https://www.investing.com', fallbackDateKey);
   const titleEnByEventAttrId = new Map(
     englishEvents.map((event) => [event.eventAttrId, event.title])
   );
@@ -252,7 +258,7 @@ export async function GET(req: NextRequest) {
       englishHtml = koreanHtml;
     }
 
-    const data = mergeCalendarEvents(koreanHtml, englishHtml);
+    const data = mergeCalendarEvents(koreanHtml, englishHtml, dateKey);
     cache.set(dateKey, { data, timestamp: now });
     pruneCache(now);
 
