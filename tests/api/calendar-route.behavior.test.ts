@@ -94,5 +94,31 @@ describe('GET /api/calendar', () => {
 
     expect(failedResponse.status).toBe(200);
     expect(failedBody).toEqual([]);
+
+    const callsAfterFailedDate = fetchMock.mock.calls.length;
+    const cachedResponse = await GET(new NextRequest('http://localhost/api/calendar?date=2026-05-15'));
+    const cachedBody = await cachedResponse.json();
+
+    expect(cachedResponse.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(callsAfterFailedDate);
+    expect(cachedBody).toEqual([
+      expect.objectContaining({
+        id: '545080',
+        dateKey: '2026-05-15',
+      }),
+    ]);
+  });
+
+  it('rejects invalid requested dates', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const { GET } = await loadRoute();
+
+    const malformedResponse = await GET(new NextRequest('http://localhost/api/calendar?date=foo'));
+    const impossibleResponse = await GET(new NextRequest('http://localhost/api/calendar?date=2026-02-31'));
+
+    expect(malformedResponse.status).toBe(400);
+    expect(await malformedResponse.json()).toEqual({ error: 'invalid-date' });
+    expect(impossibleResponse.status).toBe(400);
+    expect(await impossibleResponse.json()).toEqual({ error: 'invalid-date' });
   });
 });

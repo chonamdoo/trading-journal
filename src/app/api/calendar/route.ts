@@ -35,7 +35,7 @@ export interface EconomicCalendarEvent {
   url: string;
 }
 
-let cache: { dateKey: string; data: EconomicCalendarEvent[]; timestamp: number } | null = null;
+const cache = new Map<string, { data: EconomicCalendarEvent[]; timestamp: number }>();
 
 const CACHE_TTL = 30 * 60 * 1000;
 const INVESTING_KR_URL = 'https://kr.investing.com/economic-calendar/Service/getCalendarFilteredData';
@@ -51,7 +51,9 @@ function kstDateKey(date = new Date()): string {
 }
 
 function validDateKey(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00+09:00`);
+  return !Number.isNaN(parsed.getTime()) && kstDateKey(parsed) === value;
 }
 
 function calendarRequestBody(dateKey: string): URLSearchParams {
@@ -196,14 +198,23 @@ function mergeCalendarEvents(koreanHtml: string, englishHtml: string): EconomicC
 }
 
 export async function GET(req: NextRequest) {
-  const requestedDateKey = req.nextUrl.searchParams.get('date') ?? kstDateKey();
-  const dateKey = validDateKey(requestedDateKey) ? requestedDateKey : kstDateKey();
+  const requestedDateKey = req.nextUrl.searchParams.get('date');
+  if (requestedDateKey && !validDateKey(requestedDateKey)) {
+    return NextResponse.json(
+      { error: 'invalid-date' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
 
-  if (cache && cache.dateKey === dateKey && Date.now() - cache.timestamp < CACHE_TTL) {
-    return NextResponse.json(cache.data, {
+  const dateKey = requestedDateKey ?? kstDateKey();
+  const cached = cache.get(dateKey);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return NextResponse.json(cached.data, {
       headers: { 'Cache-Control': 'public, max-age=1800' },
     });
   }
+  if (cached) cache.delete(dateKey);
 
   try {
     const koreanHtml = await fetchInvestingCalendar(INVESTING_KR_URL, dateKey);
@@ -216,13 +227,13 @@ export async function GET(req: NextRequest) {
     }
 
     const data = mergeCalendarEvents(koreanHtml, englishHtml);
-    cache = { dateKey, data, timestamp: Date.now() };
+    cache.set(dateKey, { data, timestamp: Date.now() });
 
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'public, max-age=1800' },
     });
   } catch {
-    const fallback = cache?.dateKey === dateKey ? cache.data : [];
+    const fallback = cache.get(dateKey)?.data ?? [];
     return NextResponse.json(fallback, {
       headers: { 'Cache-Control': 'no-store' },
     });
