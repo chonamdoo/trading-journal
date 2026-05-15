@@ -11,8 +11,20 @@ const TRADE_FORM_SETUP_BY_ASSET_KEY = 'trade-form-setup-by-asset'
 const TRADE_FORM_INPUT_MODE_KEY = 'trade-form-input-mode'
 const TRADE_FORM_REMEMBER_INPUT_MODE_BY_ASSET_ENABLED_KEY = 'trade-form-remember-input-mode-by-asset-enabled'
 
-function canUseLocalStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+function getLocalStorage(): Storage | null {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
+
+function setLocalStorageItem(key: string, value: string): void {
+  try {
+    getLocalStorage()?.setItem(key, value)
+  } catch {
+    return
+  }
 }
 
 function normalizeAssetSymbol(asset: string): string {
@@ -30,10 +42,11 @@ function isTradeFormAssetSetup(value: unknown): value is TradeFormAssetSetup {
 }
 
 function readSetupByAsset(): Record<string, TradeFormAssetSetup> {
-  if (!canUseLocalStorage()) return {}
+  const storage = getLocalStorage()
+  if (!storage) return {}
 
   try {
-    const raw = window.localStorage.getItem(TRADE_FORM_SETUP_BY_ASSET_KEY)
+    const raw = storage.getItem(TRADE_FORM_SETUP_BY_ASSET_KEY)
     if (!raw) return {}
     const parsed = JSON.parse(raw) as Record<string, unknown>
     return Object.fromEntries(
@@ -47,25 +60,25 @@ function readSetupByAsset(): Record<string, TradeFormAssetSetup> {
 }
 
 export function isTradeFormInputModeMemoryEnabled(): boolean {
-  if (!canUseLocalStorage()) return false
-  return window.localStorage.getItem(TRADE_FORM_REMEMBER_INPUT_MODE_BY_ASSET_ENABLED_KEY) === 'true'
+  const storage = getLocalStorage()
+  if (!storage) return false
+  return storage.getItem(TRADE_FORM_REMEMBER_INPUT_MODE_BY_ASSET_ENABLED_KEY) === 'true'
 }
 
 export function setTradeFormInputModeMemoryEnabled(enabled: boolean): void {
-  if (!canUseLocalStorage()) return
-  window.localStorage.setItem(TRADE_FORM_REMEMBER_INPUT_MODE_BY_ASSET_ENABLED_KEY, String(enabled))
+  setLocalStorageItem(TRADE_FORM_REMEMBER_INPUT_MODE_BY_ASSET_ENABLED_KEY, String(enabled))
 }
 
 export function getTradeFormInputMode(): TradeFormInputMode {
-  if (!canUseLocalStorage()) return 'margin'
+  const storage = getLocalStorage()
+  if (!storage) return 'margin'
 
-  const savedInputMode = window.localStorage.getItem(TRADE_FORM_INPUT_MODE_KEY)
+  const savedInputMode = storage.getItem(TRADE_FORM_INPUT_MODE_KEY)
   return isTradeFormInputMode(savedInputMode) ? savedInputMode : 'margin'
 }
 
 export function setTradeFormInputMode(mode: TradeFormInputMode): void {
-  if (!canUseLocalStorage()) return
-  window.localStorage.setItem(TRADE_FORM_INPUT_MODE_KEY, mode)
+  setLocalStorageItem(TRADE_FORM_INPUT_MODE_KEY, mode)
 }
 
 export function getTradeFormSetupForAsset(asset: string): TradeFormAssetSetup | null {
@@ -88,5 +101,5 @@ export function saveTradeFormSetupForAsset(asset: string, setup: TradeFormAssetS
     [normalizedAsset]: setup,
   }
 
-  window.localStorage.setItem(TRADE_FORM_SETUP_BY_ASSET_KEY, JSON.stringify(nextSetupByAsset))
+  setLocalStorageItem(TRADE_FORM_SETUP_BY_ASSET_KEY, JSON.stringify(nextSetupByAsset))
 }

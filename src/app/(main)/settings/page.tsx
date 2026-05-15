@@ -740,6 +740,7 @@ export default function SettingsPage() {
             type="button"
             role="switch"
             aria-checked={rememberTradeInputModeByAsset}
+            aria-label="코인별 입력값 기억"
             onClick={handleToggleTradeInputModeMemory}
             className={`relative h-6 w-11 rounded-full border transition-colors duration-100 ${
               rememberTradeInputModeByAsset
