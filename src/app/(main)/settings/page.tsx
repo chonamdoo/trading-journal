@@ -742,15 +742,15 @@ export default function SettingsPage() {
             aria-checked={rememberTradeInputModeByAsset}
             aria-label="코인별 입력값 기억"
             onClick={handleToggleTradeInputModeMemory}
-            className={`relative h-6 w-11 rounded-full border transition-colors duration-100 ${
+            className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors duration-100 ${
               rememberTradeInputModeByAsset
                 ? 'border-info bg-info/20'
                 : 'border-border-input bg-surface-muted'
             }`}
           >
             <span
-              className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-content transition-transform duration-100 ${
-                rememberTradeInputModeByAsset ? 'translate-x-5' : 'translate-x-1'
+              className={`absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-content transition-transform duration-100 ${
+                rememberTradeInputModeByAsset ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
           </button>
