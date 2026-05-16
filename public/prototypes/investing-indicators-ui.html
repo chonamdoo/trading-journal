@@ -1,0 +1,1254 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Investing Indicators UI Prototypes</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #111827;
+      --muted: #64748b;
+      --line: #d9e2ef;
+      --soft: #f5f8fc;
+      --panel: #ffffff;
+      --blue: #2f63e7;
+      --blue-weak: #eaf0ff;
+      --green: #25d69a;
+      --red: #ff4d5d;
+      --orange: #ff9f1c;
+      --yellow: #f7bf23;
+      --dark: #0b1015;
+      --dark-panel: #171d23;
+      --dark-line: #2a333d;
+      --dark-muted: #95a5ba;
+      --shadow: 0 18px 48px rgba(15, 23, 42, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #eef3f9;
+      color: var(--ink);
+    }
+
+    .page {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .title-block h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .title-block p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .source-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      color: #344155;
+      font-size: 13px;
+    }
+
+    .source-strip span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .72);
+      white-space: nowrap;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: 540px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .column {
+      display: grid;
+      gap: 24px;
+    }
+
+    .prototype {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .prototype-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .prototype-header h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .prototype-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: var(--blue-weak);
+      color: #214ec7;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .mock {
+      padding: 22px;
+    }
+
+    .dark-shell {
+      background: var(--dark);
+      color: #eef4ff;
+    }
+
+    .dark-shell .prototype-header {
+      border-color: var(--dark-line);
+      background: #10161d;
+    }
+
+    .dark-shell .prototype-header p {
+      color: var(--dark-muted);
+    }
+
+    .dark-shell .tag {
+      background: rgba(37, 214, 154, .14);
+      color: var(--green);
+    }
+
+    .phone-dashboard {
+      display: grid;
+      gap: 20px;
+      max-width: 430px;
+      margin: 0 auto;
+      padding: 10px 0;
+    }
+
+    .asset-head {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .asset-head .label {
+      color: var(--dark-muted);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .asset-value {
+      font-size: 48px;
+      line-height: 1;
+      color: var(--green);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .asset-value small {
+      color: #e7edf8;
+      font-size: .4em;
+      vertical-align: .24em;
+    }
+
+    .asset-change {
+      color: var(--green);
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dark-card {
+      background: var(--dark-panel);
+      border: 1px solid #202933;
+      border-radius: 8px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .28);
+      padding: 24px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      color: #b8c7dc;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .rows {
+      display: grid;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 58px;
+      border-top: 1px solid var(--dark-line);
+      color: #aab8c9;
+      font-size: 17px;
+    }
+
+    .metric-row:first-child {
+      border-top: 0;
+    }
+
+    .metric-row strong {
+      color: #f1f5fb;
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-row .good {
+      color: var(--green);
+    }
+
+    .metric-row .bad {
+      color: #ff7c86;
+    }
+
+    .metric-row .warn {
+      color: var(--yellow);
+    }
+
+    .mini-spark {
+      width: 88px;
+      height: 24px;
+    }
+
+    .calendar-shell {
+      padding: 28px 32px 32px;
+    }
+
+    .calendar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .calendar-title h3 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+
+    .calendar-title div {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary-pill,
+    .segmented button,
+    .filter-pill {
+      border: 0;
+      font: inherit;
+      min-height: 38px;
+      border-radius: 999px;
+      padding: 0 14px;
+      font-weight: 800;
+    }
+
+    .primary-pill {
+      background: var(--blue);
+      color: white;
+      box-shadow: 0 8px 18px rgba(47, 99, 231, .28);
+    }
+
+    .filter-pill {
+      background: #f2f6fb;
+      color: #526276;
+      border: 1px solid var(--line);
+    }
+
+    .segmented {
+      display: flex;
+      padding: 6px;
+      gap: 4px;
+      border-radius: 999px;
+      background: #edf2f8;
+    }
+
+    .segmented button {
+      color: #63738a;
+      background: transparent;
+    }
+
+    .segmented .active {
+      color: #101827;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .13);
+    }
+
+    .day-group {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 14px;
+      background: #fff;
+    }
+
+    .day-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      min-height: 54px;
+      padding: 0 20px;
+      background: #eef3f9;
+      font-weight: 850;
+      font-size: 20px;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: 82px 64px 78px minmax(220px, 1fr) 112px 112px 112px;
+      align-items: center;
+      min-height: 62px;
+      padding: 0 20px;
+      border-top: 1px solid var(--line);
+      column-gap: 12px;
+      color: #526276;
+      font-size: 15px;
+    }
+
+    .event-row .time {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #475a74;
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .impact {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 46px;
+      height: 30px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .impact.high {
+      background: #b91c32;
+    }
+
+    .impact.mid {
+      background: #8a4f00;
+    }
+
+    .currency {
+      font-weight: 850;
+      color: #66768c;
+    }
+
+    .event-name {
+      color: #111827;
+      font-size: 17px;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-value {
+      text-align: right;
+      color: #5a6a80;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .event-value strong {
+      color: #111827;
+      font-size: 16px;
+    }
+
+    .today-empty {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 64px;
+      padding: 0 22px;
+      border: 1px solid #8fb0ff;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 850;
+      box-shadow: 0 0 0 4px rgba(47, 99, 231, .12);
+      margin-top: 18px;
+    }
+
+    .today-empty .today-badge {
+      margin-left: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: white;
+      color: var(--blue);
+      font-size: 14px;
+    }
+
+    .terminal-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      padding: 22px;
+      background: #0e141b;
+    }
+
+    .terminal-panel {
+      border: 1px solid #242f3a;
+      border-radius: 8px;
+      background: #151c24;
+      padding: 18px;
+      color: #e8eef8;
+    }
+
+    .terminal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .terminal-head h3 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status-dot::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(37, 214, 154, .13);
+    }
+
+    .ticker-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .ticker {
+      min-height: 112px;
+      border: 1px solid #263340;
+      border-radius: 8px;
+      background: #101720;
+      padding: 14px;
+    }
+
+    .ticker .name {
+      color: var(--dark-muted);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 12px;
+    }
+
+    .ticker .num {
+      font-size: 23px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 8px;
+    }
+
+    .ticker .move {
+      color: var(--green);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ticker .move.down {
+      color: #ff7683;
+    }
+
+    .news-row,
+    .risk-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      border-top: 1px solid #263340;
+      color: #aebcd0;
+      font-size: 14px;
+    }
+
+    .news-row:first-of-type,
+    .risk-row:first-of-type {
+      border-top: 0;
+    }
+
+    .time-chip {
+      min-width: 54px;
+      color: #c9d6e7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .event-chip {
+      color: #f4f7fb;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .severity {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      height: 24px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .severity.high {
+      background: #b91c32;
+    }
+
+    .severity.mid {
+      background: #8a4f00;
+    }
+
+    .risk-row {
+      grid-template-columns: 1fr auto;
+      min-height: 60px;
+    }
+
+    .risk-row strong {
+      color: #f4f7fb;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .risk-row span {
+      color: var(--dark-muted);
+      font-size: 13px;
+    }
+
+    .gauge {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        conic-gradient(var(--yellow) 0 31%, #2c3641 31% 100%);
+      font-weight: 900;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      position: relative;
+    }
+
+    .gauge::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background: #151c24;
+    }
+
+    .gauge span {
+      position: relative;
+    }
+
+    .rail-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 18px;
+      padding: 22px;
+      background: #f7f9fc;
+    }
+
+    .workspace-pane,
+    .alert-rail {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .workspace-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .workspace-head h3 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .chart-panel {
+      min-height: 218px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(to right, transparent 0 98%, rgba(100, 116, 139, .08) 98% 100%),
+        linear-gradient(to bottom, transparent 0 98%, rgba(100, 116, 139, .1) 98% 100%);
+      background-size: 64px 100%, 100% 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-panel svg {
+      width: 100%;
+      height: 218px;
+      display: block;
+    }
+
+    .chart-caption {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .caption-cell {
+      min-height: 72px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .caption-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .caption-cell strong {
+      font-size: 19px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .alert-rail h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .alert-item {
+      display: grid;
+      gap: 8px;
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .alert-item:first-of-type {
+      border-top: 0;
+    }
+
+    .alert-item .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .alert-item strong {
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .alert-item p {
+      margin: 0;
+      color: #536476;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .mobile-list {
+      max-width: 390px;
+      margin: 0 auto;
+      background: #10151b;
+      color: #edf4ff;
+      border-radius: 8px;
+      border: 1px solid #24303b;
+      overflow: hidden;
+    }
+
+    .mobile-list-head {
+      padding: 18px;
+      background: #161d25;
+      border-bottom: 1px solid #26333e;
+    }
+
+    .mobile-list-head h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .mobile-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .mobile-tabs button {
+      min-height: 34px;
+      border: 1px solid #2d3a47;
+      border-radius: 8px;
+      background: transparent;
+      color: #aebbd0;
+      font-weight: 850;
+    }
+
+    .mobile-tabs .active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .mobile-event {
+      display: grid;
+      grid-template-columns: 54px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 72px;
+      padding: 0 18px;
+      border-top: 1px solid #26333e;
+    }
+
+    .mobile-event:first-of-type {
+      border-top: 0;
+    }
+
+    .mobile-event time {
+      color: #9eadc1;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mobile-event strong {
+      display: block;
+      color: #f4f8ff;
+      font-size: 15px;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .mobile-event span {
+      color: #90a0b5;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mobile-bottom {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid #26333e;
+      background: #141b22;
+    }
+
+    .mobile-bottom button {
+      height: 56px;
+      border: 0;
+      border-right: 1px solid #26333e;
+      background: transparent;
+      color: #9eacc0;
+      font-weight: 800;
+    }
+
+    .mobile-bottom button:last-child {
+      border-right: 0;
+    }
+
+    .mobile-bottom .active {
+      color: var(--green);
+    }
+
+    @media (max-width: 1160px) {
+      .gallery,
+      .terminal-grid,
+      .rail-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .event-row {
+        grid-template-columns: 74px 56px 66px minmax(170px, 1fr) 92px 92px 92px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        padding: 16px;
+      }
+
+      .topbar,
+      .calendar-top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .source-strip {
+        justify-content: flex-start;
+      }
+
+      .mock,
+      .calendar-shell,
+      .terminal-grid,
+      .rail-layout {
+        padding: 14px;
+      }
+
+      .ticker-grid,
+      .chart-caption {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .event-row {
+        grid-template-columns: 58px 52px 58px minmax(0, 1fr);
+        min-height: 72px;
+        row-gap: 6px;
+      }
+
+      .event-value {
+        display: none;
+      }
+
+      .event-name {
+        font-size: 15px;
+      }
+
+      .asset-value {
+        font-size: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="title-block">
+        <h1>Investing 주요 지표 UI 시안</h1>
+        <p>Scrapling 수집 데이터와 내부 API 캐시를 기준으로 쓰기 좋은 화면 조합</p>
+      </div>
+      <div class="source-strip" aria-label="data pipeline">
+        <span>Scrapling Fetcher</span>
+        <span>API cache 30m</span>
+        <span>Investing calendar</span>
+        <span>Market summary</span>
+      </div>
+    </header>
+
+    <div class="gallery">
+      <div class="column">
+        <section class="prototype dark-shell" aria-labelledby="mobile-summary-title">
+          <header class="prototype-header">
+            <div>
+              <h2 id="mobile-summary-title">A. 모바일 홈 요약</h2>
+              <p>자산 화면 아래에 붙이기 좋은 핵심 지표 카드</p>
+            </div>
+            <span class="tag">추천 1</span>
+          </header>
+          <div class="mock">
+            <div class="phone-dashboard">
+              <div class="asset-head">
+                <div class="label">현재 자산</div>
+                <div class="asset-value"><small>$</small> 2,766.25</div>
+                <div class="asset-change">+266.25 USDT  +10.2%</div>
+              </div>
+
+              <div class="dark-card">
+                <div class="section-title">
+                  <span>매매 통계</span>
+                  <svg class="mini-spark" viewBox="0 0 88 24" aria-hidden="true">
+                    <polyline points="0,18 12,15 24,16 36,9 48,12 60,6 72,8 88,3" fill="none" stroke="#25d69a" stroke-width="3" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="rows">
+                  <div class="metric-row"><span>최근 10건 승률</span><strong>100%</strong></div>
+                  <div class="metric-row"><span>연속 성적</span><strong class="good">1연승</strong></div>
+                  <div class="metric-row"><span>오늘 매매</span><strong>0건</strong></div>
+                  <div class="metric-row"><span>평균 보유 기간</span><strong>22h 20m</strong></div>
+                </div>
+              </div>
+
+              <div class="dark-card">
+                <div class="section-title">
+                  <span>마켓 인사이트</span>
+                  <span>00:30 갱신</span>
+                </div>
+                <div class="rows">
+                  <div class="metric-row"><span>BTC 가격</span><strong>$78,075 <span class="bad">-1.45%</span></strong></div>
+                  <div class="metric-row"><span>BTC 도미넌스</span><strong>58.3%</strong></div>
+                  <div class="metric-row"><span>Fear &amp; Greed</span><strong class="warn">31 Fear</strong></div>
+                  <div class="metric-row"><span>오늘 주요 경제 일정</span><strong>없음</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="prototype dark-shell" aria-labelledby="mobile-feed-title">
+          <header class="prototype-header">
+            <div>
+              <h2 id="mobile-feed-title">D. 모바일 일정 피드</h2>
+              <p>트레이딩 전 체크용 바텀 탭 화면</p>
+            </div>
+            <span class="tag">추천 4</span>
+          </header>
+          <div class="mock">
+            <div class="mobile-list">
+              <div class="mobile-list-head">
+                <h3>오늘 체크</h3>
+                <div class="mobile-tabs">
+                  <button class="active">지표</button>
+                  <button>가격</button>
+                  <button>리스크</button>
+                </div>
+              </div>
+              <div class="mobile-event">
+                <time>21:30</time>
+                <div>
+                  <strong>근원 소비자물가지수 (MoM)</strong>
+                  <span>USD · 중요도 높음 · 예측 0.3%</span>
+                </div>
+                <span class="severity high">H</span>
+              </div>
+              <div class="mobile-event">
+                <time>21:30</time>
+                <div>
+                  <strong>소비자물가지수 (YoY)</strong>
+                  <span>USD · 이전 3.3%</span>
+                </div>
+                <span class="severity high">H</span>
+              </div>
+              <div class="mobile-event">
+                <time>23:00</time>
+                <div>
+                  <strong>기존주택판매</strong>
+                  <span>USD · 예측 4.05M</span>
+                </div>
+                <span class="severity mid">M</span>
+              </div>
+              <nav class="mobile-bottom" aria-label="mobile navigation">
+                <button class="active">홈</button>
+                <button>캘린더</button>
+                <button>알림</button>
+                <button>설정</button>
+              </nav>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="column">
+        <section class="prototype" aria-labelledby="calendar-title">
+          <header class="prototype-header">
+            <div>
+              <h2 id="calendar-title">B. 경제 일정 중심</h2>
+              <p>Investing 경제 캘린더 데이터를 그대로 API화할 때 가장 명확한 화면</p>
+            </div>
+            <span class="tag">추천 2</span>
+          </header>
+          <div class="calendar-shell">
+            <div class="calendar-top">
+              <div class="calendar-title">
+                <div class="pill-row">
+                  <h3>경제 일정</h3>
+                  <button class="primary-pill">오늘 5월 17일 (일)</button>
+                  <button class="filter-pill">USD</button>
+                  <button class="filter-pill">중요도 2 이상</button>
+                </div>
+                <div>미국 주요 지표 · 한국 시간 · 실시간/예측/이전값 비교</div>
+              </div>
+              <div class="segmented" aria-label="calendar range">
+                <button class="active">이번 주</button>
+                <button>다음 주</button>
+              </div>
+            </div>
+
+            <div class="day-group">
+              <div class="day-head"><span>5월 11일 (월)</span><span class="count">2건</span></div>
+              <div class="event-row">
+                <span class="time">23:00</span>
+                <span class="impact mid">★★</span>
+                <span class="currency">USD</span>
+                <span class="event-name">기존주택판매 (MoM) (4월)</span>
+                <span class="event-value">실제 <strong>0.2%</strong></span>
+                <span class="event-value">예측</span>
+                <span class="event-value">이전 <strong>-2.9%</strong></span>
+              </div>
+              <div class="event-row">
+                <span class="time">23:00</span>
+                <span class="impact high">★★★</span>
+                <span class="currency">USD</span>
+                <span class="event-name">기존주택판매 (4월)</span>
+                <span class="event-value">실제 <strong>4.02M</strong></span>
+                <span class="event-value">예측 <strong>4.05M</strong></span>
+                <span class="event-value">이전 <strong>4.01M</strong></span>
+              </div>
+            </div>
+
+            <div class="day-group">
+              <div class="day-head"><span>5월 12일 (화)</span><span class="count">7건</span></div>
+              <div class="event-row">
+                <span class="time">02:00</span>
+                <span class="impact mid">★★</span>
+                <span class="currency">USD</span>
+                <span class="event-name">3년물 국채 입찰</span>
+                <span class="event-value">실제 <strong>3.965%</strong></span>
+                <span class="event-value">예측</span>
+                <span class="event-value">이전 <strong>3.897%</strong></span>
+              </div>
+              <div class="event-row">
+                <span class="time">21:30</span>
+                <span class="impact high">★★★</span>
+                <span class="currency">USD</span>
+                <span class="event-name">근원 소비자물가지수 (MoM)</span>
+                <span class="event-value">실제 <strong>0.4%</strong></span>
+                <span class="event-value">예측 <strong>0.3%</strong></span>
+                <span class="event-value">이전 <strong>0.2%</strong></span>
+              </div>
+              <div class="event-row">
+                <span class="time">21:30</span>
+                <span class="impact high">★★★</span>
+                <span class="currency">USD</span>
+                <span class="event-name">소비자물가지수 (YoY) (4월)</span>
+                <span class="event-value">실제 <strong>3.8%</strong></span>
+                <span class="event-value">예측 <strong>3.7%</strong></span>
+                <span class="event-value">이전 <strong>3.3%</strong></span>
+              </div>
+            </div>
+
+            <div class="today-empty">
+              <span>5월 17일 (일)<span class="today-badge">오늘</span></span>
+              <span>예정 없음</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="prototype dark-shell" aria-labelledby="terminal-title">
+          <header class="prototype-header">
+            <div>
+              <h2 id="terminal-title">C. 트레이딩 터미널형</h2>
+              <p>차트 옆 보조 패널로 쓰기 좋은 시장 요약</p>
+            </div>
+            <span class="tag">추천 3</span>
+          </header>
+          <div class="terminal-grid">
+            <div class="terminal-panel">
+              <div class="terminal-head">
+                <h3>Market Summary</h3>
+                <span class="status-dot">LIVE API</span>
+              </div>
+              <div class="ticker-grid">
+                <div class="ticker">
+                  <div class="name">BTC/USD</div>
+                  <div class="num">$78,075</div>
+                  <div class="move down">-1.45%</div>
+                </div>
+                <div class="ticker">
+                  <div class="name">BTC.D</div>
+                  <div class="num">58.3%</div>
+                  <div class="move">+0.4%</div>
+                </div>
+                <div class="ticker">
+                  <div class="name">DXY</div>
+                  <div class="num">104.21</div>
+                  <div class="move">+0.18%</div>
+                </div>
+                <div class="ticker">
+                  <div class="name">NASDAQ</div>
+                  <div class="num">18,512</div>
+                  <div class="move down">-0.22%</div>
+                </div>
+                <div class="ticker">
+                  <div class="name">US10Y</div>
+                  <div class="num">4.468%</div>
+                  <div class="move">+5bp</div>
+                </div>
+                <div class="ticker">
+                  <div class="name">Fear &amp; Greed</div>
+                  <div class="num">31</div>
+                  <div class="move down">Fear</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="terminal-panel">
+              <div class="terminal-head">
+                <h3>Next Events</h3>
+                <span class="status-dot">30m cache</span>
+              </div>
+              <div class="news-row">
+                <span class="time-chip">21:30</span>
+                <span class="event-chip">근원 CPI (MoM)</span>
+                <span class="severity high">H</span>
+              </div>
+              <div class="news-row">
+                <span class="time-chip">21:30</span>
+                <span class="event-chip">CPI (YoY)</span>
+                <span class="severity high">H</span>
+              </div>
+              <div class="news-row">
+                <span class="time-chip">23:00</span>
+                <span class="event-chip">기존주택판매</span>
+                <span class="severity mid">M</span>
+              </div>
+              <div class="risk-row">
+                <div>
+                  <strong>리스크 모드</strong>
+                  <span>CPI 발표 30분 전 신규 진입 제한</span>
+                </div>
+                <div class="gauge"><span>31</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="prototype" aria-labelledby="rail-title">
+          <header class="prototype-header">
+            <div>
+              <h2 id="rail-title">E. 대시보드 우측 레일</h2>
+              <p>기존 트레이딩 저널 화면에 가장 적게 침투하는 통합 방식</p>
+            </div>
+            <span class="tag">추천 5</span>
+          </header>
+          <div class="rail-layout">
+            <div class="workspace-pane">
+              <div class="workspace-head">
+                <h3>자산 곡선</h3>
+                <span class="tag">이번 달 +10.2%</span>
+              </div>
+              <div class="chart-panel" aria-label="sample equity chart">
+                <svg viewBox="0 0 720 218" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="#25d69a" stop-opacity=".28"/>
+                      <stop offset="100%" stop-color="#25d69a" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0 166 C70 160 86 130 142 139 C203 148 215 101 278 110 C341 119 367 66 424 78 C493 92 505 54 568 57 C635 61 665 32 720 39 L720 218 L0 218 Z" fill="url(#area)"/>
+                  <path d="M0 166 C70 160 86 130 142 139 C203 148 215 101 278 110 C341 119 367 66 424 78 C493 92 505 54 568 57 C635 61 665 32 720 39" fill="none" stroke="#25d69a" stroke-width="4" stroke-linecap="round"/>
+                  <line x1="0" y1="160" x2="720" y2="160" stroke="#d9e2ef" stroke-width="1"/>
+                  <line x1="0" y1="82" x2="720" y2="82" stroke="#d9e2ef" stroke-width="1"/>
+                </svg>
+              </div>
+              <div class="chart-caption">
+                <div class="caption-cell"><span>BTC</span><strong>$78,075</strong></div>
+                <div class="caption-cell"><span>Dominance</span><strong>58.3%</strong></div>
+                <div class="caption-cell"><span>Fear</span><strong>31</strong></div>
+                <div class="caption-cell"><span>Events</span><strong>0</strong></div>
+              </div>
+            </div>
+
+            <aside class="alert-rail">
+              <h3>시장 알림</h3>
+              <div class="alert-item">
+                <div class="meta"><span>21:30</span><span class="severity high">H</span></div>
+                <strong>CPI 발표 구간</strong>
+                <p>발표 전후 30분은 자동으로 리스크 배지를 표시.</p>
+              </div>
+              <div class="alert-item">
+                <div class="meta"><span>상시</span><span class="severity mid">M</span></div>
+                <strong>BTC 도미넌스 상승</strong>
+                <p>알트 포지션 비중 점검 신호.</p>
+              </div>
+              <div class="alert-item">
+                <div class="meta"><span>00:30</span><span class="severity mid">M</span></div>
+                <strong>Fear &amp; Greed 31</strong>
+                <p>공포 구간. 진입 근거 기록을 먼저 요구.</p>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
