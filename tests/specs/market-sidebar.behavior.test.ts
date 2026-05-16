@@ -6,9 +6,15 @@ describe('market sidebar economic calendar visibility', () => {
     const sidePanel = readFileSync('src/components/trades/TradeSidePanel.tsx', 'utf8');
 
     expect(sidePanel).toContain('fetchEconomicCalendar');
-    expect(sidePanel).toContain('오늘 주요 경제 일정');
+    expect(sidePanel).toContain('Next Events');
+    expect(sidePanel).toContain('오늘 주요 지표 없음');
     expect(sidePanel).toContain('calendarLoading');
-    expect(sidePanel).toMatch(/\{?\(insightLoading \|\| insight\)[\s\S]*\)\}\n\n\s+<div className="h-px bg-border my-4" \/>/);
+    expect(sidePanel).toContain('visibleCalendarEvents.map');
+    expect(sidePanel).toContain('safeExternalUrl');
+    expect(sidePanel).toContain("timeZone: 'Asia/Seoul'");
+    expect(sidePanel).toContain('rel="noopener noreferrer"');
+    expect(sidePanel).toContain('.finally(() =>');
+    expect(sidePanel).not.toContain('href={event.url}');
     expect(sidePanel).not.toContain('파생상품 데이터');
   });
 });
