@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mobile Terminal UI Options</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1016;
+      --panel: #141b23;
+      --panel-2: #18212b;
+      --line: #283646;
+      --ink: #eff5ff;
+      --muted: #9fb0c7;
+      --green: #25d69a;
+      --red: #ff6b7a;
+      --amber: #ffc429;
+      --blue: #3b74ff;
+      --blue-soft: rgba(59, 116, 255, .18);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #e9eef5;
+      color: var(--ink);
+    }
+
+    .page {
+      width: min(1360px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      color: #111827;
+    }
+
+    .top h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .top p {
+      margin: 0;
+      color: #65748a;
+      font-size: 14px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid #d8e1ee;
+      border-radius: 999px;
+      background: white;
+      color: #43536a;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+
+    .option {
+      border-radius: 8px;
+      border: 1px solid #d8e1ee;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, .12);
+    }
+
+    .option-head {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #d8e1ee;
+      color: #111827;
+    }
+
+    .option-head h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .option-head p {
+      margin: 0;
+      color: #65748a;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #eaf0ff;
+      color: #244ec2;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .phone-wrap {
+      padding: 20px;
+      display: grid;
+      place-items: center;
+      background: #f5f8fc;
+    }
+
+    .phone {
+      width: min(390px, 100%);
+      border: 1px solid #243142;
+      border-radius: 8px;
+      background: var(--bg);
+      overflow: hidden;
+      color: var(--ink);
+    }
+
+    .phone-header {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: #111922;
+    }
+
+    .phone-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .phone-header h3 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .live::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(37, 214, 154, .13);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .ticker-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      padding: 14px 18px 18px;
+      scrollbar-width: none;
+    }
+
+    .ticker-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ticker-card {
+      flex: 0 0 158px;
+      scroll-snap-align: start;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+    }
+
+    .ticker-card span,
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 10px;
+    }
+
+    .ticker-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 24px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+
+    .move {
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .move.down {
+      color: var(--red);
+    }
+
+    .compact-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 14px 18px 18px;
+    }
+
+    .metric {
+      min-height: 82px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 21px;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 0 18px 14px;
+    }
+
+    .tabs button {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tabs .active {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: white;
+    }
+
+    .section-list {
+      display: grid;
+      padding: 0 18px 18px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 62px;
+      border-top: 1px solid var(--line);
+    }
+
+    .row:first-child {
+      border-top: 0;
+    }
+
+    .row time {
+      color: #cbd6e6;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+    }
+
+    .row strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .row span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      height: 26px;
+      border-radius: 999px;
+      background: #9a5a00;
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .pill.high {
+      background: #b91c32;
+    }
+
+    .summary-card {
+      margin: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .summary-top {
+      min-height: 76px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary-top span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 6px;
+    }
+
+    .summary-top strong {
+      display: block;
+      font-size: 28px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gauge {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--amber) 0 31%, #2f3c4e 31% 100%);
+      position: relative;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gauge::before {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      background: var(--panel);
+    }
+
+    .gauge b {
+      position: relative;
+      font-size: 14px;
+    }
+
+    details {
+      border-top: 1px solid var(--line);
+    }
+
+    details:first-of-type {
+      border-top: 0;
+    }
+
+    summary {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      cursor: pointer;
+      color: #e9f0fb;
+      font-weight: 850;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .detail-body {
+      padding: 0 14px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .bottom-sheet {
+      margin: 14px 18px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+    }
+
+    .sheet-handle {
+      width: 46px;
+      height: 4px;
+      border-radius: 999px;
+      background: #39485b;
+      margin: 0 auto 14px;
+    }
+
+    .sheet-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .sheet-title strong {
+      font-size: 16px;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      min-height: 42px;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .mini-row:first-of-type {
+      border-top: 0;
+    }
+
+    .mini-row strong {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sticky-mini {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 12px;
+      background: rgba(11, 16, 22, .96);
+      border-bottom: 1px solid var(--line);
+      scrollbar-width: none;
+    }
+
+    .sticky-mini::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mini-chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .mini-chip .up {
+      color: var(--green);
+    }
+
+    .mini-chip .down {
+      color: var(--red);
+    }
+
+    .dense-table {
+      display: grid;
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .dense-row {
+      min-height: 42px;
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .dense-row span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .dense-row strong {
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .dense-row .green {
+      color: var(--green);
+    }
+
+    .dense-row .red {
+      color: var(--red);
+    }
+
+    .action-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 0 12px 14px;
+    }
+
+    .action-bar button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .recommend {
+      grid-column: 1 / -1;
+      border-radius: 8px;
+      border: 1px solid #d8e1ee;
+      background: #fff;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, .12);
+      padding: 18px;
+      color: #111827;
+    }
+
+    .recommend h2 {
+      margin: 0 0 12px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .recommend-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .recommend-card {
+      border: 1px solid #d8e1ee;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    .recommend-card span {
+      display: block;
+      color: #65748a;
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 8px;
+    }
+
+    .recommend-card strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .recommend-card p {
+      margin: 0;
+      color: #526173;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 980px) {
+      .grid,
+      .recommend-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .legend {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 12px;
+      }
+
+      .phone-wrap {
+        padding: 12px;
+      }
+
+      .option-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .compact-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .asset-value {
+        font-size: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <div>
+        <h1>모바일 터미널형 개선안</h1>
+        <p>데스크톱 3열 카드가 모바일에서 안 보이는 문제를 해결하는 UI 패턴</p>
+      </div>
+      <div class="legend">
+        <span>가로 넘침 제거</span>
+        <span>핵심값 우선</span>
+        <span>터치 영역 유지</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 1. 가로 스냅 카드</h2>
+            <p>터미널 카드 폭을 유지하되 한 장씩 넘겨서 보는 방식</p>
+          </div>
+          <span class="badge">추천</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-header-row">
+                <h3>Market Summary</h3>
+                <span class="live">LIVE API</span>
+              </div>
+              <div class="subtitle">좌우로 넘겨서 주요 지표 확인</div>
+            </div>
+            <div class="ticker-strip" aria-label="market ticker cards">
+              <div class="ticker-card">
+                <span>BTC/USD</span>
+                <strong>$78,075</strong>
+                <div class="move down">-1.45%</div>
+              </div>
+              <div class="ticker-card">
+                <span>BTC.D</span>
+                <strong>58.3%</strong>
+                <div class="move">+0.4%</div>
+              </div>
+              <div class="ticker-card">
+                <span>DXY</span>
+                <strong>104.21</strong>
+                <div class="move">+0.18%</div>
+              </div>
+              <div class="ticker-card">
+                <span>Fear &amp; Greed</span>
+                <strong>31</strong>
+                <div class="move down">Fear</div>
+              </div>
+            </div>
+            <div class="section-list">
+              <div class="row"><time>21:30</time><div><strong>근원 CPI (MoM)</strong><span>예측 0.3%</span></div><b class="pill high">H</b></div>
+              <div class="row"><time>23:00</time><div><strong>기존주택판매</strong><span>예측 4.05M</span></div><b class="pill">M</b></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 2. 2열 압축 카드</h2>
+            <p>카드 크기를 줄이고 지표명/값/등락만 남기는 방식</p>
+          </div>
+          <span class="badge">간단</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-header-row">
+                <h3>Market</h3>
+                <span class="live">30m cache</span>
+              </div>
+              <div class="subtitle">한 화면에 최대한 많이 노출</div>
+            </div>
+            <div class="compact-grid">
+              <div class="metric"><span>BTC</span><strong>$78,075</strong><div class="move down">-1.45%</div></div>
+              <div class="metric"><span>BTC.D</span><strong>58.3%</strong><div class="move">+0.4%</div></div>
+              <div class="metric"><span>DXY</span><strong>104.21</strong><div class="move">+0.18%</div></div>
+              <div class="metric"><span>NASDAQ</span><strong>18,512</strong><div class="move down">-0.22%</div></div>
+              <div class="metric"><span>US10Y</span><strong>4.468%</strong><div class="move">+5bp</div></div>
+              <div class="metric"><span>Fear</span><strong>31</strong><div class="move down">Fear</div></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 3. 탭 분리</h2>
+            <p>시장/일정/리스크를 탭으로 나눠 한 번에 한 종류만 표시</p>
+          </div>
+          <span class="badge">실사용</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-header-row">
+                <h3>오늘 체크</h3>
+                <span class="live">ON</span>
+              </div>
+            </div>
+            <div class="tabs">
+              <button class="active">시장</button>
+              <button>일정</button>
+              <button>리스크</button>
+            </div>
+            <div class="summary-card">
+              <div class="summary-top">
+                <div>
+                  <span>BTC/USD</span>
+                  <strong>$78,075</strong>
+                  <div class="move down">-1.45%</div>
+                </div>
+                <div class="gauge"><b>31</b></div>
+              </div>
+              <details open>
+                <summary><span>도미넌스</span><b>58.3%</b></summary>
+                <div class="detail-body">BTC 도미넌스 상승. 알트 포지션 비중 점검.</div>
+              </details>
+              <details>
+                <summary><span>DXY</span><b>104.21</b></summary>
+                <div class="detail-body">달러 강세 구간에서는 변동성 확대 가능.</div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 4. 요약 + 바텀시트</h2>
+            <p>첫 화면은 한 장 요약, 상세는 아래 패널에서 확인</p>
+          </div>
+          <span class="badge">모바일 앱형</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-header-row">
+                <h3>Risk Mode</h3>
+                <span class="live">LIVE</span>
+              </div>
+              <div class="subtitle">중요 이벤트만 먼저 표시</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-top">
+                <div>
+                  <span>현재 리스크</span>
+                  <strong>Medium</strong>
+                  <div class="move down">CPI 30분 전 제한</div>
+                </div>
+                <div class="gauge"><b>31</b></div>
+              </div>
+            </div>
+            <div class="bottom-sheet">
+              <div class="sheet-handle"></div>
+              <div class="sheet-title">
+                <strong>상세 지표</strong>
+                <span class="live">updated</span>
+              </div>
+              <div class="mini-row"><span>BTC/USD</span><strong>$78,075</strong></div>
+              <div class="mini-row"><span>US10Y</span><strong>4.468%</strong></div>
+              <div class="mini-row"><span>Next Event</span><strong>21:30 CPI</strong></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 5. 고정 미니티커 + 리스트</h2>
+            <p>상단에 핵심 가격을 고정하고, 본문은 일정 리스트만 스크롤</p>
+          </div>
+          <span class="badge">트레이딩용</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="sticky-mini" aria-label="sticky market ticker">
+              <span class="mini-chip">BTC <b class="down">-1.45%</b></span>
+              <span class="mini-chip">BTC.D <b class="up">58.3%</b></span>
+              <span class="mini-chip">DXY <b class="up">104.21</b></span>
+              <span class="mini-chip">Fear <b class="down">31</b></span>
+            </div>
+            <div class="phone-header">
+              <div class="phone-header-row">
+                <h3>Next Events</h3>
+                <span class="live">30m cache</span>
+              </div>
+              <div class="subtitle">가격은 고정, 일정은 세로 스크롤</div>
+            </div>
+            <div class="section-list">
+              <div class="row"><time>21:30</time><div><strong>근원 CPI (MoM)</strong><span>실제 · 예측 · 이전</span></div><b class="pill high">H</b></div>
+              <div class="row"><time>21:30</time><div><strong>CPI (YoY)</strong><span>실제 · 예측 · 이전</span></div><b class="pill high">H</b></div>
+              <div class="row"><time>23:00</time><div><strong>기존주택판매</strong><span>예측 4.05M</span></div><b class="pill">M</b></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 6. 초밀도 행 리스트</h2>
+            <p>카드를 없애고 표처럼 보여서 작은 화면에서 가장 많이 보임</p>
+          </div>
+          <span class="badge">최대정보량</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-header">
+              <div class="phone-header-row">
+                <h3>Terminal Lite</h3>
+                <span class="live">API</span>
+              </div>
+              <div class="subtitle">카드 대신 행 단위 밀도 최적화</div>
+            </div>
+            <div class="dense-table">
+              <div class="dense-row"><span>BTC/USD</span><strong>$78,075</strong><strong class="red">-1.45%</strong></div>
+              <div class="dense-row"><span>BTC.D</span><strong>58.3%</strong><strong class="green">+0.4%</strong></div>
+              <div class="dense-row"><span>DXY</span><strong>104.21</strong><strong class="green">+0.18%</strong></div>
+              <div class="dense-row"><span>US10Y</span><strong>4.468%</strong><strong class="green">+5bp</strong></div>
+              <div class="dense-row"><span>Fear</span><strong>31</strong><strong class="red">Fear</strong></div>
+              <div class="dense-row"><span>21:30</span><strong>CPI</strong><strong class="red">H</strong></div>
+            </div>
+            <div class="action-bar">
+              <button>시장</button>
+              <button>일정</button>
+              <button>알림</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <section class="recommend">
+        <h2>추천 적용 순서</h2>
+        <div class="recommend-grid">
+          <div class="recommend-card">
+            <span>1차</span>
+            <strong>방안 5</strong>
+            <p>상단 미니티커 고정 + 일정 리스트. 실제 트레이딩 화면에서 가장 덜 답답함.</p>
+          </div>
+          <div class="recommend-card">
+            <span>2차</span>
+            <strong>방안 3</strong>
+            <p>시장/일정/리스크를 탭으로 분리. 기능이 늘어나도 화면이 무너지지 않음.</p>
+          </div>
+          <div class="recommend-card">
+            <span>보조</span>
+            <strong>방안 1</strong>
+            <p>데스크톱 카드 감성을 살리고 싶을 때만 가로 스냅 카드로 사용.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade Form Context UI Options</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1016;
+      --panel: #171d23;
+      --panel-2: #1d242c;
+      --line: #2c343d;
+      --line-strong: #45505c;
+      --ink: #eef4ff;
+      --muted: #8fa0b5;
+      --green: #2de0a5;
+      --green-soft: rgba(45, 224, 165, .14);
+      --red: #ff7280;
+      --amber: #ffc43b;
+      --blue: #6f96d8;
+      --shadow: 0 18px 46px rgba(0, 0, 0, .28);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #e9eef5;
+      color: var(--ink);
+    }
+
+    .page {
+      width: min(1480px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      color: #111827;
+    }
+
+    .top h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .top p {
+      margin: 0;
+      color: #65748a;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid #d8e1ee;
+      border-radius: 999px;
+      background: white;
+      color: #43536a;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+
+    .option {
+      overflow: hidden;
+      border: 1px solid #d8e1ee;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, .12);
+    }
+
+    .option-head {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #d8e1ee;
+      color: #111827;
+    }
+
+    .option-head h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .option-head p {
+      margin: 0;
+      color: #65748a;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #eaf0ff;
+      color: #244ec2;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .phone-wrap {
+      padding: 20px;
+      display: grid;
+      place-items: center;
+      background: #f5f8fc;
+    }
+
+    .phone {
+      width: min(430px, 100%);
+      min-height: 720px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #26303a;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    .phone-inner {
+      height: 720px;
+      overflow: auto;
+      padding: 24px 20px 84px;
+      scrollbar-width: none;
+    }
+
+    .phone-inner::-webkit-scrollbar {
+      display: none;
+    }
+
+    .asset {
+      display: grid;
+      justify-items: end;
+      gap: 6px;
+      margin-bottom: 24px;
+      padding-right: 6px;
+    }
+
+    .asset-value {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      color: var(--green);
+      font-size: 31px;
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .asset-value small {
+      color: #dce5f1;
+      font-size: .52em;
+    }
+
+    .asset-change {
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .trade-card {
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 20px;
+    }
+
+    .trade-card h3 {
+      margin: 0 0 22px;
+      color: #aebbd0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #9fb0c7;
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .select,
+    .input {
+      min-height: 52px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: #edf4ff;
+      font-weight: 850;
+      background: #1a2027;
+    }
+
+    .side-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .side-toggle button {
+      min-height: 48px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: transparent;
+      color: #9fb0c7;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .side-toggle .active {
+      border-color: var(--green);
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .question {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 18px;
+      background: #181f26;
+    }
+
+    .question-title {
+      color: #edf4ff;
+      font-size: 15px;
+      font-weight: 850;
+      margin-bottom: 14px;
+    }
+
+    .tag-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tag {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 11px;
+      border: 1px solid #3e4650;
+      border-radius: 7px;
+      background: #293039;
+      color: #aebbd0;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .tag.dim {
+      background: transparent;
+      border-color: #2f3741;
+      color: #77869a;
+    }
+
+    .hint {
+      color: #7f8ea3;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .slider-line {
+      height: 8px;
+      margin: 12px 2px 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #cfd8e4 0 11%, #686f78 11% 100%);
+      position: relative;
+    }
+
+    .slider-line::before {
+      content: "";
+      width: 26px;
+      height: 26px;
+      position: absolute;
+      left: 9%;
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: 50%;
+      background: #dfe8f4;
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      min-height: 72px;
+      border-top: 1px solid var(--line);
+      background: rgba(23, 29, 35, .98);
+      backdrop-filter: blur(8px);
+    }
+
+    .bottom-nav div {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 4px;
+      color: #778aa2;
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .bottom-nav .active {
+      color: #eaf1ff;
+    }
+
+    .icon {
+      width: 24px;
+      height: 24px;
+      border: 2px solid currentColor;
+      border-radius: 6px;
+      opacity: .9;
+    }
+
+    .context-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin: -8px 0 16px;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .context-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .context-pill {
+      flex: 0 0 auto;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #111820;
+      color: #c8d4e4;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .context-pill strong {
+      color: var(--green);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .context-pill .warn {
+      color: var(--amber);
+    }
+
+    .risk-card {
+      border: 1px solid #3c4653;
+      border-radius: 8px;
+      margin: -8px 0 16px;
+      background: #121920;
+      overflow: hidden;
+    }
+
+    .risk-card summary {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      list-style: none;
+      color: #dce6f4;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .risk-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .risk-body {
+      border-top: 1px solid var(--line);
+      padding: 12px 14px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .risk-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      color: #9fb0c7;
+      font-size: 12px;
+    }
+
+    .risk-row strong {
+      color: #edf4ff;
+    }
+
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(255, 196, 59, .16);
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .mini-badge.green {
+      background: rgba(45, 224, 165, .14);
+      color: var(--green);
+    }
+
+    .inline-alert {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      margin-bottom: 14px;
+      border: 1px solid rgba(255, 196, 59, .34);
+      border-radius: 8px;
+      background: rgba(255, 196, 59, .08);
+      color: #d9e2ee;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .inline-alert b {
+      color: var(--amber);
+      font-size: 13px;
+    }
+
+    .floating-button {
+      position: absolute;
+      right: 18px;
+      bottom: 88px;
+      min-width: 94px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border-radius: 999px;
+      background: var(--green);
+      color: #062116;
+      font-size: 13px;
+      font-weight: 950;
+      box-shadow: 0 10px 24px rgba(45, 224, 165, .24);
+    }
+
+    .sheet {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 78px;
+      border: 1px solid #3d4651;
+      border-radius: 8px;
+      background: #141b23;
+      padding: 12px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .42);
+    }
+
+    .sheet-handle {
+      width: 44px;
+      height: 4px;
+      border-radius: 999px;
+      background: #4c5968;
+      margin: 0 auto 12px;
+    }
+
+    .sheet-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .sheet-head strong {
+      font-size: 14px;
+    }
+
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .sheet-cell {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #111820;
+    }
+
+    .sheet-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      margin-bottom: 7px;
+    }
+
+    .sheet-cell strong {
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .submit-preview {
+      margin-top: 18px;
+      border: 1px solid rgba(45, 224, 165, .34);
+      border-radius: 8px;
+      background: rgba(45, 224, 165, .08);
+      padding: 14px;
+    }
+
+    .submit-preview-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: #dff9ef;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .check-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      min-height: 30px;
+      align-items: center;
+      color: #aebbd0;
+      font-size: 12px;
+      border-top: 1px solid rgba(45, 224, 165, .18);
+    }
+
+    .check-row:first-of-type {
+      border-top: 0;
+    }
+
+    .check-row strong {
+      color: #edf4ff;
+      font-weight: 850;
+    }
+
+    .recommend {
+      grid-column: 1 / -1;
+      border: 1px solid #d8e1ee;
+      border-radius: 8px;
+      background: #fff;
+      color: #111827;
+      padding: 18px;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, .12);
+    }
+
+    .recommend h2 {
+      margin: 0 0 12px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .recommend-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .recommend-card {
+      border: 1px solid #d8e1ee;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    .recommend-card span {
+      display: block;
+      color: #65748a;
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 8px;
+    }
+
+    .recommend-card strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .recommend-card p {
+      margin: 0;
+      color: #526173;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 980px) {
+      .grid,
+      .recommend-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .legend {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 12px;
+      }
+
+      .phone-wrap {
+        padding: 12px;
+      }
+
+      .option-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .sheet-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <div>
+        <h1>거래 입력 폼 안에서 시장 정보 넣는 방식</h1>
+        <p>현재 폼 흐름을 깨지 않고 Investing 지표, 트럼프/뉴스, 경제 일정 정보를 넣는 모바일 UI 안</p>
+      </div>
+      <div class="legend">
+        <span>입력 방해 최소화</span>
+        <span>중요도 기반 노출</span>
+        <span>폼 하단 고정 nav 유지</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 1. 상단 컨텍스트 바</h2>
+            <p>자산 아래, 거래 카드 위에 핵심 지표만 가로 스크롤로 노출</p>
+          </div>
+          <span class="badge">추천 1</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="asset">
+                <div class="asset-value"><small>$</small>2,766.25</div>
+                <div class="asset-change">+266.25 USDT +10.2%</div>
+              </div>
+              <div class="context-strip" role="group" aria-label="market context">
+                <span class="context-pill">BTC <strong>$78,075</strong></span>
+                <span class="context-pill">Fear <strong class="warn">31</strong></span>
+                <span class="context-pill">CPI <strong class="warn">21:30</strong></span>
+                <span class="context-pill">Trump <strong>중간</strong></span>
+              </div>
+              <div class="trade-card">
+                <h3>새 거래 입력</h3>
+                <div class="field"><div class="label">코인 / 종목</div><div class="select">BTC <span>⌄</span></div></div>
+                <div class="field"><div class="label">포지션 방향</div><div class="side-toggle"><button class="active">↑ LONG</button><button>↓ SHORT</button></div></div>
+                <div class="question">
+                  <div class="label">복기 질문</div>
+                  <div class="question-title">이 거래는 어떤 매매였나요?</div>
+                  <div class="tag-group">
+                    <span class="tag">계획된 진입</span><span class="tag">지지/저항 근거</span><span class="tag">돌파/추세 근거</span>
+                    <span class="tag">충동 진입</span><span class="tag">손실 복구 시도</span><span class="tag">아직 모름</span>
+                  </div>
+                  <div class="hint">상단 컨텍스트는 훑기만 하고, 입력 폼은 그대로 유지.</div>
+                </div>
+                <div class="field"><div class="label">레버리지</div><div class="input">x&nbsp;&nbsp;<strong>10</strong></div><div class="slider-line"></div></div>
+              </div>
+            </div>
+            <nav class="bottom-nav"><div><i class="icon"></i>홈</div><div class="active"><i class="icon"></i>입력</div><div><i class="icon"></i>내역</div><div><i class="icon"></i>분석</div><div><i class="icon"></i>설정</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 2. 접이식 리스크 카드</h2>
+            <p>평소에는 한 줄, 필요할 때만 펼쳐서 상세 확인</p>
+          </div>
+          <span class="badge">추천 2</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="asset">
+                <div class="asset-value"><small>$</small>2,766.25</div>
+                <div class="asset-change">+266.25 USDT +10.2%</div>
+              </div>
+              <details class="risk-card" open>
+                <summary><span>진입 전 리스크 체크</span><span class="mini-badge">Medium</span></summary>
+                <div class="risk-body">
+                  <div class="risk-row"><span>BTC</span><strong>$78,075 · -1.45%</strong></div>
+                  <div class="risk-row"><span>경제 일정</span><strong>오늘 주요 지표 없음</strong></div>
+                  <div class="risk-row"><span>트럼프/뉴스</span><strong>정책 발언 중간</strong></div>
+                </div>
+              </details>
+              <div class="trade-card">
+                <h3>새 거래 입력</h3>
+                <div class="field"><div class="label">코인 / 종목</div><div class="select">BTC <span>⌄</span></div></div>
+                <div class="field"><div class="label">포지션 방향</div><div class="side-toggle"><button class="active">↑ LONG</button><button>↓ SHORT</button></div></div>
+                <div class="question">
+                  <div class="label">복기 질문</div>
+                  <div class="question-title">이 거래는 어떤 매매였나요?</div>
+                  <div class="tag-group">
+                    <span class="tag">계획된 진입</span><span class="tag">지지/저항 근거</span><span class="tag">돌파/추세 근거</span>
+                    <span class="tag dim">뇌동매매</span><span class="tag dim">FOMO</span><span class="tag dim">복수매매</span>
+                  </div>
+                  <div class="hint">리스크 카드는 접으면 한 줄만 차지.</div>
+                </div>
+                <div class="field"><div class="label">레버리지</div><div class="input">x&nbsp;&nbsp;<strong>10</strong></div><div class="slider-line"></div></div>
+              </div>
+            </div>
+            <nav class="bottom-nav"><div><i class="icon"></i>홈</div><div class="active"><i class="icon"></i>입력</div><div><i class="icon"></i>내역</div><div><i class="icon"></i>분석</div><div><i class="icon"></i>설정</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 3. 질문 안 인라인 경고</h2>
+            <p>폼 바깥에 영역을 만들지 않고 위험 행동 선택 시에만 노출</p>
+          </div>
+          <span class="badge">공간 절약</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="asset">
+                <div class="asset-value"><small>$</small>2,766.25</div>
+                <div class="asset-change">+266.25 USDT +10.2%</div>
+              </div>
+              <div class="trade-card">
+                <h3>새 거래 입력</h3>
+                <div class="field"><div class="label">코인 / 종목 <span class="mini-badge green">BTC -1.45%</span></div><div class="select">BTC <span>⌄</span></div></div>
+                <div class="field"><div class="label">포지션 방향</div><div class="side-toggle"><button class="active">↑ LONG</button><button>↓ SHORT</button></div></div>
+                <div class="question">
+                  <div class="label">복기 질문</div>
+                  <div class="question-title">이 거래는 어떤 매매였나요?</div>
+                  <div class="tag-group">
+                    <span class="tag">계획된 진입</span><span class="tag">지지/저항 근거</span><span class="tag">돌파/추세 근거</span>
+                    <span class="tag">충동 진입</span><span class="tag">손실 복구 시도</span><span class="tag">아직 모름</span>
+                  </div>
+                  <div class="inline-alert">
+                    <b>주의</b>
+                    <span>Fear 31 공포 구간입니다. “충동 진입” 선택 시 손절가 입력을 먼저 요구하세요.</span>
+                  </div>
+                  <div class="tag-group">
+                    <span class="tag dim">근거부족</span><span class="tag dim">FOMO</span><span class="tag dim">사이즈과다</span>
+                  </div>
+                </div>
+                <div class="field"><div class="label">레버리지</div><div class="input">x&nbsp;&nbsp;<strong>10</strong></div><div class="slider-line"></div></div>
+              </div>
+            </div>
+            <nav class="bottom-nav"><div><i class="icon"></i>홈</div><div class="active"><i class="icon"></i>입력</div><div><i class="icon"></i>내역</div><div><i class="icon"></i>분석</div><div><i class="icon"></i>설정</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 4. 플로팅 버튼 + 바텀시트</h2>
+            <p>폼은 그대로 두고 필요할 때만 시장 정보를 열어 보는 방식</p>
+          </div>
+          <span class="badge">입력 방해 최소</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="asset">
+                <div class="asset-value"><small>$</small>2,766.25</div>
+                <div class="asset-change">+266.25 USDT +10.2%</div>
+              </div>
+              <div class="trade-card">
+                <h3>새 거래 입력</h3>
+                <div class="field"><div class="label">코인 / 종목</div><div class="select">BTC <span>⌄</span></div></div>
+                <div class="field"><div class="label">포지션 방향</div><div class="side-toggle"><button class="active">↑ LONG</button><button>↓ SHORT</button></div></div>
+                <div class="question">
+                  <div class="label">복기 질문</div>
+                  <div class="question-title">이 거래는 어떤 매매였나요?</div>
+                  <div class="tag-group">
+                    <span class="tag">계획된 진입</span><span class="tag">지지/저항 근거</span><span class="tag">돌파/추세 근거</span>
+                    <span class="tag">충동 진입</span><span class="tag">손실 복구 시도</span><span class="tag">아직 모름</span>
+                  </div>
+                </div>
+                <div class="field"><div class="label">레버리지</div><div class="input">x&nbsp;&nbsp;<strong>10</strong></div><div class="slider-line"></div></div>
+              </div>
+            </div>
+            <div class="sheet">
+              <div class="sheet-handle"></div>
+              <div class="sheet-head"><strong>시장 컨텍스트</strong><span class="mini-badge">30m cache</span></div>
+              <div class="sheet-grid">
+                <div class="sheet-cell"><span>BTC</span><strong>$78,075</strong></div>
+                <div class="sheet-cell"><span>Fear</span><strong>31</strong></div>
+                <div class="sheet-cell"><span>Event</span><strong>없음</strong></div>
+              </div>
+            </div>
+            <div class="floating-button">시장 보기</div>
+            <nav class="bottom-nav"><div><i class="icon"></i>홈</div><div class="active"><i class="icon"></i>입력</div><div><i class="icon"></i>내역</div><div><i class="icon"></i>분석</div><div><i class="icon"></i>설정</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div>
+            <h2>방안 5. 제출 전 체크 요약</h2>
+            <p>입력 중에는 숨기고, 저장 직전에만 판단 근거를 보여줌</p>
+          </div>
+          <span class="badge">가장 안전</span>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-inner">
+              <div class="asset">
+                <div class="asset-value"><small>$</small>2,766.25</div>
+                <div class="asset-change">+266.25 USDT +10.2%</div>
+              </div>
+              <div class="trade-card">
+                <h3>새 거래 입력</h3>
+                <div class="field"><div class="label">코인 / 종목</div><div class="select">BTC <span>⌄</span></div></div>
+                <div class="field"><div class="label">포지션 방향</div><div class="side-toggle"><button class="active">↑ LONG</button><button>↓ SHORT</button></div></div>
+                <div class="question">
+                  <div class="label">복기 질문</div>
+                  <div class="question-title">이 거래는 어떤 매매였나요?</div>
+                  <div class="tag-group">
+                    <span class="tag">계획된 진입</span><span class="tag">지지/저항 근거</span><span class="tag">돌파/추세 근거</span>
+                  </div>
+                </div>
+                <div class="field"><div class="label">레버리지</div><div class="input">x&nbsp;&nbsp;<strong>10</strong></div><div class="slider-line"></div></div>
+                <div class="submit-preview">
+                  <div class="submit-preview-title"><span>저장 전 자동 체크</span><span class="mini-badge">통과</span></div>
+                  <div class="check-row"><span>시장</span><strong>BTC 약세 · Fear 31</strong></div>
+                  <div class="check-row"><span>일정</span><strong>오늘 주요 발표 없음</strong></div>
+                  <div class="check-row"><span>뉴스</span><strong>고위험 발언 없음</strong></div>
+                </div>
+              </div>
+            </div>
+            <nav class="bottom-nav"><div><i class="icon"></i>홈</div><div class="active"><i class="icon"></i>입력</div><div><i class="icon"></i>내역</div><div><i class="icon"></i>분석</div><div><i class="icon"></i>설정</div></nav>
+          </div>
+        </div>
+      </article>
+
+      <section class="recommend">
+        <h2>내 추천</h2>
+        <div class="recommend-grid">
+          <div class="recommend-card">
+            <span>기본값</span>
+            <strong>방안 1 + 방안 5</strong>
+            <p>평소에는 상단 컨텍스트 바만 보여주고, 저장 직전에 자동 체크 요약을 보여주는 조합.</p>
+          </div>
+          <div class="recommend-card">
+            <span>트레이더 친화</span>
+            <strong>방안 2</strong>
+            <p>리스크 체크를 접이식으로 두면 사용자가 원할 때만 자세히 봄. 폼 흐름을 덜 깨뜨림.</p>
+          </div>
+          <div class="recommend-card">
+            <span>피해야 할 것</span>
+            <strong>상시 터미널 카드</strong>
+            <p>이 입력 폼 안에서는 큰 터미널 카드가 복기 질문과 레버리지 입력을 밀어내서 모바일 UX가 나빠짐.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

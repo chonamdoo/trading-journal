@@ -1,0 +1,1286 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Market Politics Brief UI</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #edf2f7;
+      --panel: #ffffff;
+      --ink: #101827;
+      --muted: #627188;
+      --line: #d9e2ee;
+      --blue: #2864e8;
+      --blue-soft: #eaf1ff;
+      --green: #087a55;
+      --green-soft: #e8f8f1;
+      --red: #b91c32;
+      --red-soft: #fde8ed;
+      --amber: #8a4f00;
+      --amber-soft: #fff4df;
+      --dark: #101827;
+      --dark-panel: #172033;
+      --dark-line: #2b374b;
+      --dark-muted: #9fb0c7;
+      --shadow: 0 18px 50px rgba(15, 23, 42, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      width: min(1460px, 100%);
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .shell {
+      min-height: calc(100vh - 56px);
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .side {
+      background: var(--dark);
+      color: #f5f8fd;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 7px;
+    }
+
+    .brand strong {
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      color: var(--dark-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav a {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: #b5c4d8;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .nav a.active {
+      color: #fff;
+      background: #243047;
+    }
+
+    .side-card {
+      margin-top: auto;
+      padding: 14px;
+      border: 1px solid var(--dark-line);
+      border-radius: 8px;
+      background: var(--dark-panel);
+    }
+
+    .side-card span {
+      display: block;
+      color: var(--dark-muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .side-card strong {
+      display: block;
+      font-size: 27px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+
+    .main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      min-height: 86px;
+      padding: 0 26px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      background: rgba(255, 255, 255, .86);
+    }
+
+    .topbar h1 {
+      margin: 0 0 6px;
+      font-size: 25px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .topbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #4d5e75;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .chip.blue {
+      border-color: #bad0ff;
+      background: var(--blue-soft);
+      color: #1f4fc6;
+    }
+
+    .content {
+      min-width: 0;
+      display: grid;
+      gap: 18px;
+      padding: 22px;
+      background: #f7f9fc;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .panel-pad {
+      padding: 18px;
+    }
+
+    .market-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 18px;
+      padding: 20px;
+      align-items: stretch;
+    }
+
+    .asset-block {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .asset-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .asset-value {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      color: #0d9668;
+      font-size: 54px;
+      line-height: 1;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .asset-value span {
+      color: var(--ink);
+      font-size: 22px;
+    }
+
+    .asset-change {
+      color: #0d9668;
+      font-size: 18px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mini-chart {
+      min-height: 170px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(to right, transparent 0 98%, rgba(100, 116, 139, .08) 98% 100%),
+        linear-gradient(to bottom, transparent 0 98%, rgba(100, 116, 139, .1) 98% 100%);
+      background-size: 58px 100%, 100% 44px;
+      overflow: hidden;
+    }
+
+    .mini-chart svg {
+      width: 100%;
+      height: 170px;
+      display: block;
+    }
+
+    .risk-tile {
+      display: grid;
+      align-content: space-between;
+      gap: 14px;
+      border-radius: 8px;
+      background: var(--dark);
+      color: #f6f8fc;
+      padding: 18px;
+    }
+
+    .risk-tile span {
+      color: var(--dark-muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .risk-score {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--amber) 0 38%, #2d394d 38% 100%);
+      position: relative;
+      font-size: 30px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .risk-score::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      background: var(--dark);
+    }
+
+    .risk-score strong {
+      position: relative;
+    }
+
+    .risk-tile p {
+      margin: 0;
+      color: #cad5e5;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+    }
+
+    .kpi {
+      min-height: 92px;
+      padding: 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .kpi:last-child {
+      border-right: 0;
+    }
+
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 8px;
+    }
+
+    .kpi strong {
+      display: block;
+      font-size: 22px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .api-panel {
+      background: #111827;
+      border-color: #26334a;
+      color: #f6f8fc;
+    }
+
+    .api-panel h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .endpoint {
+      display: grid;
+      gap: 9px;
+      padding: 14px;
+      border: 1px solid #2d3a52;
+      border-radius: 8px;
+      background: #182235;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .endpoint .method {
+      color: #67e8a5;
+      font-weight: 900;
+    }
+
+    .api-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .api-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      color: #b9c6d8;
+      font-size: 13px;
+    }
+
+    .api-row strong {
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel-head {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .panel-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .calendar {
+      display: grid;
+    }
+
+    .calendar-row {
+      min-height: 66px;
+      display: grid;
+      grid-template-columns: 72px 56px 70px minmax(0, 1fr) 92px 92px;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .calendar-row:first-child {
+      border-top: 0;
+    }
+
+    .time {
+      color: #4c5f76;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .impact {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 28px;
+      border-radius: 999px;
+      background: var(--amber);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .impact.high {
+      background: var(--red);
+    }
+
+    .currency {
+      color: #5a6b82;
+      font-weight: 850;
+      font-size: 13px;
+    }
+
+    .event-name {
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .value {
+      color: #56677d;
+      text-align: right;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .value strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .empty-day {
+      margin: 16px 18px 18px;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 18px;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 0 0 4px rgba(40, 100, 232, .12);
+    }
+
+    .brief-list {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+    }
+
+    .brief-item {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .brief-item h3 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .brief-item p {
+      margin: 0;
+      color: #526173;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #edf2f8;
+      color: #48596d;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .badge.red {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .badge.amber {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .badge.green {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .right-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .alert-card {
+      padding: 18px;
+      background: var(--dark);
+      border-color: #26334a;
+      color: #f6f8fc;
+    }
+
+    .alert-card h2,
+    .source-card h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .signal {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 58px;
+      border-top: 1px solid var(--dark-line);
+      color: #cad5e5;
+    }
+
+    .signal:first-of-type {
+      border-top: 0;
+    }
+
+    .signal strong {
+      display: block;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .signal span {
+      color: var(--dark-muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .source-card {
+      padding: 18px;
+    }
+
+    .source-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .source {
+      min-height: 50px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .dot.green {
+      background: var(--green);
+    }
+
+    .dot.red {
+      background: var(--red);
+    }
+
+    .source strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .source span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      color: #1f4fc6;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .status.good {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .status.warn {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .mobile-preview {
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .phone {
+      width: 100%;
+      border: 1px solid #253144;
+      border-radius: 8px;
+      background: #0b1016;
+      color: #edf4ff;
+      overflow: hidden;
+    }
+
+    .phone-head {
+      padding: 18px;
+      border-bottom: 1px solid #263344;
+      background: #151d29;
+    }
+
+    .phone-head h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .tabs button {
+      min-height: 34px;
+      border: 1px solid #2d3a4f;
+      border-radius: 8px;
+      background: transparent;
+      color: #aebdd1;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tabs .active {
+      color: #fff;
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+
+    .phone-row {
+      min-height: 74px;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 0 18px;
+      border-top: 1px solid #263344;
+    }
+
+    .phone-row:first-of-type {
+      border-top: 0;
+    }
+
+    .phone-row time {
+      color: #9fb0c7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .phone-row .phone-time {
+      color: #9fb0c7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+      font-size: inherit;
+      font-weight: inherit;
+    }
+
+    .phone-row strong {
+      display: block;
+      color: #f6f8fc;
+      font-size: 14px;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+
+    .phone-row span {
+      display: block;
+      color: #93a4bb;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid #263344;
+      background: #141c27;
+    }
+
+    .bottom-nav button {
+      min-height: 54px;
+      border: 0;
+      border-right: 1px solid #263344;
+      background: transparent;
+      color: #9fb0c7;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .bottom-nav button:last-child {
+      border-right: 0;
+    }
+
+    .bottom-nav .active {
+      color: #67e8a5;
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .note {
+      min-height: 120px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .note span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 8px;
+    }
+
+    .note strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+
+    .note p {
+      margin: 0;
+      color: #526173;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1180px) {
+      .shell,
+      .hero-grid,
+      .section-grid,
+      .mobile-preview {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        display: none;
+      }
+
+      .notes {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .calendar-row {
+        grid-template-columns: 58px 52px 58px minmax(0, 1fr);
+        min-height: 72px;
+      }
+
+      .value {
+        display: none;
+      }
+
+      .market-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .kpi {
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        padding: 14px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 18px;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+
+      .content {
+        padding: 14px;
+      }
+
+      .asset-value {
+        font-size: 42px;
+      }
+
+      .brief-item,
+      .source {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        max-width: 390px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="shell">
+      <aside class="side" aria-label="대시보드 탐색과 통합 리스크">
+        <div class="brand">
+          <strong>Market Intelligence</strong>
+          <span>Investing 지표와 Trump Today API를 합친 데일리 트레이딩 브리핑</span>
+        </div>
+
+        <nav class="nav" aria-label="dashboard sections">
+          <a class="active" href="#overview"><span>오늘 개요</span><span>Live</span></a>
+          <a href="#calendar"><span>경제 일정</span><span>USD</span></a>
+          <a href="#trump"><span>트럼프 발언</span><span>21</span></a>
+          <a href="#mobile"><span>모바일 카드</span><span>UI</span></a>
+        </nav>
+
+        <div class="side-card">
+          <span>통합 리스크 점수</span>
+          <strong>38</strong>
+          <span>시장 변동성 낮음 · 정치 발언 중간</span>
+        </div>
+      </aside>
+
+      <section class="main">
+        <header class="topbar">
+          <div>
+            <h1>시장 지표 + 오늘 트럼프 발언 브리핑</h1>
+            <p>Scrapling Investing 수집 API와 claude-trump 패턴 API를 하나의 트레이딩 대시보드로 통합</p>
+          </div>
+          <div class="controls">
+            <span class="chip blue">GET /api/brief/today</span>
+            <span class="chip">market=crypto</span>
+            <span class="chip">politics=trump</span>
+            <span class="chip">cache=15m</span>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="hero-grid" id="overview">
+            <article class="panel">
+              <div class="market-hero">
+                <div class="asset-block">
+                  <div>
+                    <div class="asset-label">현재 자산</div>
+                    <div class="asset-value"><span>$</span>2,766.25</div>
+                    <div class="asset-change">+266.25 USDT · +10.2%</div>
+                  </div>
+                  <div class="mini-chart" role="img" aria-label="자산 곡선 상승 차트">
+                    <svg viewBox="0 0 760 170" preserveAspectRatio="none" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="gainArea" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stop-color="#22c58b" stop-opacity=".28"/>
+                          <stop offset="100%" stop-color="#22c58b" stop-opacity="0"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M0 130 C70 124 108 104 160 112 C223 121 244 76 305 83 C372 91 399 54 460 62 C529 72 560 38 626 43 C685 47 712 26 760 31 L760 170 L0 170 Z" fill="url(#gainArea)"/>
+                      <path d="M0 130 C70 124 108 104 160 112 C223 121 244 76 305 83 C372 91 399 54 460 62 C529 72 560 38 626 43 C685 47 712 26 760 31" fill="none" stroke="#22c58b" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <aside class="risk-tile" aria-label="매크로와 정치 통합 리스크 점수">
+                  <div>
+                    <span>Macro + Politics Risk</span>
+                    <div class="risk-score"><strong>38</strong></div>
+                  </div>
+                  <p>오늘 주요 경제 일정 없음. 트럼프 발언은 선거·뉴욕·안보 이슈 중심이라 즉시 시장 충격은 중간 이하.</p>
+                </aside>
+              </div>
+
+              <div class="kpi-grid">
+                <div class="kpi">
+                  <span>BTC 가격</span>
+                  <strong>$78,075</strong>
+                  <small>-1.45%</small>
+                </div>
+                <div class="kpi">
+                  <span>BTC 도미넌스</span>
+                  <strong>58.3%</strong>
+                  <small>+0.4%</small>
+                </div>
+                <div class="kpi">
+                  <span>Fear &amp; Greed</span>
+                  <strong>31</strong>
+                  <small>Fear</small>
+                </div>
+                <div class="kpi">
+                  <span>Trump Posts</span>
+                  <strong>21</strong>
+                  <small>Truth Social</small>
+                </div>
+                <div class="kpi">
+                  <span>경제 일정</span>
+                  <strong>0</strong>
+                  <small>오늘 예정 없음</small>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel api-panel panel-pad">
+              <h2>통합 API 계약</h2>
+              <div class="endpoint">
+                <div><span class="method">GET</span> /api/brief/today?asset=BTC&amp;politics=trump&amp;lang=ko</div>
+                <div>{ "market": {}, "calendar": [], "politics": {}, "risk": {} }</div>
+              </div>
+              <div class="api-list">
+                <div class="api-row"><span>market adapter</span><strong>Investing + crypto feeds</strong></div>
+                <div class="api-row"><span>politics adapter</span><strong>White House + Truth archive</strong></div>
+                <div class="api-row"><span>normalizer</span><strong>dedupe + topic tags</strong></div>
+                <div class="api-row"><span>cache policy</span><strong>15m politics · 30m market</strong></div>
+                <div class="api-row"><span>UI output</span><strong>risk-first brief</strong></div>
+              </div>
+            </article>
+          </section>
+
+          <section class="section-grid">
+            <div class="panel" id="calendar">
+              <div class="panel-head">
+                <h2>경제 일정과 시장 체크</h2>
+                <span>미국 주요 지표 · 한국 시간</span>
+              </div>
+              <div class="calendar">
+                <div class="calendar-row">
+                  <span class="time">21:30</span>
+                  <span class="impact high">H</span>
+                  <span class="currency">USD</span>
+                  <span class="event-name">근원 소비자물가지수 (MoM)</span>
+                  <span class="value">예측 <strong>0.3%</strong></span>
+                  <span class="value">이전 <strong>0.2%</strong></span>
+                </div>
+                <div class="calendar-row">
+                  <span class="time">21:30</span>
+                  <span class="impact high">H</span>
+                  <span class="currency">USD</span>
+                  <span class="event-name">소비자물가지수 (YoY)</span>
+                  <span class="value">예측 <strong>3.7%</strong></span>
+                  <span class="value">이전 <strong>3.3%</strong></span>
+                </div>
+                <div class="calendar-row">
+                  <span class="time">23:00</span>
+                  <span class="impact">M</span>
+                  <span class="currency">USD</span>
+                  <span class="event-name">기존주택판매</span>
+                  <span class="value">예측 <strong>4.05M</strong></span>
+                  <span class="value">이전 <strong>4.01M</strong></span>
+                </div>
+                <div class="empty-day">
+                  <span>기준일 5월 17일</span>
+                  <span>예정 없음</span>
+                </div>
+              </div>
+            </div>
+
+            <aside class="right-stack" aria-label="진입 전 리스크와 데이터 소스">
+              <article class="panel alert-card">
+                <h2>진입 전 리스크 신호</h2>
+                <div class="signal">
+                  <div>
+                    <strong>경제 일정 공백</strong>
+                    <span>지표 이벤트보다 가격 액션과 유동성 확인 우선.</span>
+                  </div>
+                  <span class="status good">low</span>
+                </div>
+                <div class="signal">
+                  <div>
+                    <strong>Trump political noise</strong>
+                    <span>SAVE America Act, 뉴욕 철도 파업, 루이지애나 선거 언급.</span>
+                  </div>
+                  <span class="status warn">medium</span>
+                </div>
+                <div class="signal">
+                  <div>
+                    <strong>Fear &amp; Greed 31</strong>
+                    <span>공포 구간. 손절·진입 근거 기록 권장.</span>
+                  </div>
+                  <span class="status warn">watch</span>
+                </div>
+              </article>
+
+              <article class="panel source-card">
+                <h2>수집 소스</h2>
+                <div class="source-list">
+                  <a class="source" href="https://github.com/D4Vinci/Scrapling">
+                    <span class="dot green"></span>
+                    <span><strong>Scrapling</strong><span>Investing 데이터 수집 어댑터</span></span>
+                    <span class="status good">market</span>
+                  </a>
+                  <a class="source" href="https://github.com/alsgur9865-sketch/claude-trump">
+                    <span class="dot green"></span>
+                    <span><strong>claude-trump</strong><span>Trump RSS 브리핑 패턴</span></span>
+                    <span class="status good">adapt</span>
+                  </a>
+                  <a class="source" href="https://www.whitehouse.gov/briefings-statements/">
+                    <span class="dot"></span>
+                    <span><strong>White House</strong><span>공식 메시지 우선</span></span>
+                    <span class="status">primary</span>
+                  </a>
+                  <a class="source" href="https://supertrumptracker.com/">
+                    <span class="dot red"></span>
+                    <span><strong>Truth Social archive</strong><span>게시/리포스트 보강</span></span>
+                    <span class="status warn">archive</span>
+                  </a>
+                </div>
+              </article>
+            </aside>
+          </section>
+
+          <section class="section-grid" id="trump">
+            <article class="panel">
+              <div class="panel-head">
+                <h2>오늘 트럼프 발언</h2>
+                <span>2026-05-16 미국 기준</span>
+              </div>
+              <div class="brief-list">
+                <div class="brief-item">
+                  <span class="time">공식</span>
+                  <div>
+                    <h3>Armed Forces Day 메시지</h3>
+                    <p>미군과 군 가족에게 경의를 표하고, 전투원에게 자원·장비·훈련을 제공하겠다는 입장.</p>
+                  </div>
+                  <span class="badge green">White House</span>
+                </div>
+                <div class="brief-item">
+                  <time class="time" datetime="05:31">05:31</time>
+                  <div>
+                    <h3>ISIS 관련 작전 발표 성격의 게시</h3>
+                    <p>미국과 나이지리아 군이 ISIS 고위 인물을 제거했다는 내용을 게시. 원문 확인 필요.</p>
+                  </div>
+                  <span class="badge red">Security</span>
+                </div>
+                <div class="brief-item">
+                  <time class="time" datetime="15:18">15:18</time>
+                  <div>
+                    <h3>루이지애나 선거와 Bill Cassidy 비판</h3>
+                    <p>Cassidy 상원의원을 강하게 비판하고 특정 후보 투표를 독려.</p>
+                  </div>
+                  <span class="badge amber">Election</span>
+                </div>
+                <div class="brief-item">
+                  <time class="time" datetime="15:40">15:40</time>
+                  <div>
+                    <h3>SAVE America Act 통과 요구</h3>
+                    <p>voter ID, 시민권 증명, 우편투표 제한을 법안에 넣어야 한다고 주장.</p>
+                  </div>
+                  <span class="badge red">Policy</span>
+                </div>
+                <div class="brief-item">
+                  <time class="time" datetime="15:57">15:57</time>
+                  <div>
+                    <h3>Long Island Rail Road 파업 관련 발언</h3>
+                    <p>뉴욕 주지사가 자신을 탓했다고 반박하고 Bruce Blakeman을 언급.</p>
+                  </div>
+                  <span class="badge amber">NY transit</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel source-card">
+              <h2>요약 태그</h2>
+              <div class="source-list">
+                <div class="source">
+                  <span class="dot red"></span>
+                  <span><strong>Security</strong><span>ISIS 관련 주장. 시장 직접 영향은 제한적.</span></span>
+                  <span class="status warn">check</span>
+                </div>
+                <div class="source">
+                  <span class="dot"></span>
+                  <span><strong>Election</strong><span>루이지애나 선거·voter ID 프레임.</span></span>
+                  <span class="status warn">noise</span>
+                </div>
+                <div class="source">
+                  <span class="dot green"></span>
+                  <span><strong>Official</strong><span>Armed Forces Day 공식 메시지.</span></span>
+                  <span class="status good">stable</span>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="mobile-preview" id="mobile">
+            <div class="phone">
+              <div class="phone-head">
+                <h2>오늘 체크</h2>
+                <div class="tabs" role="tablist" aria-label="모바일 체크 탭">
+                  <button id="mobile-tab-market" class="active" role="tab" aria-selected="true" aria-controls="mobile-market-panel">시장</button>
+                  <button id="mobile-tab-politics" role="tab" aria-selected="false" aria-controls="mobile-politics-panel" tabindex="-1">정치</button>
+                  <button id="mobile-tab-risk" role="tab" aria-selected="false" aria-controls="mobile-risk-panel" tabindex="-1">리스크</button>
+                </div>
+              </div>
+              <div id="mobile-market-panel" role="tabpanel" aria-labelledby="mobile-tab-market">
+                <div class="phone-row">
+                  <span class="phone-time">Now</span>
+                  <div>
+                    <strong>BTC $78,075 · Fear 31</strong>
+                    <span>공포 구간. 신규 진입 근거 기록.</span>
+                  </div>
+                  <span class="badge amber">M</span>
+                </div>
+                <div class="phone-row">
+                  <span class="phone-time">오늘</span>
+                  <div>
+                    <strong>경제 일정 예정 없음</strong>
+                    <span>미국 주요 지표 공백.</span>
+                  </div>
+                  <span class="badge green">L</span>
+                </div>
+                <div class="phone-row">
+                  <time datetime="15:40">15:40</time>
+                  <div>
+                    <strong>Trump: SAVE America Act</strong>
+                    <span>선거 정책성 발언. 시장 민감도 중간.</span>
+                  </div>
+                  <span class="badge amber">M</span>
+                </div>
+              </div>
+              <div id="mobile-politics-panel" role="tabpanel" aria-labelledby="mobile-tab-politics" hidden></div>
+              <div id="mobile-risk-panel" role="tabpanel" aria-labelledby="mobile-tab-risk" hidden></div>
+              <nav class="bottom-nav" aria-label="mobile bottom navigation">
+                <button class="active">홈</button>
+                <button>지표</button>
+                <button>발언</button>
+                <button>설정</button>
+              </nav>
+            </div>
+
+            <div class="notes">
+              <div class="note">
+                <span>UI 방향</span>
+                <strong>트레이딩 의사결정용으로 합침</strong>
+                <p>시장 숫자와 정치 발언을 분리하지 않고, 진입 전 리스크 판단에 바로 연결.</p>
+              </div>
+              <div class="note">
+                <span>API 방향</span>
+                <strong>한 엔드포인트로 통합</strong>
+                <p>`/api/brief/today`가 market, calendar, politics, risk를 한 번에 반환.</p>
+              </div>
+              <div class="note">
+                <span>확장 방향</span>
+                <strong>알림 조건만 추가</strong>
+                <p>경제 지표 30분 전, Trump 고위험 키워드, Fear 지수 급변 때 푸시 가능.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
