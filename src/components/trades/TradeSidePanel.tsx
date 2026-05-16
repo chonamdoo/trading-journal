@@ -67,6 +67,16 @@ function calendarSummary(events: EconomicCalendarEvent[], loading: boolean): str
   return `${calendarTimeLabel(first)} ${first.title}`
 }
 
+/** 외부 일정 링크는 http/https URL만 허용한다. */
+function safeExternalUrl(raw: string): string | null {
+  try {
+    const parsed = new URL(raw)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : null
+  } catch {
+    return null
+  }
+}
+
 /** 현재 시장 상태를 진입 전 리스크 레벨로 압축한다. */
 function resolveRiskMode(
   insight: MarketInsight | null,
@@ -156,12 +166,16 @@ export function TradeSidePanel() {
 
   useEffect(() => {
     let cancelled = false
-    fetchMarketInsight().then((data) => {
-      if (!cancelled) {
-        setInsight(data)
-        setInsightLoading(false)
-      }
-    })
+    fetchMarketInsight()
+      .then((data) => {
+        if (!cancelled) setInsight(data)
+      })
+      .catch(() => {
+        if (!cancelled) setInsight(null)
+      })
+      .finally(() => {
+        if (!cancelled) setInsightLoading(false)
+      })
     return () => { cancelled = true }
   }, [])
 
@@ -279,25 +293,43 @@ export function TradeSidePanel() {
                 <span className="font-mono text-sm text-content-muted">-</span>
               </div>
             ) : (
-              visibleCalendarEvents.map((event, index) => (
-                <a
-                  key={event.id}
-                  href={event.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`grid min-h-[54px] grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-3 px-sp-7 hover:bg-surface-hover ${
-                    index > 0 ? 'border-t border-border' : ''
-                  }`}
-                >
-                  <time className="font-mono text-sm text-content-secondary" dateTime={event.ts}>
-                    {calendarTimeLabel(event)}
-                  </time>
-                  <strong className="truncate text-sm font-bold text-content">{event.title}</strong>
-                  <span className={`inline-flex h-7 min-w-9 items-center justify-center rounded-full px-3 text-[12px] font-bold ${calendarImpactBadgeClass(event.impact)}`}>
-                    {calendarImpactBadge(event.impact)}
-                  </span>
-                </a>
-              ))
+              visibleCalendarEvents.map((event, index) => {
+                const safeUrl = safeExternalUrl(event.url)
+                const rowClassName = `grid min-h-[54px] grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-3 px-sp-7 ${
+                  safeUrl ? 'hover:bg-surface-hover' : ''
+                } ${index > 0 ? 'border-t border-border' : ''}`
+                const rowContent = (
+                  <>
+                    <time className="font-mono text-sm text-content-secondary" dateTime={event.ts}>
+                      {calendarTimeLabel(event)}
+                    </time>
+                    <strong className="truncate text-sm font-bold text-content">{event.title}</strong>
+                    <span className={`inline-flex h-7 min-w-9 items-center justify-center rounded-full px-3 text-[12px] font-bold ${calendarImpactBadgeClass(event.impact)}`}>
+                      {calendarImpactBadge(event.impact)}
+                    </span>
+                  </>
+                )
+
+                if (!safeUrl) {
+                  return (
+                    <div key={event.id} className={rowClassName}>
+                      {rowContent}
+                    </div>
+                  )
+                }
+
+                return (
+                  <a
+                    key={event.id}
+                    href={safeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={rowClassName}
+                  >
+                    {rowContent}
+                  </a>
+                )
+              })
             )}
           </div>
 
