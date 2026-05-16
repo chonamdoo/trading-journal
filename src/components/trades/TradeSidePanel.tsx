@@ -1,8 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
-import { useTradeStore } from '@/hooks/useTrades'
-import { winRate, streaks, avgHoldTime } from '@/lib/calc'
+import { useEffect, useMemo, useState } from 'react'
 import {
   fetchEconomicCalendar,
   fetchMarketInsight,
@@ -11,36 +9,34 @@ import {
 } from '@/lib/api/client-api'
 import { formatNumber, pnlColorClass } from '@/lib/format'
 
-/** avgHoldTime(분)을 "Xh Ym" 형태로 변환 */
-function formatMinutes(totalMin: number): string | null {
-  if (totalMin <= 0) return null
-  const d = Math.floor(totalMin / 1440)
-  const h = Math.floor((totalMin % 1440) / 60)
-  const m = Math.round(totalMin % 60)
-  if (d > 0) return `${d}일 ${h}h ${m}m`
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
+type RiskMode = {
+  label: 'Low' | 'Medium' | 'High'
+  className: string
+  summary: string
 }
 
-/** Fear & Greed 값(0~100)에 따른 텍스트 색상 */
-function fearGreedColor(value: number): string {
-  if (value < 25) return 'text-loss'
-  if (value < 50) return 'text-warning'
-  return 'text-profit'
+type TickerCard = {
+  label: string
+  value: string
+  move: string
+  moveClassName: string
 }
 
-function calendarImpactLabel(impact: EconomicCalendarEvent['impact']): string {
-  if (impact === 'high') return '높음'
-  if (impact === 'medium') return '보통'
-  return '낮음'
+/** 일정 중요도를 짧은 배지로 변환한다. */
+function calendarImpactBadge(impact: EconomicCalendarEvent['impact']): string {
+  if (impact === 'high') return 'H'
+  if (impact === 'medium') return 'M'
+  return 'L'
 }
 
-function calendarImpactColor(impact: EconomicCalendarEvent['impact']): string {
-  if (impact === 'high') return 'text-warning'
-  if (impact === 'medium') return 'text-info'
-  return 'text-content-muted'
+/** 일정 중요도에 맞는 배지 색상을 반환한다. */
+function calendarImpactBadgeClass(impact: EconomicCalendarEvent['impact']): string {
+  if (impact === 'high') return 'bg-loss text-white'
+  if (impact === 'medium') return 'bg-warning text-bg'
+  return 'bg-profit-bg text-profit'
 }
 
+/** 경제 일정 시간을 한국 시간 기준으로 표시한다. */
 function calendarTimeLabel(event: EconomicCalendarEvent): string {
   if (event.allDay) return '종일'
   return new Intl.DateTimeFormat('ko-KR', {
@@ -50,17 +46,109 @@ function calendarTimeLabel(event: EconomicCalendarEvent): string {
   }).format(new Date(event.ts))
 }
 
-function calendarPrimaryValue(event: EconomicCalendarEvent): string {
-  return event.actual ?? event.forecast ?? event.previous ?? '-'
+/** 큰 달러 값을 터미널 카드에 맞게 압축한다. */
+function formatCompactUsd(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value)
+}
+
+/** 숫자 변화율을 부호 포함 텍스트로 변환한다. */
+function signedPercent(value: number, digits = 2): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`
+}
+
+/** 오늘 일정의 첫 줄 요약을 만든다. */
+function calendarSummary(events: EconomicCalendarEvent[], loading: boolean): string {
+  if (loading) return '수집 중'
+  if (events.length === 0) return '오늘 주요 지표 없음'
+  const first = events[0]
+  return `${calendarTimeLabel(first)} ${first.title}`
+}
+
+/** 현재 시장 상태를 진입 전 리스크 레벨로 압축한다. */
+function resolveRiskMode(
+  insight: MarketInsight | null,
+  events: EconomicCalendarEvent[],
+  calendarLoading: boolean,
+): RiskMode {
+  const hasHighImpactEvent = !calendarLoading && events.some((event) => event.impact === 'high')
+
+  if (hasHighImpactEvent) {
+    return {
+      label: 'High',
+      className: 'bg-loss/15 text-loss',
+      summary: '고중요 지표 전후 신규 진입 제한',
+    }
+  }
+
+  if (!insight || insight.fearGreed.value < 50) {
+    return {
+      label: 'Medium',
+      className: 'bg-warning-bg text-warning',
+      summary: '공포 구간. 진입 근거와 손절 기준 확인',
+    }
+  }
+
+  return {
+    label: 'Low',
+    className: 'bg-profit-bg text-profit',
+    summary: '주요 경계 이벤트 없음. 계획 준수 우선',
+  }
+}
+
+/** API가 제공하는 값만 사용해 데스크탑 터미널 카드를 구성한다. */
+function buildTickerCards(insight: MarketInsight | null, loading: boolean): TickerCard[] {
+  const emptyMove = loading ? 'loading' : 'unavailable'
+  const derivatives = insight?.derivatives
+  const fundingRate = derivatives ? derivatives.fundingRate * 100 : null
+
+  return [
+    {
+      label: 'BTC/USD',
+      value: loading || !insight ? '-' : `$${formatNumber(insight.btcPrice, 0)}`,
+      move: loading || !insight ? emptyMove : signedPercent(insight.btcChange24h),
+      moveClassName: !insight ? 'text-content-muted' : pnlColorClass(insight.btcChange24h),
+    },
+    {
+      label: 'BTC.D',
+      value: loading || !insight ? '-' : `${insight.btcDominance.toFixed(1)}%`,
+      move: 'dominance',
+      moveClassName: 'text-content-muted',
+    },
+    {
+      label: 'Funding',
+      value: fundingRate == null ? '-' : `${signedPercent(fundingRate, 4)}`,
+      move: derivatives?.fundingPaymentSide ?? emptyMove,
+      moveClassName: fundingRate == null ? 'text-content-muted' : pnlColorClass(fundingRate),
+    },
+    {
+      label: 'Long/Short',
+      value: derivatives ? derivatives.longShortRatio.ratio.toFixed(2) : '-',
+      move: derivatives ? `${derivatives.longShortRatio.longAccount.toFixed(1)}% long` : emptyMove,
+      moveClassName: 'text-profit',
+    },
+    {
+      label: 'Open Interest',
+      value: derivatives ? `$${formatCompactUsd(derivatives.openInterest.notionalUsd)}` : '-',
+      move: 'BTC futures',
+      moveClassName: 'text-content-muted',
+    },
+    {
+      label: 'Fear & Greed',
+      value: loading || !insight ? '-' : String(insight.fearGreed.value),
+      move: loading || !insight ? emptyMove : insight.fearGreed.classification,
+      moveClassName: !insight || insight.fearGreed.value < 50 ? 'text-loss' : 'text-profit',
+    },
+  ]
 }
 
 /**
- * 거래 입력 페이지 — 데스크탑 우측 매매 통계 사이드 패널
- * lg: 브레이크포인트 이상에서만 렌더링됨 (숨김은 page.tsx에서 hidden lg:block으로 처리)
+ * 거래 입력 화면 시장 컨텍스트 패널
+ * 모바일은 접이식 리스크 카드, 데스크탑은 터미널형 패널로 같은 데이터를 다르게 보여준다.
  */
 export function TradeSidePanel() {
-  const trades = useTradeStore((s) => s.trades)
-
   const [insight, setInsight] = useState<MarketInsight | null>(null)
   const [insightLoading, setInsightLoading] = useState(true)
   const [calendarEvents, setCalendarEvents] = useState<EconomicCalendarEvent[]>([])
@@ -90,178 +178,137 @@ export function TradeSidePanel() {
     return () => { cancelled = true }
   }, [])
 
-  const stats = useMemo(() => {
-    const recent10 = trades.filter((t) => t.status === 'closed').slice(-10)
-    const recentWr = winRate(recent10)
-    const streakResult = streaks(trades)
-    const avgHoldMinutes = avgHoldTime(trades)
-    const holdStr = formatMinutes(avgHoldMinutes)
-
-    const today = new Date().toISOString().slice(0, 10)
-    const todayCount = trades.filter((t) => t.date === today).length
-
-    return { recentWr, streakResult, holdStr, todayCount }
-  }, [trades])
-
-  const { recentWr, streakResult, holdStr, todayCount } = stats
   const visibleCalendarEvents = calendarEvents.slice(0, 3)
 
-  const streakLabel =
-    streakResult.current.count === 0
-      ? '없음'
-      : streakResult.current.type === 'win'
-        ? `🔥 ${streakResult.current.count}연승`
-        : `❄️ ${streakResult.current.count}연패`
+  const riskMode = useMemo(
+    () => resolveRiskMode(insight, visibleCalendarEvents, calendarLoading),
+    [calendarLoading, insight, visibleCalendarEvents],
+  )
 
-  const streakColor =
-    streakResult.current.count === 0
-      ? 'text-content-secondary'
-      : streakResult.current.type === 'win'
-        ? 'text-profit'
-        : 'text-loss'
+  const tickerCards = useMemo(
+    () => buildTickerCards(insight, insightLoading),
+    [insight, insightLoading],
+  )
+
+  const btcSummary = insightLoading || !insight
+    ? '-'
+    : `$${formatNumber(insight.btcPrice, 0)} · ${signedPercent(insight.btcChange24h)}`
+
+  const fearGreedSummary = insightLoading || !insight
+    ? '-'
+    : `${insight.fearGreed.value} ${insight.fearGreed.classification}`
 
   return (
-    <div
-      className="bg-surface rounded-card shadow p-sp-8 flex flex-col gap-0 sticky top-4"
-      aria-label="매매 통계"
-    >
-      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
-        📊 매매 통계
-      </h2>
-
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <span className="text-sm text-content-secondary">최근 10건 승률</span>
-          <span className="font-mono text-sm font-semibold text-content">
-            {recentWr.toFixed(0)}%
+    <div aria-label="시장 컨텍스트">
+      {/* 모바일에서는 거래 폼 위에서 접이식 리스크 요약만 보여준다. */}
+      <details className="mb-sp-7 overflow-hidden rounded-card border border-border-strong bg-surface shadow-sm min-[1120px]:hidden" open>
+        <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-3 px-sp-8 text-[15px] font-bold text-content [&::-webkit-details-marker]:hidden">
+          <span>진입 전 리스크 체크</span>
+          <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${riskMode.className}`}>
+            {riskMode.label}
           </span>
+        </summary>
+        <div className="grid gap-3 border-t border-border px-sp-8 py-sp-7 text-[13px]">
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">BTC</span>
+            <strong className="font-mono text-content">{btcSummary}</strong>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">Fear &amp; Greed</span>
+            <strong className="font-mono text-content">{fearGreedSummary}</strong>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">경제 일정</span>
+            <strong className="max-w-[190px] truncate text-right text-content">
+              {calendarSummary(visibleCalendarEvents, calendarLoading)}
+            </strong>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">뉴스 리스크</span>
+            <strong className="text-right text-content">정책/거시 이슈 확인</strong>
+          </div>
         </div>
+      </details>
 
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <span className="text-sm text-content-secondary">연속 성적</span>
-          <span className={`font-mono text-sm font-semibold ${streakColor}`}>
-            {streakLabel}
-          </span>
-        </div>
+      {/* 데스크탑에서는 차트 옆 보조 패널처럼 넓은 터미널형 요약을 보여준다. */}
+      <aside className="hidden min-[1120px]:sticky min-[1120px]:top-4 min-[1120px]:flex min-[1120px]:flex-col min-[1120px]:gap-sp-8" aria-label="데스크탑 시장 터미널 패널">
+        <section className="rounded-card border border-border bg-surface p-sp-8 shadow-sm">
+          <div className="mb-sp-8 flex min-h-[36px] items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-content">Market Summary</h2>
+            <span className="inline-flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-profit">
+              <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_0_4px_var(--green-bg)]" aria-hidden="true" />
+              LIVE API
+            </span>
+          </div>
 
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <span className="text-sm text-content-secondary">오늘 매매</span>
-          <span className="font-mono text-sm font-semibold text-content">
-            {todayCount}건
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between py-3">
-          <span className="text-sm text-content-secondary">평균 보유 기간</span>
-          <span className="font-mono text-sm font-semibold text-content">
-            {holdStr ?? '-'}
-          </span>
-        </div>
-      </div>
-
-      {/* 마켓 인사이트 섹션 */}
-      {(insightLoading || insight) && (
-        <>
-          <div className="h-px bg-border my-4" />
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-4">
-            🌐 마켓 인사이트
-          </h2>
-
-          <div className="flex flex-col">
-            {/* BTC 가격 */}
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm text-content-secondary">BTC 가격</span>
-              {insightLoading ? (
-                <span className="font-mono text-sm text-content-muted">-</span>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-sm font-semibold text-content">
-                    ${formatNumber(insight!.btcPrice, 0)}
-                  </span>
-                  <span className={`font-mono text-[11px] font-medium ${pnlColorClass(insight!.btcChange24h)}`}>
-                    {insight!.btcChange24h >= 0 ? '+' : ''}{insight!.btcChange24h.toFixed(2)}%
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* BTC 도미넌스 */}
-            <div className="flex items-center justify-between py-3 border-b border-border">
-              <span className="text-sm text-content-secondary">BTC 도미넌스</span>
-              {insightLoading ? (
-                <span className="font-mono text-sm text-content-muted">-</span>
-              ) : (
-                <span className="font-mono text-sm font-semibold text-content">
-                  {insight!.btcDominance.toFixed(1)}%
+          <div className="grid grid-cols-2 gap-sp-5 xl:grid-cols-3">
+            {tickerCards.map((card) => (
+              <div key={card.label} className="min-h-[112px] min-w-0 rounded-card border border-border bg-bg px-sp-7 py-sp-6">
+                <span className="mb-3 block truncate text-[12px] font-bold text-content-muted">
+                  {card.label}
                 </span>
-              )}
-            </div>
-
-            {/* Fear & Greed */}
-            <div className="flex items-center justify-between py-3">
-              <span className="text-sm text-content-secondary">Fear & Greed</span>
-              {insightLoading ? (
-                <span className="font-mono text-sm text-content-muted">-</span>
-              ) : (
-                <span className={`font-mono text-sm font-semibold ${fearGreedColor(insight!.fearGreed.value)}`}>
-                  {insight!.fearGreed.value} {insight!.fearGreed.classification}
-                </span>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className="h-px bg-border my-4" />
-      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-content-secondary mb-1">
-        오늘 주요 경제 일정
-      </h2>
-      <div className="text-[11px] text-content-muted mb-3">
-        데이터: kr.investing.com (US 한정) · 30분마다 갱신
-      </div>
-
-      <div className="flex flex-col">
-        {calendarLoading ? (
-          <div className="flex items-center justify-between py-3">
-            <span className="text-sm text-content-secondary">수집 중</span>
-            <span className="font-mono text-sm text-content-muted">-</span>
-          </div>
-        ) : visibleCalendarEvents.length === 0 ? (
-          <div className="flex items-center justify-between py-3">
-            <span className="text-sm text-content-secondary">예정된 발표</span>
-            <span className="font-mono text-sm text-content-muted">없음</span>
-          </div>
-        ) : (
-          visibleCalendarEvents.map((event, index) => (
-            <a
-              key={event.id}
-              href={event.url}
-              target="_blank"
-              rel="noreferrer"
-              className={`block py-3 ${
-                index < visibleCalendarEvents.length - 1 ? 'border-b border-border' : ''
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm text-content-secondary">
-                    {event.title}
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-[11px] text-content-muted">
-                    <span className="font-mono">{calendarTimeLabel(event)}</span>
-                    <span className={calendarImpactColor(event.impact)}>
-                      {calendarImpactLabel(event.impact)}
-                    </span>
-                  </div>
-                </div>
-                <span className="shrink-0 font-mono text-sm font-semibold text-content">
-                  {calendarPrimaryValue(event)}
+                <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">
+                  {card.value}
+                </strong>
+                <span className={`block truncate font-mono text-[13px] font-semibold ${card.moveClassName}`}>
+                  {card.move}
                 </span>
               </div>
-            </a>
-          ))
-        )}
-      </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-card border border-border bg-surface p-sp-8 shadow-sm">
+          <div className="mb-sp-7 flex min-h-[34px] items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-content">Next Events</h2>
+            <span className="inline-flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-profit">
+              <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_0_4px_var(--green-bg)]" aria-hidden="true" />
+              30m cache
+            </span>
+          </div>
+
+          <div className="overflow-hidden rounded-card border border-border bg-bg">
+            {calendarLoading ? (
+              <div className="flex min-h-[54px] items-center justify-between gap-3 px-sp-7">
+                <span className="text-sm text-content-secondary">수집 중</span>
+                <span className="font-mono text-sm text-content-muted">-</span>
+              </div>
+            ) : visibleCalendarEvents.length === 0 ? (
+              <div className="flex min-h-[54px] items-center justify-between gap-3 px-sp-7">
+                <span className="text-sm text-content-secondary">오늘 주요 지표 없음</span>
+                <span className="font-mono text-sm text-content-muted">-</span>
+              </div>
+            ) : (
+              visibleCalendarEvents.map((event, index) => (
+                <a
+                  key={event.id}
+                  href={event.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`grid min-h-[54px] grid-cols-[58px_minmax(0,1fr)_auto] items-center gap-3 px-sp-7 hover:bg-surface-hover ${
+                    index > 0 ? 'border-t border-border' : ''
+                  }`}
+                >
+                  <time className="font-mono text-sm text-content-secondary" dateTime={event.ts}>
+                    {calendarTimeLabel(event)}
+                  </time>
+                  <strong className="truncate text-sm font-bold text-content">{event.title}</strong>
+                  <span className={`inline-flex h-7 min-w-9 items-center justify-center rounded-full px-3 text-[12px] font-bold ${calendarImpactBadgeClass(event.impact)}`}>
+                    {calendarImpactBadge(event.impact)}
+                  </span>
+                </a>
+              ))
+            )}
+          </div>
+
+          <div className="mt-sp-8 rounded-card border border-warning/40 bg-warning-bg px-sp-7 py-sp-6">
+            <h3 className="mb-2 text-base font-bold text-content">리스크 모드</h3>
+            <p className="text-[13px] leading-relaxed text-content-secondary">
+              {riskMode.summary}
+            </p>
+          </div>
+        </section>
+      </aside>
     </div>
   )
 }

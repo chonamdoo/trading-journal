@@ -19,8 +19,12 @@ export default function NewTradePage() {
   const { allAssets, favorites, recentAssets, toggleFavorite } = useAssets(profile?.id)
 
   return (
-    <div className="lg:flex lg:gap-8 lg:items-start">
-      <div className="flex-1 min-w-0">
+    <div className="grid gap-8 min-[1120px]:grid-cols-[minmax(0,1fr)_minmax(420px,500px)] min-[1120px]:items-start">
+      {/* 1120px 이상에서만 시장 패널을 오른쪽으로 이동해 중간 폭 깨짐을 피한다. */}
+      <div className="min-[1120px]:col-start-2 min-[1120px]:row-start-1">
+        <TradeSidePanel />
+      </div>
+      <div className="min-w-0 min-[1120px]:col-start-1 min-[1120px]:row-start-1">
         <TradeForm
           currentCapital={capital}
           favorites={favorites}
@@ -34,9 +38,6 @@ export default function NewTradePage() {
           }}
         />
         <MotivationBanner />
-      </div>
-      <div className="hidden lg:block w-[280px] shrink-0">
-        <TradeSidePanel />
       </div>
     </div>
   )
