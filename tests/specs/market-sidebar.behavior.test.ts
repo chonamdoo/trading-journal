@@ -11,6 +11,7 @@ describe('market sidebar economic calendar visibility', () => {
     expect(sidePanel).toContain('calendarLoading');
     expect(sidePanel).toContain('visibleCalendarEvents.map');
     expect(sidePanel).toContain('safeExternalUrl');
+    expect(sidePanel).toContain("timeZone: 'Asia/Seoul'");
     expect(sidePanel).toContain('rel="noopener noreferrer"');
     expect(sidePanel).toContain('.finally(() =>');
     expect(sidePanel).not.toContain('href={event.url}');

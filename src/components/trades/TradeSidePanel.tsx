@@ -40,6 +40,7 @@ function calendarImpactBadgeClass(impact: EconomicCalendarEvent['impact']): stri
 function calendarTimeLabel(event: EconomicCalendarEvent): string {
   if (event.allDay) return '종일'
   return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
