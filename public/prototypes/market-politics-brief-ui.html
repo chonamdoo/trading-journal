@@ -775,6 +775,14 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .phone-row .phone-time {
+      color: #9fb0c7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+      font-size: inherit;
+      font-weight: inherit;
+    }
+
     .phone-row strong {
       display: block;
       color: #f6f8fc;
@@ -1074,7 +1082,7 @@
                   <span class="value">이전 <strong>4.01M</strong></span>
                 </div>
                 <div class="empty-day">
-                  <span>오늘 5월 17일</span>
+                  <span>기준일 5월 17일</span>
                   <span>예정 없음</span>
                 </div>
               </div>
@@ -1142,7 +1150,7 @@
               </div>
               <div class="brief-list">
                 <div class="brief-item">
-                  <time class="time">공식</time>
+                  <span class="time">공식</span>
                   <div>
                     <h3>Armed Forces Day 메시지</h3>
                     <p>미군과 군 가족에게 경의를 표하고, 전투원에게 자원·장비·훈련을 제공하겠다는 입장.</p>
@@ -1150,7 +1158,7 @@
                   <span class="badge green">White House</span>
                 </div>
                 <div class="brief-item">
-                  <time class="time">05:31</time>
+                  <time class="time" datetime="05:31">05:31</time>
                   <div>
                     <h3>ISIS 관련 작전 발표 성격의 게시</h3>
                     <p>미국과 나이지리아 군이 ISIS 고위 인물을 제거했다는 내용을 게시. 원문 확인 필요.</p>
@@ -1158,7 +1166,7 @@
                   <span class="badge red">Security</span>
                 </div>
                 <div class="brief-item">
-                  <time class="time">15:18</time>
+                  <time class="time" datetime="15:18">15:18</time>
                   <div>
                     <h3>루이지애나 선거와 Bill Cassidy 비판</h3>
                     <p>Cassidy 상원의원을 강하게 비판하고 특정 후보 투표를 독려.</p>
@@ -1166,7 +1174,7 @@
                   <span class="badge amber">Election</span>
                 </div>
                 <div class="brief-item">
-                  <time class="time">15:40</time>
+                  <time class="time" datetime="15:40">15:40</time>
                   <div>
                     <h3>SAVE America Act 통과 요구</h3>
                     <p>voter ID, 시민권 증명, 우편투표 제한을 법안에 넣어야 한다고 주장.</p>
@@ -1174,7 +1182,7 @@
                   <span class="badge red">Policy</span>
                 </div>
                 <div class="brief-item">
-                  <time class="time">15:57</time>
+                  <time class="time" datetime="15:57">15:57</time>
                   <div>
                     <h3>Long Island Rail Road 파업 관련 발언</h3>
                     <p>뉴욕 주지사가 자신을 탓했다고 반박하고 Bruce Blakeman을 언급.</p>
@@ -1210,36 +1218,40 @@
             <div class="phone">
               <div class="phone-head">
                 <h2>오늘 체크</h2>
-                <div class="tabs">
-                  <button class="active">시장</button>
-                  <button>정치</button>
-                  <button>리스크</button>
+                <div class="tabs" role="tablist" aria-label="모바일 체크 탭">
+                  <button id="mobile-tab-market" class="active" role="tab" aria-selected="true" aria-controls="mobile-market-panel">시장</button>
+                  <button id="mobile-tab-politics" role="tab" aria-selected="false" aria-controls="mobile-politics-panel" tabindex="-1">정치</button>
+                  <button id="mobile-tab-risk" role="tab" aria-selected="false" aria-controls="mobile-risk-panel" tabindex="-1">리스크</button>
                 </div>
               </div>
-              <div class="phone-row">
-                <time>Now</time>
-                <div>
-                  <strong>BTC $78,075 · Fear 31</strong>
-                  <span>공포 구간. 신규 진입 근거 기록.</span>
+              <div id="mobile-market-panel" role="tabpanel" aria-labelledby="mobile-tab-market">
+                <div class="phone-row">
+                  <span class="phone-time">Now</span>
+                  <div>
+                    <strong>BTC $78,075 · Fear 31</strong>
+                    <span>공포 구간. 신규 진입 근거 기록.</span>
+                  </div>
+                  <span class="badge amber">M</span>
                 </div>
-                <span class="badge amber">M</span>
-              </div>
-              <div class="phone-row">
-                <time>오늘</time>
-                <div>
-                  <strong>경제 일정 예정 없음</strong>
-                  <span>미국 주요 지표 공백.</span>
+                <div class="phone-row">
+                  <span class="phone-time">오늘</span>
+                  <div>
+                    <strong>경제 일정 예정 없음</strong>
+                    <span>미국 주요 지표 공백.</span>
+                  </div>
+                  <span class="badge green">L</span>
                 </div>
-                <span class="badge green">L</span>
-              </div>
-              <div class="phone-row">
-                <time>15:40</time>
-                <div>
-                  <strong>Trump: SAVE America Act</strong>
-                  <span>선거 정책성 발언. 시장 민감도 중간.</span>
+                <div class="phone-row">
+                  <time datetime="15:40">15:40</time>
+                  <div>
+                    <strong>Trump: SAVE America Act</strong>
+                    <span>선거 정책성 발언. 시장 민감도 중간.</span>
+                  </div>
+                  <span class="badge amber">M</span>
                 </div>
-                <span class="badge amber">M</span>
               </div>
+              <div id="mobile-politics-panel" role="tabpanel" aria-labelledby="mobile-tab-politics" hidden></div>
+              <div id="mobile-risk-panel" role="tabpanel" aria-labelledby="mobile-tab-risk" hidden></div>
               <nav class="bottom-nav" aria-label="mobile bottom navigation">
                 <button class="active">홈</button>
                 <button>지표</button>
