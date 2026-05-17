@@ -33,10 +33,9 @@ export interface MarketInsight {
 }
 
 /** 인메모리 캐시 (30분) */
-let cache: { data: MarketInsight; timestamp: number } | null = null;
+let cache: { data: MarketInsight; timestamp: number; ttlMs: number } | null = null;
 const CACHE_SECONDS = 30 * 60;
-const CACHE_TTL = CACHE_SECONDS * 1000;
-const CACHE_CONTROL_HEADER = `public, max-age=${CACHE_SECONDS}`;
+const DEGRADED_CACHE_SECONDS = 60;
 const FRESH_FETCH_OPTIONS = { cache: 'no-store' } as const;
 const BTC_SYMBOL = 'BTCUSDT';
 const BINANCE_FUTURES_BASE_URL = 'https://fapi.binance.com';
@@ -68,6 +67,24 @@ function fundingPaymentSide(rate: number): MarketDerivativesInsight['fundingPaym
 function round(value: number, decimals: number): number {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+function cacheSecondsFor(insight: MarketInsight): number {
+  return insight.derivativesStatus.state === 'ready'
+    ? CACHE_SECONDS
+    : DEGRADED_CACHE_SECONDS;
+}
+
+function cacheControlHeaderFor(insight: MarketInsight): string {
+  return `public, max-age=${cacheSecondsFor(insight)}`;
+}
+
+function writeCache(insight: MarketInsight): void {
+  cache = {
+    data: insight,
+    timestamp: Date.now(),
+    ttlMs: cacheSecondsFor(insight) * 1000,
+  };
 }
 
 /** Binance Futures 응답 실패를 공개 가능한 안정 코드로 요약한다. */
@@ -200,9 +217,9 @@ export async function GET(req: NextRequest) {
   }
 
   // 캐시 체크
-  if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
+  if (cache && Date.now() - cache.timestamp < cache.ttlMs) {
     return NextResponse.json(cache.data, {
-      headers: { 'Cache-Control': CACHE_CONTROL_HEADER },
+      headers: { 'Cache-Control': cacheControlHeaderFor(cache.data) },
     });
   }
 
@@ -255,15 +272,15 @@ export async function GET(req: NextRequest) {
       derivativesStatus: derivativesResult.status,
     };
 
-    cache = { data: insight, timestamp: Date.now() };
+    writeCache(insight);
     return NextResponse.json(insight, {
-      headers: { 'Cache-Control': CACHE_CONTROL_HEADER },
+      headers: { 'Cache-Control': cacheControlHeaderFor(insight) },
     });
   } catch {
     // stale 캐시 반환
     if (cache) {
       return NextResponse.json(cache.data, {
-        headers: { 'Cache-Control': CACHE_CONTROL_HEADER },
+        headers: { 'Cache-Control': cacheControlHeaderFor(cache.data) },
       });
     }
     return NextResponse.json(

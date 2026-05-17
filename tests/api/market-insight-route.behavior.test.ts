@@ -151,6 +151,50 @@ describe('GET /api/market/insight', () => {
     expect(body.btcPrice).toBe(91_500);
   });
 
+  it('retries derivatives soon after a degraded market insight response', async () => {
+    const failedLongShort = {
+      ok: false,
+      status: 451,
+      json: async () => ({}),
+    };
+    const fetchMock = mockFetchSequence(
+      ...successPayloads.slice(0, 5),
+      failedLongShort,
+      ...successPayloads,
+    );
+    const { GET } = await loadRoute();
+
+    const first = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.16' },
+    }));
+    const firstBody = await first.json();
+
+    vi.setSystemTime(new Date('2026-05-05T00:01:01Z'));
+
+    const second = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.16' },
+    }));
+    const secondBody = await second.json();
+
+    expect(fetchMock).toHaveBeenCalledTimes(12);
+    expect(firstBody.derivativesStatus.state).toBe('unavailable');
+    expect(secondBody.derivativesStatus.state).toBe('ready');
+    expect(secondBody.derivatives).toEqual({
+      symbol: 'BTCUSDT',
+      fundingRate: -0.0028,
+      fundingPaymentSide: 'short',
+      longShortRatio: {
+        longAccount: 42.4,
+        shortAccount: 57.6,
+        ratio: 0.7361,
+      },
+      openInterest: {
+        baseAsset: 104_890.25,
+        notionalUsd: 9_597_457_875,
+      },
+    });
+  });
+
   it('normalizes derivatives parsing failures to stable reason codes', async () => {
     mockFetchSequence(
       ...successPayloads.slice(0, 3),
