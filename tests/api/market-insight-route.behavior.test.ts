@@ -95,7 +95,7 @@ describe('GET /api/market/insight', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       6,
       'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1',
-      { next: { revalidate: 1800 } },
+      { cache: 'no-store' },
     );
     expect(body).toEqual({
       fearGreed: { value: 40, classification: 'Fear' },

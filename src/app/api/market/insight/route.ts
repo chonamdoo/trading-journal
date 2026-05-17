@@ -34,9 +34,10 @@ export interface MarketInsight {
 
 /** 인메모리 캐시 (30분) */
 let cache: { data: MarketInsight; timestamp: number } | null = null;
-const CACHE_REVALIDATE_SECONDS = 30 * 60;
-const CACHE_TTL = CACHE_REVALIDATE_SECONDS * 1000;
-const CACHE_CONTROL_HEADER = `public, max-age=${CACHE_REVALIDATE_SECONDS}`;
+const CACHE_SECONDS = 30 * 60;
+const CACHE_TTL = CACHE_SECONDS * 1000;
+const CACHE_CONTROL_HEADER = `public, max-age=${CACHE_SECONDS}`;
+const FRESH_FETCH_OPTIONS = { cache: 'no-store' } as const;
 const BTC_SYMBOL = 'BTCUSDT';
 const BINANCE_FUTURES_BASE_URL = 'https://fapi.binance.com';
 
@@ -93,15 +94,12 @@ async function fetchDerivativesInsight(): Promise<{
 }> {
   try {
     const [premiumRes, openInterestRes, longShortRes] = await Promise.all([
-      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${BTC_SYMBOL}`, {
-        next: { revalidate: CACHE_REVALIDATE_SECONDS },
-      }),
-      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/openInterest?symbol=${BTC_SYMBOL}`, {
-        next: { revalidate: CACHE_REVALIDATE_SECONDS },
-      }),
-      fetch(`${BINANCE_FUTURES_BASE_URL}/futures/data/globalLongShortAccountRatio?symbol=${BTC_SYMBOL}&period=1h&limit=1`, {
-        next: { revalidate: CACHE_REVALIDATE_SECONDS },
-      }),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${BTC_SYMBOL}`, FRESH_FETCH_OPTIONS),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/openInterest?symbol=${BTC_SYMBOL}`, FRESH_FETCH_OPTIONS),
+      fetch(
+        `${BINANCE_FUTURES_BASE_URL}/futures/data/globalLongShortAccountRatio?symbol=${BTC_SYMBOL}&period=1h&limit=1`,
+        FRESH_FETCH_OPTIONS
+      ),
     ]);
 
     const failureReason = providerFailureReason(premiumRes, openInterestRes, longShortRes);
@@ -210,11 +208,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const [fgRes, globalRes, btcRes, derivativesResult] = await Promise.all([
-      fetch('https://api.alternative.me/fng/?limit=1', { next: { revalidate: CACHE_REVALIDATE_SECONDS } }),
-      fetch('https://api.coingecko.com/api/v3/global', { next: { revalidate: CACHE_REVALIDATE_SECONDS } }),
+      fetch('https://api.alternative.me/fng/?limit=1', FRESH_FETCH_OPTIONS),
+      fetch('https://api.coingecko.com/api/v3/global', FRESH_FETCH_OPTIONS),
       fetch(
         'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
-        { next: { revalidate: CACHE_REVALIDATE_SECONDS } }
+        FRESH_FETCH_OPTIONS
       ),
       fetchDerivativesInsight(),
     ]);
