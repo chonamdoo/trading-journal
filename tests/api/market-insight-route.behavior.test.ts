@@ -92,6 +92,11 @@ describe('GET /api/market/insight', () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1',
+      { next: { revalidate: 1800 } },
+    );
     expect(body).toEqual({
       fearGreed: { value: 40, classification: 'Fear' },
       btcDominance: 51.25,
@@ -141,7 +146,7 @@ describe('GET /api/market/insight', () => {
     expect(body.derivativesStatus).toEqual({
       state: 'unavailable',
       source: 'binance-futures',
-      reason: 'topLongShortAccountRatio:451',
+      reason: 'globalLongShortAccountRatio:451',
     });
     expect(body.btcPrice).toBe(91_500);
   });
@@ -189,7 +194,7 @@ describe('GET /api/market/insight', () => {
     }));
     const cachedBody = await first.json();
 
-    vi.setSystemTime(new Date('2026-05-05T00:06:00Z'));
+    vi.setSystemTime(new Date('2026-05-05T00:31:00Z'));
 
     const second = await GET(new NextRequest('http://localhost/api/market/insight', {
       headers: { 'x-forwarded-for': '203.0.113.11' },

@@ -32,9 +32,11 @@ export interface MarketInsight {
   derivativesStatus: MarketDerivativesStatus;
 }
 
-/** 인메모리 캐시 (5분) */
+/** 인메모리 캐시 (30분) */
 let cache: { data: MarketInsight; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_REVALIDATE_SECONDS = 30 * 60;
+const CACHE_TTL = CACHE_REVALIDATE_SECONDS * 1000;
+const CACHE_CONTROL_HEADER = `public, max-age=${CACHE_REVALIDATE_SECONDS}`;
 const BTC_SYMBOL = 'BTCUSDT';
 const BINANCE_FUTURES_BASE_URL = 'https://fapi.binance.com';
 
@@ -76,7 +78,7 @@ function providerFailureReason(
   const failed = [
     ['premiumIndex', premiumRes],
     ['openInterest', openInterestRes],
-    ['topLongShortAccountRatio', longShortRes],
+    ['globalLongShortAccountRatio', longShortRes],
   ]
     .filter(([, response]) => !(response as Response).ok)
     .map(([name, response]) => `${name}:${(response as Response).status}`);
@@ -92,13 +94,13 @@ async function fetchDerivativesInsight(): Promise<{
   try {
     const [premiumRes, openInterestRes, longShortRes] = await Promise.all([
       fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${BTC_SYMBOL}`, {
-        next: { revalidate: 300 },
+        next: { revalidate: CACHE_REVALIDATE_SECONDS },
       }),
       fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/openInterest?symbol=${BTC_SYMBOL}`, {
-        next: { revalidate: 300 },
+        next: { revalidate: CACHE_REVALIDATE_SECONDS },
       }),
-      fetch(`${BINANCE_FUTURES_BASE_URL}/futures/data/topLongShortAccountRatio?symbol=${BTC_SYMBOL}&period=1h&limit=1`, {
-        next: { revalidate: 300 },
+      fetch(`${BINANCE_FUTURES_BASE_URL}/futures/data/globalLongShortAccountRatio?symbol=${BTC_SYMBOL}&period=1h&limit=1`, {
+        next: { revalidate: CACHE_REVALIDATE_SECONDS },
       }),
     ]);
 
@@ -202,17 +204,17 @@ export async function GET(req: NextRequest) {
   // 캐시 체크
   if (cache && Date.now() - cache.timestamp < CACHE_TTL) {
     return NextResponse.json(cache.data, {
-      headers: { 'Cache-Control': 'public, max-age=60' },
+      headers: { 'Cache-Control': CACHE_CONTROL_HEADER },
     });
   }
 
   try {
     const [fgRes, globalRes, btcRes, derivativesResult] = await Promise.all([
-      fetch('https://api.alternative.me/fng/?limit=1', { next: { revalidate: 300 } }),
-      fetch('https://api.coingecko.com/api/v3/global', { next: { revalidate: 300 } }),
+      fetch('https://api.alternative.me/fng/?limit=1', { next: { revalidate: CACHE_REVALIDATE_SECONDS } }),
+      fetch('https://api.coingecko.com/api/v3/global', { next: { revalidate: CACHE_REVALIDATE_SECONDS } }),
       fetch(
         'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
-        { next: { revalidate: 300 } }
+        { next: { revalidate: CACHE_REVALIDATE_SECONDS } }
       ),
       fetchDerivativesInsight(),
     ]);
@@ -257,13 +259,13 @@ export async function GET(req: NextRequest) {
 
     cache = { data: insight, timestamp: Date.now() };
     return NextResponse.json(insight, {
-      headers: { 'Cache-Control': 'public, max-age=60' },
+      headers: { 'Cache-Control': CACHE_CONTROL_HEADER },
     });
   } catch {
     // stale 캐시 반환
     if (cache) {
       return NextResponse.json(cache.data, {
-        headers: { 'Cache-Control': 'public, max-age=60' },
+        headers: { 'Cache-Control': CACHE_CONTROL_HEADER },
       });
     }
     return NextResponse.json(
