@@ -391,7 +391,7 @@ export function TradeSidePanel() {
                         </span>
                       </>
                     ) : card.rows.map((row) => (
-                      <div key={row.key} className="grid min-h-[30px] grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2">
+                      <div key={row.key} className="grid min-h-[34px] grid-cols-[34px_minmax(0,1fr)] items-start gap-2">
                         <span className="font-mono text-[12px] font-bold text-content-secondary">
                           {row.symbol}
                         </span>
@@ -399,12 +399,14 @@ export function TradeSidePanel() {
                           <strong className={`block truncate font-mono text-sm font-bold ${row.valueClassName}`}>
                             {row.value}
                           </strong>
-                          <span className={`block truncate font-mono text-[11px] font-semibold ${row.detailClassName}`}>
-                            {row.detail}
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className={`min-w-0 truncate font-mono text-[11px] font-semibold ${row.detailClassName}`}>
+                              {row.detail}
+                            </span>
+                            <span className="inline-flex h-5 shrink-0 items-center rounded-badge bg-surface-muted px-1.5 text-[10px] font-bold text-content-secondary">
+                              {row.exchange}
+                            </span>
                           </span>
-                        </span>
-                        <span className="inline-flex h-6 items-center rounded-badge bg-surface-muted px-2 text-[11px] font-bold text-content-secondary">
-                          {row.exchange}
                         </span>
                       </div>
                     ))}
