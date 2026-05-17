@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit';
 
+export const runtime = 'nodejs';
+export const preferredRegion = 'sin1';
+
 interface MarketDerivativesInsight {
   symbol: string;
   fundingRate: number;
