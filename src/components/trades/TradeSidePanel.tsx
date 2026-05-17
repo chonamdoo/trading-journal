@@ -10,17 +10,40 @@ import {
 import { formatNumber, pnlColorClass } from '@/lib/format'
 
 type RiskMode = {
-  label: 'Low' | 'Medium' | 'High'
+  label: '낮음' | '중간' | '높음'
   className: string
   summary: string
 }
 
-type TickerCard = {
+type MarketDerivatives = NonNullable<MarketInsight['derivatives']>
+type DerivativeAssetInsight = NonNullable<MarketDerivatives['assets']>[number]
+
+type SingleTickerCard = {
+  kind: 'single'
   label: string
   value: string
   move: string
   moveClassName: string
 }
+
+type TickerCardRow = {
+  key: string
+  symbol: string
+  value: string
+  valueClassName: string
+  detail: string
+  detailClassName: string
+  exchange: string
+}
+
+type RowsTickerCard = {
+  kind: 'rows'
+  label: string
+  rows: TickerCardRow[]
+  emptyMove: string
+}
+
+type TickerCard = SingleTickerCard | RowsTickerCard
 
 /** 일정 중요도를 짧은 배지로 변환한다. */
 function calendarImpactBadge(impact: EconomicCalendarEvent['impact']): string {
@@ -60,6 +83,39 @@ function signedPercent(value: number, digits = 2): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`
 }
 
+function fundingPaymentSideLabel(side: MarketDerivatives['fundingPaymentSide']): string {
+  if (side === 'long') return '롱 지급'
+  if (side === 'short') return '숏 지급'
+  return '중립'
+}
+
+function fearGreedClassificationLabel(classification: string): string {
+  const labels: Record<string, string> = {
+    'Extreme Fear': '극단적 공포',
+    Fear: '공포',
+    Neutral: '중립',
+    Greed: '탐욕',
+    'Extreme Greed': '극단적 탐욕',
+  }
+
+  return labels[classification] ?? classification
+}
+
+function derivativeAssetsFrom(insight: MarketInsight | null): DerivativeAssetInsight[] {
+  const derivatives = insight?.derivatives
+  if (!derivatives) return []
+  if (derivatives.assets && derivatives.assets.length > 0) return derivatives.assets
+
+  return [{
+    asset: derivatives.asset ?? 'BTC',
+    symbol: derivatives.symbol,
+    exchange: derivatives.exchange ?? 'Binance',
+    fundingRate: derivatives.fundingRate,
+    fundingPaymentSide: derivatives.fundingPaymentSide,
+    longShortRatio: derivatives.longShortRatio,
+  }]
+}
+
 /** 오늘 일정의 첫 줄 요약을 만든다. */
 function calendarSummary(events: EconomicCalendarEvent[], loading: boolean): string {
   if (loading) return '수집 중'
@@ -88,7 +144,7 @@ function resolveRiskMode(
 
   if (hasHighImpactEvent) {
     return {
-      label: 'High',
+      label: '높음',
       className: 'bg-loss/15 text-loss',
       summary: '고중요 지표 전후 신규 진입 제한',
     }
@@ -96,14 +152,14 @@ function resolveRiskMode(
 
   if (!insight || insight.fearGreed.value < 50) {
     return {
-      label: 'Medium',
+      label: '중간',
       className: 'bg-warning-bg text-warning',
       summary: '공포 구간. 진입 근거와 손절 기준 확인',
     }
   }
 
   return {
-    label: 'Low',
+    label: '낮음',
     className: 'bg-profit-bg text-profit',
     summary: '주요 경계 이벤트 없음. 계획 준수 우선',
   }
@@ -111,45 +167,66 @@ function resolveRiskMode(
 
 /** API가 제공하는 값만 사용해 데스크탑 터미널 카드를 구성한다. */
 export function buildTickerCards(insight: MarketInsight | null, loading: boolean): TickerCard[] {
-  const emptyMove = loading ? 'loading' : 'unavailable'
+  const emptyMove = loading ? '수집 중' : '사용 불가'
   const derivatives = insight?.derivatives
-  const fundingRate = derivatives ? derivatives.fundingRate : null
+  const derivativeAssets = derivativeAssetsFrom(insight)
+  const openInterestAsset = derivatives?.asset ?? derivativeAssets[0]?.asset ?? 'BTC'
 
   return [
     {
-      label: 'BTC/USD',
+      kind: 'single',
+      label: '비트코인 가격',
       value: loading || !insight ? '-' : `$${formatNumber(insight.btcPrice, 0)}`,
       move: loading || !insight ? emptyMove : signedPercent(insight.btcChange24h),
       moveClassName: !insight ? 'text-content-muted' : pnlColorClass(insight.btcChange24h),
     },
     {
-      label: 'BTC.D',
+      kind: 'single',
+      label: '비트코인 점유율',
       value: loading || !insight ? '-' : `${insight.btcDominance.toFixed(1)}%`,
-      move: 'dominance',
+      move: '점유율',
       moveClassName: 'text-content-muted',
     },
     {
-      label: 'Funding',
-      value: fundingRate == null ? '-' : `${signedPercent(fundingRate, 4)}`,
-      move: derivatives?.fundingPaymentSide ?? emptyMove,
-      moveClassName: fundingRate == null ? 'text-content-muted' : pnlColorClass(fundingRate),
+      kind: 'rows',
+      label: '펀딩비',
+      emptyMove,
+      rows: derivativeAssets.map((asset) => ({
+        key: `${asset.symbol}-funding`,
+        symbol: asset.asset,
+        value: signedPercent(asset.fundingRate, 4),
+        valueClassName: pnlColorClass(asset.fundingRate),
+        detail: fundingPaymentSideLabel(asset.fundingPaymentSide),
+        detailClassName: 'text-content-muted',
+        exchange: asset.exchange,
+      })),
     },
     {
-      label: 'Long/Short',
-      value: derivatives ? derivatives.longShortRatio.ratio.toFixed(2) : '-',
-      move: derivatives ? `${derivatives.longShortRatio.longAccount.toFixed(1)}% long` : emptyMove,
-      moveClassName: 'text-profit',
+      kind: 'rows',
+      label: '롱/숏 비율',
+      emptyMove,
+      rows: derivativeAssets.map((asset) => ({
+        key: `${asset.symbol}-long-short`,
+        symbol: asset.asset,
+        value: asset.longShortRatio.ratio.toFixed(2),
+        valueClassName: 'text-content',
+        detail: `롱 ${asset.longShortRatio.longAccount.toFixed(1)}%`,
+        detailClassName: 'text-profit',
+        exchange: asset.exchange,
+      })),
     },
     {
-      label: 'Open Interest',
+      kind: 'single',
+      label: '미결제약정',
       value: derivatives ? `$${formatCompactUsd(derivatives.openInterest.notionalUsd)}` : '-',
-      move: 'BTC futures',
+      move: derivatives ? `${openInterestAsset} 선물` : emptyMove,
       moveClassName: 'text-content-muted',
     },
     {
-      label: 'Fear & Greed',
+      kind: 'single',
+      label: '공포·탐욕 지수',
       value: loading || !insight ? '-' : String(insight.fearGreed.value),
-      move: loading || !insight ? emptyMove : insight.fearGreed.classification,
+      move: loading || !insight ? emptyMove : fearGreedClassificationLabel(insight.fearGreed.classification),
       moveClassName: !insight || insight.fearGreed.value < 50 ? 'text-loss' : 'text-profit',
     },
   ]
@@ -205,13 +282,32 @@ export function TradeSidePanel() {
     [insight, insightLoading],
   )
 
+  const derivativeAssets = useMemo(
+    () => derivativeAssetsFrom(insight),
+    [insight],
+  )
+
   const btcSummary = insightLoading || !insight
     ? '-'
     : `$${formatNumber(insight.btcPrice, 0)} · ${signedPercent(insight.btcChange24h)}`
 
   const fearGreedSummary = insightLoading || !insight
     ? '-'
-    : `${insight.fearGreed.value} ${insight.fearGreed.classification}`
+    : `${insight.fearGreed.value} ${fearGreedClassificationLabel(insight.fearGreed.classification)}`
+
+  const fundingSummary = derivativeAssets.length === 0
+    ? '-'
+    : derivativeAssets.map((asset) => `${asset.asset} ${signedPercent(asset.fundingRate, 4)}`).join(' / ')
+
+  const longShortSummary = derivativeAssets.length === 0
+    ? '-'
+    : derivativeAssets.map((asset) => `${asset.asset} ${asset.longShortRatio.ratio.toFixed(2)}`).join(' / ')
+
+  const derivativeExchangeSummary = derivativeAssets.length === 0
+    ? '-'
+    : derivativeAssets
+      .map((asset) => `${asset.asset} ${asset.exchange}`)
+      .join(' / ')
 
   return (
     <div aria-label="시장 컨텍스트">
@@ -229,7 +325,25 @@ export function TradeSidePanel() {
             <strong className="font-mono text-content">{btcSummary}</strong>
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-3">
-            <span className="text-content-secondary">Fear &amp; Greed</span>
+            <span className="text-content-secondary">펀딩비</span>
+            <strong className="max-w-[210px] truncate text-right font-mono text-content">
+              {fundingSummary}
+            </strong>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">롱/숏 비율</span>
+            <strong className="max-w-[210px] truncate text-right font-mono text-content">
+              {longShortSummary}
+            </strong>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">거래소</span>
+            <strong className="max-w-[210px] truncate text-right font-mono text-content">
+              {derivativeExchangeSummary}
+            </strong>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="text-content-secondary">공포·탐욕</span>
             <strong className="font-mono text-content">{fearGreedSummary}</strong>
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-3">
@@ -240,7 +354,7 @@ export function TradeSidePanel() {
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <span className="text-content-secondary">뉴스 리스크</span>
-            <strong className="text-right text-content">정책/거시 이슈 확인</strong>
+            <strong className="text-right text-content">주요 뉴스 확인</strong>
           </div>
         </div>
       </details>
@@ -249,7 +363,7 @@ export function TradeSidePanel() {
       <aside className="hidden min-[1120px]:sticky min-[1120px]:top-4 min-[1120px]:flex min-[1120px]:flex-col min-[1120px]:gap-sp-8" aria-label="데스크탑 시장 터미널 패널">
         <section className="rounded-card border border-border bg-surface p-sp-8 shadow-sm">
           <div className="mb-sp-8 flex min-h-[36px] items-center justify-between gap-4">
-            <h2 className="text-xl font-bold text-content">Market Summary</h2>
+            <h2 className="text-xl font-bold text-content">시장 요약</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-sp-5 xl:grid-cols-3">
@@ -258,12 +372,44 @@ export function TradeSidePanel() {
                 <span className="mb-3 block truncate text-[12px] font-bold text-content-muted">
                   {card.label}
                 </span>
-                <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">
-                  {card.value}
-                </strong>
-                <span className={`block truncate font-mono text-[13px] font-semibold ${card.moveClassName}`}>
-                  {card.move}
-                </span>
+                {card.kind === 'single' ? (
+                  <>
+                    <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">
+                      {card.value}
+                    </strong>
+                    <span className={`block truncate font-mono text-[13px] font-semibold ${card.moveClassName}`}>
+                      {card.move}
+                    </span>
+                  </>
+                ) : (
+                  <div className="grid gap-2">
+                    {card.rows.length === 0 ? (
+                      <>
+                        <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">-</strong>
+                        <span className="block truncate font-mono text-[13px] font-semibold text-content-muted">
+                          {card.emptyMove}
+                        </span>
+                      </>
+                    ) : card.rows.map((row) => (
+                      <div key={row.key} className="grid min-h-[30px] grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-2">
+                        <span className="font-mono text-[12px] font-bold text-content-secondary">
+                          {row.symbol}
+                        </span>
+                        <span className="min-w-0">
+                          <strong className={`block truncate font-mono text-sm font-bold ${row.valueClassName}`}>
+                            {row.value}
+                          </strong>
+                          <span className={`block truncate font-mono text-[11px] font-semibold ${row.detailClassName}`}>
+                            {row.detail}
+                          </span>
+                        </span>
+                        <span className="inline-flex h-6 items-center rounded-badge bg-surface-muted px-2 text-[11px] font-bold text-content-secondary">
+                          {row.exchange}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -271,7 +417,7 @@ export function TradeSidePanel() {
 
         <section className="rounded-card border border-border bg-surface p-sp-8 shadow-sm">
           <div className="mb-sp-7 flex min-h-[34px] items-center justify-between gap-4">
-            <h2 className="text-xl font-bold text-content">Next Events</h2>
+            <h2 className="text-xl font-bold text-content">다가오는 이벤트</h2>
           </div>
 
           <div className="overflow-hidden rounded-card border border-border bg-bg">

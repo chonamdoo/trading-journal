@@ -39,6 +39,14 @@ const successPayloads = [
   {
     ok: true,
     json: async () => ({
+      symbol: 'ETHUSDT',
+      lastFundingRate: '0.000041',
+      markPrice: '3125.00',
+    }),
+  },
+  {
+    ok: true,
+    json: async () => ({
       symbol: 'BTCUSDT',
       openInterest: '104890.25',
     }),
@@ -51,6 +59,17 @@ const successPayloads = [
         longAccount: '0.424',
         shortAccount: '0.576',
         longShortRatio: '0.7361',
+      },
+    ]),
+  },
+  {
+    ok: true,
+    json: async () => ([
+      {
+        symbol: 'ETHUSDT',
+        longAccount: '0.541',
+        shortAccount: '0.459',
+        longShortRatio: '1.1786',
       },
     ]),
   },
@@ -91,9 +110,14 @@ describe('GET /api/market/insight', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(fetchMock).toHaveBeenCalledTimes(8);
     expect(fetchMock).toHaveBeenNthCalledWith(
-      6,
+      8,
+      'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=ETHUSDT&period=1h&limit=1',
+      { cache: 'no-store' },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
       'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1',
       { cache: 'no-store' },
     );
@@ -104,7 +128,9 @@ describe('GET /api/market/insight', () => {
       btcChange24h: -2.35,
       totalMarketCap: 2_700_000_000_000,
       derivatives: {
+        asset: 'BTC',
         symbol: 'BTCUSDT',
+        exchange: 'Binance',
         fundingRate: -0.0028,
         fundingPaymentSide: 'short',
         longShortRatio: {
@@ -116,6 +142,32 @@ describe('GET /api/market/insight', () => {
           baseAsset: 104_890.25,
           notionalUsd: 9_597_457_875,
         },
+        assets: [
+          {
+            asset: 'BTC',
+            symbol: 'BTCUSDT',
+            exchange: 'Binance',
+            fundingRate: -0.0028,
+            fundingPaymentSide: 'short',
+            longShortRatio: {
+              longAccount: 42.4,
+              shortAccount: 57.6,
+              ratio: 0.7361,
+            },
+          },
+          {
+            asset: 'ETH',
+            symbol: 'ETHUSDT',
+            exchange: 'Binance',
+            fundingRate: 0.0041,
+            fundingPaymentSide: 'long',
+            longShortRatio: {
+              longAccount: 54.1,
+              shortAccount: 45.9,
+              ratio: 1.1786,
+            },
+          },
+        ],
       },
       derivativesStatus: {
         state: 'ready',
@@ -124,15 +176,16 @@ describe('GET /api/market/insight', () => {
     });
   });
 
-  it('keeps market insight visible when derivatives provider fails', async () => {
+  it('keeps market insight visible when required BTC derivatives provider fails', async () => {
     const failedLongShort = {
       ok: false,
       status: 451,
       json: async () => ({}),
     };
     mockFetchSequence(
-      ...successPayloads.slice(0, 5),
+      ...successPayloads.slice(0, 6),
       failedLongShort,
+      successPayloads[7],
     );
     const { GET } = await loadRoute();
 
@@ -146,9 +199,76 @@ describe('GET /api/market/insight', () => {
     expect(body.derivativesStatus).toEqual({
       state: 'unavailable',
       source: 'binance-futures',
-      reason: 'globalLongShortAccountRatio:451',
+      reason: 'globalLongShortAccountRatio:BTCUSDT:451',
     });
     expect(body.btcPrice).toBe(91_500);
+  });
+
+  it('keeps BTC derivatives when optional ETH derivatives provider fails', async () => {
+    const failedEthLongShort = {
+      ok: false,
+      status: 451,
+      json: async () => ({}),
+    };
+    mockFetchSequence(
+      ...successPayloads.slice(0, 7),
+      failedEthLongShort,
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.18' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivativesStatus).toEqual({
+      state: 'ready',
+      source: 'binance-futures',
+    });
+    expect(body.derivatives.assets).toEqual([
+      {
+        asset: 'BTC',
+        symbol: 'BTCUSDT',
+        exchange: 'Binance',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+      },
+    ]);
+  });
+
+  it('rejects derivatives payloads when provider symbols do not match requested assets', async () => {
+    mockFetchSequence(
+      ...successPayloads.slice(0, 3),
+      {
+        ok: true,
+        json: async () => ({
+          symbol: 'ETHUSDT',
+          lastFundingRate: '-0.000028',
+          markPrice: '91500.00',
+        }),
+      },
+      ...successPayloads.slice(4),
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.17' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivatives).toBeNull();
+    expect(body.derivativesStatus).toEqual({
+      state: 'unavailable',
+      source: 'binance-futures',
+      reason: 'empty-payload',
+    });
   });
 
   it('retries derivatives soon after a degraded market insight response', async () => {
@@ -158,8 +278,9 @@ describe('GET /api/market/insight', () => {
       json: async () => ({}),
     };
     const fetchMock = mockFetchSequence(
-      ...successPayloads.slice(0, 5),
+      ...successPayloads.slice(0, 6),
       failedLongShort,
+      successPayloads[7],
       ...successPayloads,
     );
     const { GET } = await loadRoute();
@@ -176,11 +297,13 @@ describe('GET /api/market/insight', () => {
     }));
     const secondBody = await second.json();
 
-    expect(fetchMock).toHaveBeenCalledTimes(12);
+    expect(fetchMock).toHaveBeenCalledTimes(16);
     expect(firstBody.derivativesStatus.state).toBe('unavailable');
     expect(secondBody.derivativesStatus.state).toBe('ready');
     expect(secondBody.derivatives).toEqual({
+      asset: 'BTC',
       symbol: 'BTCUSDT',
+      exchange: 'Binance',
       fundingRate: -0.0028,
       fundingPaymentSide: 'short',
       longShortRatio: {
@@ -192,6 +315,32 @@ describe('GET /api/market/insight', () => {
         baseAsset: 104_890.25,
         notionalUsd: 9_597_457_875,
       },
+      assets: [
+        {
+          asset: 'BTC',
+          symbol: 'BTCUSDT',
+          exchange: 'Binance',
+          fundingRate: -0.0028,
+          fundingPaymentSide: 'short',
+          longShortRatio: {
+            longAccount: 42.4,
+            shortAccount: 57.6,
+            ratio: 0.7361,
+          },
+        },
+        {
+          asset: 'ETH',
+          symbol: 'ETHUSDT',
+          exchange: 'Binance',
+          fundingRate: 0.0041,
+          fundingPaymentSide: 'long',
+          longShortRatio: {
+            longAccount: 54.1,
+            shortAccount: 45.9,
+            ratio: 1.1786,
+          },
+        },
+      ],
     });
   });
 
@@ -206,7 +355,7 @@ describe('GET /api/market/insight', () => {
           markPrice: '91500.00',
         }),
       },
-      ...successPayloads.slice(4, 6),
+      ...successPayloads.slice(4),
     );
     const { GET } = await loadRoute();
 
