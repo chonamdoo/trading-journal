@@ -14,7 +14,10 @@ describe('market sidebar economic calendar visibility', () => {
     expect(sidePanel).toContain("timeZone: 'Asia/Seoul'");
     expect(sidePanel).toContain('rel="noopener noreferrer"');
     expect(sidePanel).toContain('.finally(() =>');
-    expect(sidePanel).toContain('grid-cols-[34px_minmax(0,1fr)]');
+    expect(sidePanel).toContain('파생상품');
+    expect(sidePanel).toContain('overflow-x-auto');
+    expect(sidePanel).toContain('min-w-[420px]');
+    expect(sidePanel).toContain('longShortAccountLabel');
     expect(sidePanel).not.toContain('grid-cols-[34px_minmax(0,1fr)_auto]');
     expect(sidePanel).not.toContain('href={event.url}');
     expect(sidePanel).not.toContain('파생상품 데이터');

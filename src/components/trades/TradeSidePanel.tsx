@@ -45,6 +45,16 @@ type RowsTickerCard = {
 
 type TickerCard = SingleTickerCard | RowsTickerCard
 
+type DerivativeTableRow = {
+  key: string
+  asset: string
+  fundingRate: string
+  fundingRateClassName: string
+  longShortRatio: string
+  accountRatio: string
+  exchange: string
+}
+
 /** 일정 중요도를 짧은 배지로 변환한다. */
 function calendarImpactBadge(impact: EconomicCalendarEvent['impact']): string {
   if (impact === 'high') return 'H'
@@ -87,6 +97,10 @@ function fundingPaymentSideLabel(side: MarketDerivatives['fundingPaymentSide']):
   if (side === 'long') return '롱 지급'
   if (side === 'short') return '숏 지급'
   return '중립'
+}
+
+function longShortAccountLabel(asset: DerivativeAssetInsight): string {
+  return `롱 ${asset.longShortRatio.longAccount.toFixed(1)}% / 숏 ${asset.longShortRatio.shortAccount.toFixed(1)}%`
 }
 
 function fearGreedClassificationLabel(classification: string): string {
@@ -210,8 +224,8 @@ export function buildTickerCards(insight: MarketInsight | null, loading: boolean
         symbol: asset.asset,
         value: asset.longShortRatio.ratio.toFixed(2),
         valueClassName: 'text-content',
-        detail: `롱 ${asset.longShortRatio.longAccount.toFixed(1)}%`,
-        detailClassName: 'text-profit',
+        detail: longShortAccountLabel(asset),
+        detailClassName: 'text-content-muted',
         exchange: asset.exchange,
       })),
     },
@@ -230,6 +244,18 @@ export function buildTickerCards(insight: MarketInsight | null, loading: boolean
       moveClassName: !insight || insight.fearGreed.value < 50 ? 'text-loss' : 'text-profit',
     },
   ]
+}
+
+export function buildDerivativeTableRows(insight: MarketInsight | null): DerivativeTableRow[] {
+  return derivativeAssetsFrom(insight).map((asset) => ({
+    key: asset.symbol,
+    asset: asset.asset,
+    fundingRate: signedPercent(asset.fundingRate, 4),
+    fundingRateClassName: pnlColorClass(asset.fundingRate),
+    longShortRatio: asset.longShortRatio.ratio.toFixed(2),
+    accountRatio: longShortAccountLabel(asset),
+    exchange: asset.exchange,
+  }))
 }
 
 /**
@@ -282,8 +308,30 @@ export function TradeSidePanel() {
     [insight, insightLoading],
   )
 
+  const singleTickerCards = useMemo(
+    () => tickerCards.filter((card): card is SingleTickerCard => card.kind === 'single'),
+    [tickerCards],
+  )
+
+  const marketSummaryCards = useMemo(() => {
+    const cardByLabel = new Map(singleTickerCards.map((card) => [card.label, card]))
+    return [
+      '비트코인 가격',
+      '비트코인 점유율',
+      '공포·탐욕 지수',
+      '미결제약정',
+    ]
+      .map((label) => cardByLabel.get(label))
+      .filter((card): card is SingleTickerCard => Boolean(card))
+  }, [singleTickerCards])
+
   const derivativeAssets = useMemo(
     () => derivativeAssetsFrom(insight),
+    [insight],
+  )
+
+  const derivativeRows = useMemo(
+    () => buildDerivativeTableRows(insight),
     [insight],
   )
 
@@ -303,6 +351,10 @@ export function TradeSidePanel() {
     ? '-'
     : derivativeAssets.map((asset) => `${asset.asset} ${asset.longShortRatio.ratio.toFixed(2)}`).join(' / ')
 
+  const longShortAccountSummary = derivativeAssets.length === 0
+    ? '-'
+    : derivativeAssets.map((asset) => `${asset.asset} ${longShortAccountLabel(asset)}`).join(' / ')
+
   const derivativeExchangeSummary = derivativeAssets.length === 0
     ? '-'
     : derivativeAssets
@@ -320,39 +372,44 @@ export function TradeSidePanel() {
           </span>
         </summary>
         <div className="grid gap-3 border-t border-border px-sp-8 py-sp-7 text-[13px]">
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">BTC</span>
-            <strong className="font-mono text-content">{btcSummary}</strong>
+            <strong className="text-right font-mono text-content">{btcSummary}</strong>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">펀딩비</span>
-            <strong className="max-w-[210px] truncate text-right font-mono text-content">
+            <strong className="min-w-0 break-words text-right font-mono text-content">
               {fundingSummary}
             </strong>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">롱/숏 비율</span>
-            <strong className="max-w-[210px] truncate text-right font-mono text-content">
-              {longShortSummary}
-            </strong>
+            <span className="min-w-0 text-right">
+              <strong className="block break-words font-mono text-content">
+                {longShortSummary}
+              </strong>
+              <span className="mt-1 block break-words font-mono text-[11px] font-semibold text-content-muted">
+                {longShortAccountSummary}
+              </span>
+            </span>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">거래소</span>
-            <strong className="max-w-[210px] truncate text-right font-mono text-content">
+            <strong className="min-w-0 break-words text-right font-mono text-content">
               {derivativeExchangeSummary}
             </strong>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">공포·탐욕</span>
-            <strong className="font-mono text-content">{fearGreedSummary}</strong>
+            <strong className="text-right font-mono text-content">{fearGreedSummary}</strong>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">경제 일정</span>
-            <strong className="max-w-[190px] truncate text-right text-content">
+            <strong className="min-w-0 break-words text-right text-content">
               {calendarSummary(visibleCalendarEvents, calendarLoading)}
             </strong>
           </div>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
             <span className="text-content-secondary">뉴스 리스크</span>
             <strong className="text-right text-content">주요 뉴스 확인</strong>
           </div>
@@ -367,51 +424,80 @@ export function TradeSidePanel() {
           </div>
 
           <div className="grid grid-cols-2 gap-sp-5 xl:grid-cols-3">
-            {tickerCards.map((card) => (
+            {marketSummaryCards.slice(0, 3).map((card) => (
               <div key={card.label} className="min-h-[112px] min-w-0 rounded-card border border-border bg-bg px-sp-7 py-sp-6">
                 <span className="mb-3 block truncate text-[12px] font-bold text-content-muted">
                   {card.label}
                 </span>
-                {card.kind === 'single' ? (
-                  <>
-                    <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">
-                      {card.value}
-                    </strong>
-                    <span className={`block truncate font-mono text-[13px] font-semibold ${card.moveClassName}`}>
-                      {card.move}
-                    </span>
-                  </>
-                ) : (
-                  <div className="grid gap-2">
-                    {card.rows.length === 0 ? (
-                      <>
-                        <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">-</strong>
-                        <span className="block truncate font-mono text-[13px] font-semibold text-content-muted">
-                          {card.emptyMove}
-                        </span>
-                      </>
-                    ) : card.rows.map((row) => (
-                      <div key={row.key} className="grid min-h-[34px] grid-cols-[34px_minmax(0,1fr)] items-start gap-2">
-                        <span className="font-mono text-[12px] font-bold text-content-secondary">
-                          {row.symbol}
-                        </span>
-                        <span className="min-w-0">
-                          <strong className={`block truncate font-mono text-sm font-bold ${row.valueClassName}`}>
-                            {row.value}
-                          </strong>
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className={`min-w-0 truncate font-mono text-[11px] font-semibold ${row.detailClassName}`}>
-                              {row.detail}
-                            </span>
-                            <span className="inline-flex h-5 shrink-0 items-center rounded-badge bg-surface-muted px-1.5 text-[10px] font-bold text-content-secondary">
+                <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">
+                  {card.value}
+                </strong>
+                <span className={`block truncate font-mono text-[13px] font-semibold ${card.moveClassName}`}>
+                  {card.move}
+                </span>
+              </div>
+            ))}
+
+            <div className="min-h-[112px] min-w-0 rounded-card border border-border bg-bg px-sp-7 py-sp-6 xl:col-span-2">
+              <span className="mb-3 block truncate text-[12px] font-bold text-content-muted">
+                파생상품
+              </span>
+              {derivativeRows.length === 0 ? (
+                <>
+                  <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">-</strong>
+                  <span className="block truncate font-mono text-[13px] font-semibold text-content-muted">
+                    {insightLoading ? '수집 중' : '사용 불가'}
+                  </span>
+                </>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[420px] border-collapse font-mono" aria-label="파생상품 시장 지표">
+                    <thead>
+                      <tr className="border-b border-border text-left text-[11px] font-bold text-content-muted">
+                        <th className="pb-2 pr-3" scope="col">자산</th>
+                        <th className="pb-2 pr-3" scope="col">펀딩비</th>
+                        <th className="pb-2 pr-3" scope="col">롱/숏</th>
+                        <th className="pb-2 pr-3" scope="col">계정 비율</th>
+                        <th className="pb-2" scope="col">거래소</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {derivativeRows.map((row) => (
+                        <tr key={row.key} className="border-b border-border last:border-b-0">
+                          <td className="py-2 pr-3 text-[12px] font-bold text-content-secondary">{row.asset}</td>
+                          <td className={`py-2 pr-3 text-[12px] font-bold ${row.fundingRateClassName}`}>
+                            {row.fundingRate}
+                          </td>
+                          <td className="py-2 pr-3 text-[12px] font-bold text-content">
+                            {row.longShortRatio}
+                          </td>
+                          <td className="py-2 pr-3 text-[12px] font-semibold text-content-muted">
+                            {row.accountRatio}
+                          </td>
+                          <td className="py-2">
+                            <span className="inline-flex h-6 items-center rounded-badge bg-surface-muted px-2 text-[11px] font-bold text-content-secondary">
                               {row.exchange}
                             </span>
-                          </span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {marketSummaryCards.slice(3).map((card) => (
+              <div key={card.label} className="min-h-[112px] min-w-0 rounded-card border border-border bg-bg px-sp-7 py-sp-6">
+                <span className="mb-3 block truncate text-[12px] font-bold text-content-muted">
+                  {card.label}
+                </span>
+                <strong className="mb-2 block truncate font-mono text-2xl font-bold text-content">
+                  {card.value}
+                </strong>
+                <span className={`block truncate font-mono text-[13px] font-semibold ${card.moveClassName}`}>
+                  {card.move}
+                </span>
               </div>
             ))}
           </div>
