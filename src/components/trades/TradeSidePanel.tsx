@@ -110,10 +110,10 @@ function resolveRiskMode(
 }
 
 /** API가 제공하는 값만 사용해 데스크탑 터미널 카드를 구성한다. */
-function buildTickerCards(insight: MarketInsight | null, loading: boolean): TickerCard[] {
+export function buildTickerCards(insight: MarketInsight | null, loading: boolean): TickerCard[] {
   const emptyMove = loading ? 'loading' : 'unavailable'
   const derivatives = insight?.derivatives
-  const fundingRate = derivatives ? derivatives.fundingRate * 100 : null
+  const fundingRate = derivatives ? derivatives.fundingRate : null
 
   return [
     {
@@ -250,10 +250,6 @@ export function TradeSidePanel() {
         <section className="rounded-card border border-border bg-surface p-sp-8 shadow-sm">
           <div className="mb-sp-8 flex min-h-[36px] items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-content">Market Summary</h2>
-            <span className="inline-flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-profit">
-              <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_0_4px_var(--green-bg)]" aria-hidden="true" />
-              LIVE API
-            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-sp-5 xl:grid-cols-3">
@@ -276,10 +272,6 @@ export function TradeSidePanel() {
         <section className="rounded-card border border-border bg-surface p-sp-8 shadow-sm">
           <div className="mb-sp-7 flex min-h-[34px] items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-content">Next Events</h2>
-            <span className="inline-flex items-center gap-2 whitespace-nowrap text-[12px] font-bold text-profit">
-              <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_0_4px_var(--green-bg)]" aria-hidden="true" />
-              30m cache
-            </span>
           </div>
 
           <div className="overflow-hidden rounded-card border border-border bg-bg">
