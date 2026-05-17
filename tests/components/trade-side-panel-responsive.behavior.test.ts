@@ -44,6 +44,7 @@ describe('trade side panel responsive market context', () => {
     expect(html).toContain('진입 전 리스크 체크');
     expect(html).toContain('시장 요약');
     expect(html).toContain('다가오는 이벤트');
+    expect(html).toContain('파생상품');
     expect(html).toContain('주요 뉴스 확인');
     expect(html).not.toContain('LIVE API');
     expect(html).not.toContain('30m cache');
@@ -158,6 +159,48 @@ describe('trade side panel responsive market context', () => {
     expect(longShortCard?.kind).toBe('rows');
     if (longShortCard?.kind !== 'rows') throw new Error('롱/숏 비율 카드가 행 카드로 렌더링되지 않음');
     expect(longShortCard.rows[0]?.detail).toBe('롱 42.4% / 숏 57.6%');
+  });
+
+  it('builds derivative table rows with labeled long and short account percentages', async () => {
+    const { buildDerivativeTableRows } = await import('@/components/trades/TradeSidePanel');
+
+    const rows = buildDerivativeTableRows({
+      fearGreed: { value: 40, classification: 'Fear' },
+      btcDominance: 51.25,
+      btcPrice: 91_500,
+      btcChange24h: -2.35,
+      totalMarketCap: 2_700_000_000_000,
+      derivatives: {
+        asset: 'BTC',
+        symbol: 'BTCUSDT',
+        exchange: 'Binance',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+        openInterest: {
+          baseAsset: 104_890.25,
+          notionalUsd: 9_597_457_875,
+        },
+      },
+      derivativesStatus: {
+        state: 'ready',
+        source: 'binance-futures',
+      },
+    });
+
+    expect(rows[0]).toEqual({
+      key: 'BTCUSDT',
+      asset: 'BTC',
+      fundingRate: '-0.0028%',
+      fundingRateClassName: 'text-loss',
+      longShortRatio: '0.74',
+      accountRatio: '롱 42.4% / 숏 57.6%',
+      exchange: 'Binance',
+    });
   });
 
   it('keeps a safe open interest label for legacy derivatives without asset metadata', async () => {
