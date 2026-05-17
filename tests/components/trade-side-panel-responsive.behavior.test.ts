@@ -42,8 +42,9 @@ describe('trade side panel responsive market context', () => {
     const html = renderToStaticMarkup(createElement(TradeSidePanel));
 
     expect(html).toContain('진입 전 리스크 체크');
-    expect(html).toContain('Market Summary');
-    expect(html).toContain('Next Events');
+    expect(html).toContain('시장 요약');
+    expect(html).toContain('다가오는 이벤트');
+    expect(html).toContain('주요 뉴스 확인');
     expect(html).not.toContain('LIVE API');
     expect(html).not.toContain('30m cache');
     expect(html).toContain('리스크 모드');
@@ -67,7 +68,9 @@ describe('trade side panel responsive market context', () => {
       btcChange24h: -2.35,
       totalMarketCap: 2_700_000_000_000,
       derivatives: {
+        asset: 'BTC',
         symbol: 'BTCUSDT',
+        exchange: 'Binance',
         fundingRate: -0.0028,
         fundingPaymentSide: 'short',
         longShortRatio: {
@@ -79,6 +82,32 @@ describe('trade side panel responsive market context', () => {
           baseAsset: 104_890.25,
           notionalUsd: 9_597_457_875,
         },
+        assets: [
+          {
+            asset: 'BTC',
+            symbol: 'BTCUSDT',
+            exchange: 'Binance',
+            fundingRate: -0.0028,
+            fundingPaymentSide: 'short',
+            longShortRatio: {
+              longAccount: 42.4,
+              shortAccount: 57.6,
+              ratio: 0.7361,
+            },
+          },
+          {
+            asset: 'ETH',
+            symbol: 'ETHUSDT',
+            exchange: 'Binance',
+            fundingRate: 0.0041,
+            fundingPaymentSide: 'long',
+            longShortRatio: {
+              longAccount: 54.1,
+              shortAccount: 45.9,
+              ratio: 1.1786,
+            },
+          },
+        ],
       },
       derivativesStatus: {
         state: 'ready',
@@ -86,6 +115,11 @@ describe('trade side panel responsive market context', () => {
       },
     }, false);
 
-    expect(cards.find((card) => card.label === 'Funding')?.value).toBe('-0.0028%');
+    const fundingCard = cards.find((card) => card.label === '펀딩비');
+    expect(fundingCard?.kind).toBe('rows');
+    if (fundingCard?.kind !== 'rows') throw new Error('펀딩비 카드가 행 카드로 렌더링되지 않음');
+    expect(fundingCard.rows[0]?.value).toBe('-0.0028%');
+    expect(fundingCard.rows[1]?.value).toBe('+0.0041%');
+    expect(fundingCard.rows[0]?.exchange).toBe('Binance');
   });
 });

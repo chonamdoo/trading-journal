@@ -6,7 +6,7 @@ describe('market sidebar economic calendar visibility', () => {
     const sidePanel = readFileSync('src/components/trades/TradeSidePanel.tsx', 'utf8');
 
     expect(sidePanel).toContain('fetchEconomicCalendar');
-    expect(sidePanel).toContain('Next Events');
+    expect(sidePanel).toContain('다가오는 이벤트');
     expect(sidePanel).toContain('오늘 주요 지표 없음');
     expect(sidePanel).toContain('calendarLoading');
     expect(sidePanel).toContain('visibleCalendarEvents.map');

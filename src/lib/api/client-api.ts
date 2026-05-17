@@ -747,7 +747,9 @@ export interface MarketInsight {
   btcChange24h: number;
   totalMarketCap: number;
   derivatives: {
+    asset?: 'BTC' | 'ETH';
     symbol: string;
+    exchange?: 'Binance';
     fundingRate: number;
     fundingPaymentSide: 'long' | 'short' | 'neutral';
     longShortRatio: {
@@ -759,6 +761,18 @@ export interface MarketInsight {
       baseAsset: number;
       notionalUsd: number;
     };
+    assets?: Array<{
+      asset: 'BTC' | 'ETH';
+      symbol: string;
+      exchange: 'Binance';
+      fundingRate: number;
+      fundingPaymentSide: 'long' | 'short' | 'neutral';
+      longShortRatio: {
+        longAccount: number;
+        shortAccount: number;
+        ratio: number;
+      };
+    }>;
   } | null;
   derivativesStatus: {
     state: 'ready' | 'unavailable';

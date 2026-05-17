@@ -4,8 +4,12 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit';
 export const runtime = 'nodejs';
 export const preferredRegion = 'sin1';
 
-interface MarketDerivativesInsight {
+type DerivativesAsset = 'BTC' | 'ETH';
+
+interface MarketDerivativesAssetInsight {
+  asset: DerivativesAsset;
   symbol: string;
+  exchange: 'Binance';
   fundingRate: number;
   fundingPaymentSide: 'long' | 'short' | 'neutral';
   longShortRatio: {
@@ -13,10 +17,14 @@ interface MarketDerivativesInsight {
     shortAccount: number;
     ratio: number;
   };
+}
+
+interface MarketDerivativesInsight extends MarketDerivativesAssetInsight {
   openInterest: {
     baseAsset: number;
     notionalUsd: number;
   };
+  assets: MarketDerivativesAssetInsight[];
 }
 
 interface MarketDerivativesStatus {
@@ -40,7 +48,10 @@ let cache: { data: MarketInsight; timestamp: number; ttlMs: number } | null = nu
 const CACHE_SECONDS = 30 * 60;
 const DEGRADED_CACHE_SECONDS = 60;
 const FRESH_FETCH_OPTIONS = { cache: 'no-store' } as const;
-const BTC_SYMBOL = 'BTCUSDT';
+const DERIVATIVE_ASSETS = [
+  { asset: 'BTC', symbol: 'BTCUSDT' },
+  { asset: 'ETH', symbol: 'ETHUSDT' },
+] as const;
 const BINANCE_FUTURES_BASE_URL = 'https://fapi.binance.com';
 
 function assertFiniteNumber(value: unknown): number {
@@ -91,20 +102,55 @@ function writeCache(insight: MarketInsight): void {
 }
 
 /** Binance Futures 응답 실패를 공개 가능한 안정 코드로 요약한다. */
-function providerFailureReason(
-  premiumRes: Response,
-  openInterestRes: Response,
-  longShortRes: Response
-): string | null {
-  const failed = [
-    ['premiumIndex', premiumRes],
-    ['openInterest', openInterestRes],
-    ['globalLongShortAccountRatio', longShortRes],
-  ]
+function providerFailureReason(responses: Array<[string, Response]>): string | null {
+  const failed = responses
     .filter(([, response]) => !(response as Response).ok)
     .map(([name, response]) => `${name}:${(response as Response).status}`);
 
   return failed.length > 0 ? failed.join(',') : null;
+}
+
+type BinancePremiumResponse = {
+  symbol?: string;
+  lastFundingRate?: string;
+  markPrice?: string;
+};
+
+type BinanceLongShortResponse = {
+  symbol?: string;
+  longAccount?: string;
+  shortAccount?: string;
+  longShortRatio?: string;
+};
+
+function parseDerivativeAsset(
+  asset: DerivativesAsset,
+  expectedSymbol: string,
+  premiumData: BinancePremiumResponse,
+  longShortItem: BinanceLongShortResponse | undefined
+): MarketDerivativesAssetInsight | null {
+  if (
+    premiumData.symbol !== expectedSymbol ||
+    !longShortItem ||
+    longShortItem.symbol !== expectedSymbol
+  ) {
+    return null;
+  }
+
+  const fundingRate = round(assertNumericString(premiumData.lastFundingRate) * 100, 4);
+
+  return {
+    asset,
+    symbol: premiumData.symbol,
+    exchange: 'Binance',
+    fundingRate,
+    fundingPaymentSide: fundingPaymentSide(fundingRate),
+    longShortRatio: {
+      longAccount: round(assertNumericString(longShortItem.longAccount) * 100, 1),
+      shortAccount: round(assertNumericString(longShortItem.shortAccount) * 100, 1),
+      ratio: assertNumericString(longShortItem.longShortRatio),
+    },
+  };
 }
 
 /** Binance Futures 파생상품 데이터를 조회하고 실패 사유를 정규화한다. */
@@ -113,16 +159,27 @@ async function fetchDerivativesInsight(): Promise<{
   status: MarketDerivativesStatus;
 }> {
   try {
-    const [premiumRes, openInterestRes, longShortRes] = await Promise.all([
-      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${BTC_SYMBOL}`, FRESH_FETCH_OPTIONS),
-      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/openInterest?symbol=${BTC_SYMBOL}`, FRESH_FETCH_OPTIONS),
+    const [btcPremiumRes, ethPremiumRes, openInterestRes, btcLongShortRes, ethLongShortRes] = await Promise.all([
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${DERIVATIVE_ASSETS[0].symbol}`, FRESH_FETCH_OPTIONS),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/premiumIndex?symbol=${DERIVATIVE_ASSETS[1].symbol}`, FRESH_FETCH_OPTIONS),
+      fetch(`${BINANCE_FUTURES_BASE_URL}/fapi/v1/openInterest?symbol=${DERIVATIVE_ASSETS[0].symbol}`, FRESH_FETCH_OPTIONS),
       fetch(
-        `${BINANCE_FUTURES_BASE_URL}/futures/data/globalLongShortAccountRatio?symbol=${BTC_SYMBOL}&period=1h&limit=1`,
+        `${BINANCE_FUTURES_BASE_URL}/futures/data/globalLongShortAccountRatio?symbol=${DERIVATIVE_ASSETS[0].symbol}&period=1h&limit=1`,
+        FRESH_FETCH_OPTIONS
+      ),
+      fetch(
+        `${BINANCE_FUTURES_BASE_URL}/futures/data/globalLongShortAccountRatio?symbol=${DERIVATIVE_ASSETS[1].symbol}&period=1h&limit=1`,
         FRESH_FETCH_OPTIONS
       ),
     ]);
 
-    const failureReason = providerFailureReason(premiumRes, openInterestRes, longShortRes);
+    const failureReason = providerFailureReason([
+      [`premiumIndex:${DERIVATIVE_ASSETS[0].symbol}`, btcPremiumRes],
+      [`premiumIndex:${DERIVATIVE_ASSETS[1].symbol}`, ethPremiumRes],
+      [`openInterest:${DERIVATIVE_ASSETS[0].symbol}`, openInterestRes],
+      [`globalLongShortAccountRatio:${DERIVATIVE_ASSETS[0].symbol}`, btcLongShortRes],
+      [`globalLongShortAccountRatio:${DERIVATIVE_ASSETS[1].symbol}`, ethLongShortRes],
+    ]);
     if (failureReason) {
       return {
         data: null,
@@ -134,22 +191,27 @@ async function fetchDerivativesInsight(): Promise<{
       };
     }
 
-    const premiumData = await premiumRes.json() as {
-      symbol?: string;
-      lastFundingRate?: string;
-      markPrice?: string;
-    };
+    const btcPremiumData = await btcPremiumRes.json() as BinancePremiumResponse;
+    const ethPremiumData = await ethPremiumRes.json() as BinancePremiumResponse;
     const openInterestData = await openInterestRes.json() as {
       openInterest?: string;
     };
-    const longShortData = await longShortRes.json() as Array<{
-      longAccount?: string;
-      shortAccount?: string;
-      longShortRatio?: string;
-    }>;
+    const btcLongShortData = await btcLongShortRes.json() as BinanceLongShortResponse[];
+    const ethLongShortData = await ethLongShortRes.json() as BinanceLongShortResponse[];
 
-    const longShortItem = longShortData[0];
-    if (!premiumData.symbol || !longShortItem) {
+    const btcAsset = parseDerivativeAsset(
+      DERIVATIVE_ASSETS[0].asset,
+      DERIVATIVE_ASSETS[0].symbol,
+      btcPremiumData,
+      btcLongShortData[0]
+    );
+    const ethAsset = parseDerivativeAsset(
+      DERIVATIVE_ASSETS[1].asset,
+      DERIVATIVE_ASSETS[1].symbol,
+      ethPremiumData,
+      ethLongShortData[0]
+    );
+    if (!btcAsset || !ethAsset) {
       return {
         data: null,
         status: {
@@ -160,24 +222,17 @@ async function fetchDerivativesInsight(): Promise<{
       };
     }
 
-    const fundingRate = round(assertNumericString(premiumData.lastFundingRate) * 100, 4);
-    const markPrice = assertNumericString(premiumData.markPrice);
+    const markPrice = assertNumericString(btcPremiumData.markPrice);
     const openInterest = assertNumericString(openInterestData.openInterest);
 
     return {
       data: {
-        symbol: premiumData.symbol,
-        fundingRate,
-        fundingPaymentSide: fundingPaymentSide(fundingRate),
-        longShortRatio: {
-          longAccount: round(assertNumericString(longShortItem.longAccount) * 100, 1),
-          shortAccount: round(assertNumericString(longShortItem.shortAccount) * 100, 1),
-          ratio: assertNumericString(longShortItem.longShortRatio),
-        },
+        ...btcAsset,
         openInterest: {
           baseAsset: openInterest,
           notionalUsd: Math.round(openInterest * markPrice),
         },
+        assets: [btcAsset, ethAsset],
       },
       status: {
         state: 'ready',
