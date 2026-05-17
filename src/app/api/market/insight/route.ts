@@ -175,10 +175,8 @@ async function fetchDerivativesInsight(): Promise<{
 
     const failureReason = providerFailureReason([
       [`premiumIndex:${DERIVATIVE_ASSETS[0].symbol}`, btcPremiumRes],
-      [`premiumIndex:${DERIVATIVE_ASSETS[1].symbol}`, ethPremiumRes],
       [`openInterest:${DERIVATIVE_ASSETS[0].symbol}`, openInterestRes],
       [`globalLongShortAccountRatio:${DERIVATIVE_ASSETS[0].symbol}`, btcLongShortRes],
-      [`globalLongShortAccountRatio:${DERIVATIVE_ASSETS[1].symbol}`, ethLongShortRes],
     ]);
     if (failureReason) {
       return {
@@ -192,12 +190,10 @@ async function fetchDerivativesInsight(): Promise<{
     }
 
     const btcPremiumData = await btcPremiumRes.json() as BinancePremiumResponse;
-    const ethPremiumData = await ethPremiumRes.json() as BinancePremiumResponse;
     const openInterestData = await openInterestRes.json() as {
       openInterest?: string;
     };
     const btcLongShortData = await btcLongShortRes.json() as BinanceLongShortResponse[];
-    const ethLongShortData = await ethLongShortRes.json() as BinanceLongShortResponse[];
 
     const btcAsset = parseDerivativeAsset(
       DERIVATIVE_ASSETS[0].asset,
@@ -205,13 +201,7 @@ async function fetchDerivativesInsight(): Promise<{
       btcPremiumData,
       btcLongShortData[0]
     );
-    const ethAsset = parseDerivativeAsset(
-      DERIVATIVE_ASSETS[1].asset,
-      DERIVATIVE_ASSETS[1].symbol,
-      ethPremiumData,
-      ethLongShortData[0]
-    );
-    if (!btcAsset || !ethAsset) {
+    if (!btcAsset) {
       return {
         data: null,
         status: {
@@ -220,6 +210,22 @@ async function fetchDerivativesInsight(): Promise<{
           reason: 'empty-payload',
         },
       };
+    }
+
+    let ethAsset: MarketDerivativesAssetInsight | null = null;
+    if (ethPremiumRes.ok && ethLongShortRes.ok) {
+      try {
+        const ethPremiumData = await ethPremiumRes.json() as BinancePremiumResponse;
+        const ethLongShortData = await ethLongShortRes.json() as BinanceLongShortResponse[];
+        ethAsset = parseDerivativeAsset(
+          DERIVATIVE_ASSETS[1].asset,
+          DERIVATIVE_ASSETS[1].symbol,
+          ethPremiumData,
+          ethLongShortData[0]
+        );
+      } catch {
+        ethAsset = null;
+      }
     }
 
     const markPrice = assertNumericString(btcPremiumData.markPrice);
@@ -232,7 +238,7 @@ async function fetchDerivativesInsight(): Promise<{
           baseAsset: openInterest,
           notionalUsd: Math.round(openInterest * markPrice),
         },
-        assets: [btcAsset, ethAsset],
+        assets: [btcAsset, ...(ethAsset ? [ethAsset] : [])],
       },
       status: {
         state: 'ready',

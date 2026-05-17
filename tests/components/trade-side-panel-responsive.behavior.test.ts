@@ -122,4 +122,39 @@ describe('trade side panel responsive market context', () => {
     expect(fundingCard.rows[1]?.value).toBe('+0.0041%');
     expect(fundingCard.rows[0]?.exchange).toBe('Binance');
   });
+
+  it('keeps a safe open interest label for legacy derivatives without asset metadata', async () => {
+    const { buildTickerCards } = await import('@/components/trades/TradeSidePanel');
+
+    const cards = buildTickerCards({
+      fearGreed: { value: 40, classification: 'Fear' },
+      btcDominance: 51.25,
+      btcPrice: 91_500,
+      btcChange24h: -2.35,
+      totalMarketCap: 2_700_000_000_000,
+      derivatives: {
+        symbol: 'BTCUSDT',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+        openInterest: {
+          baseAsset: 104_890.25,
+          notionalUsd: 9_597_457_875,
+        },
+      },
+      derivativesStatus: {
+        state: 'ready',
+        source: 'binance-futures',
+      },
+    }, false);
+
+    const openInterestCard = cards.find((card) => card.label === '미결제약정');
+    expect(openInterestCard?.kind).toBe('single');
+    if (openInterestCard?.kind !== 'single') throw new Error('미결제약정 카드가 단일 카드로 렌더링되지 않음');
+    expect(openInterestCard.move).toBe('BTC 선물');
+  });
 });

@@ -170,6 +170,7 @@ export function buildTickerCards(insight: MarketInsight | null, loading: boolean
   const emptyMove = loading ? '수집 중' : '사용 불가'
   const derivatives = insight?.derivatives
   const derivativeAssets = derivativeAssetsFrom(insight)
+  const openInterestAsset = derivatives?.asset ?? derivativeAssets[0]?.asset ?? 'BTC'
 
   return [
     {
@@ -218,7 +219,7 @@ export function buildTickerCards(insight: MarketInsight | null, loading: boolean
       kind: 'single',
       label: '미결제약정',
       value: derivatives ? `$${formatCompactUsd(derivatives.openInterest.notionalUsd)}` : '-',
-      move: derivatives ? `${derivatives.asset} 선물` : emptyMove,
+      move: derivatives ? `${openInterestAsset} 선물` : emptyMove,
       moveClassName: 'text-content-muted',
     },
     {

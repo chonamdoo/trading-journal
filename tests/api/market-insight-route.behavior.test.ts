@@ -176,15 +176,16 @@ describe('GET /api/market/insight', () => {
     });
   });
 
-  it('keeps market insight visible when derivatives provider fails', async () => {
+  it('keeps market insight visible when required BTC derivatives provider fails', async () => {
     const failedLongShort = {
       ok: false,
       status: 451,
       json: async () => ({}),
     };
     mockFetchSequence(
-      ...successPayloads.slice(0, 7),
+      ...successPayloads.slice(0, 6),
       failedLongShort,
+      successPayloads[7],
     );
     const { GET } = await loadRoute();
 
@@ -198,23 +199,61 @@ describe('GET /api/market/insight', () => {
     expect(body.derivativesStatus).toEqual({
       state: 'unavailable',
       source: 'binance-futures',
-      reason: 'globalLongShortAccountRatio:ETHUSDT:451',
+      reason: 'globalLongShortAccountRatio:BTCUSDT:451',
     });
     expect(body.btcPrice).toBe(91_500);
   });
 
+  it('keeps BTC derivatives when optional ETH derivatives provider fails', async () => {
+    const failedEthLongShort = {
+      ok: false,
+      status: 451,
+      json: async () => ({}),
+    };
+    mockFetchSequence(
+      ...successPayloads.slice(0, 7),
+      failedEthLongShort,
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET(new NextRequest('http://localhost/api/market/insight', {
+      headers: { 'x-forwarded-for': '203.0.113.18' },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.derivativesStatus).toEqual({
+      state: 'ready',
+      source: 'binance-futures',
+    });
+    expect(body.derivatives.assets).toEqual([
+      {
+        asset: 'BTC',
+        symbol: 'BTCUSDT',
+        exchange: 'Binance',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+      },
+    ]);
+  });
+
   it('rejects derivatives payloads when provider symbols do not match requested assets', async () => {
     mockFetchSequence(
-      ...successPayloads.slice(0, 4),
+      ...successPayloads.slice(0, 3),
       {
         ok: true,
         json: async () => ({
-          symbol: 'BTCUSDT',
-          lastFundingRate: '0.000041',
-          markPrice: '3125.00',
+          symbol: 'ETHUSDT',
+          lastFundingRate: '-0.000028',
+          markPrice: '91500.00',
         }),
       },
-      ...successPayloads.slice(5),
+      ...successPayloads.slice(4),
     );
     const { GET } = await loadRoute();
 
@@ -239,8 +278,9 @@ describe('GET /api/market/insight', () => {
       json: async () => ({}),
     };
     const fetchMock = mockFetchSequence(
-      ...successPayloads.slice(0, 7),
+      ...successPayloads.slice(0, 6),
       failedLongShort,
+      successPayloads[7],
       ...successPayloads,
     );
     const { GET } = await loadRoute();
