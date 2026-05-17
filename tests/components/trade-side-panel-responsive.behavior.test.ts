@@ -123,6 +123,43 @@ describe('trade side panel responsive market context', () => {
     expect(fundingCard.rows[0]?.exchange).toBe('Binance');
   });
 
+  it('shows both long and short account percentages in the long/short ratio card', async () => {
+    const { buildTickerCards } = await import('@/components/trades/TradeSidePanel');
+
+    const cards = buildTickerCards({
+      fearGreed: { value: 40, classification: 'Fear' },
+      btcDominance: 51.25,
+      btcPrice: 91_500,
+      btcChange24h: -2.35,
+      totalMarketCap: 2_700_000_000_000,
+      derivatives: {
+        asset: 'BTC',
+        symbol: 'BTCUSDT',
+        exchange: 'Binance',
+        fundingRate: -0.0028,
+        fundingPaymentSide: 'short',
+        longShortRatio: {
+          longAccount: 42.4,
+          shortAccount: 57.6,
+          ratio: 0.7361,
+        },
+        openInterest: {
+          baseAsset: 104_890.25,
+          notionalUsd: 9_597_457_875,
+        },
+      },
+      derivativesStatus: {
+        state: 'ready',
+        source: 'binance-futures',
+      },
+    }, false);
+
+    const longShortCard = cards.find((card) => card.label === '롱/숏 비율');
+    expect(longShortCard?.kind).toBe('rows');
+    if (longShortCard?.kind !== 'rows') throw new Error('롱/숏 비율 카드가 행 카드로 렌더링되지 않음');
+    expect(longShortCard.rows[0]?.detail).toBe('롱 42.4% / 숏 57.6%');
+  });
+
   it('keeps a safe open interest label for legacy derivatives without asset metadata', async () => {
     const { buildTickerCards } = await import('@/components/trades/TradeSidePanel');
 

@@ -210,8 +210,8 @@ export function buildTickerCards(insight: MarketInsight | null, loading: boolean
         symbol: asset.asset,
         value: asset.longShortRatio.ratio.toFixed(2),
         valueClassName: 'text-content',
-        detail: `롱 ${asset.longShortRatio.longAccount.toFixed(1)}%`,
-        detailClassName: 'text-profit',
+        detail: `롱 ${asset.longShortRatio.longAccount.toFixed(1)}% / 숏 ${asset.longShortRatio.shortAccount.toFixed(1)}%`,
+        detailClassName: 'text-content-muted',
         exchange: asset.exchange,
       })),
     },
@@ -399,8 +399,8 @@ export function TradeSidePanel() {
                           <strong className={`block truncate font-mono text-sm font-bold ${row.valueClassName}`}>
                             {row.value}
                           </strong>
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className={`min-w-0 truncate font-mono text-[11px] font-semibold ${row.detailClassName}`}>
+                          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className={`whitespace-nowrap font-mono text-[11px] font-semibold ${row.detailClassName}`}>
                               {row.detail}
                             </span>
                             <span className="inline-flex h-5 shrink-0 items-center rounded-badge bg-surface-muted px-1.5 text-[10px] font-bold text-content-secondary">
