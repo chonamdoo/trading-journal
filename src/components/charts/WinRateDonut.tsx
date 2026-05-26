@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { useChartColors } from '@/hooks/useChartColors'
 import { ChartCard } from './ChartCard'
+import { buildWinRateDonutSegments } from './winRateDonutSegments'
 
 interface WinRateDonutProps {
   winRate: number   // 승률 (%)
@@ -17,10 +18,7 @@ interface WinRateDonutProps {
 export function WinRateDonut({ winRate, wins, losses }: WinRateDonutProps) {
   const colors = useChartColors()
 
-  const data = [
-    { name: '익절', value: wins || 0 },
-    { name: '손절', value: losses || 0 },
-  ]
+  const data = buildWinRateDonutSegments({ wins, losses, colors })
 
   // 데이터가 없을 경우 빈 도넛
   const hasData = wins + losses > 0
@@ -31,7 +29,7 @@ export function WinRateDonut({ winRate, wins, losses }: WinRateDonutProps) {
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={hasData ? data : [{ name: '없음', value: 1 }]}
+              data={data}
               cx="50%"
               cy="50%"
               innerRadius={45}
@@ -40,14 +38,9 @@ export function WinRateDonut({ winRate, wins, losses }: WinRateDonutProps) {
               dataKey="value"
               stroke="none"
             >
-              {hasData ? (
-                <>
-                  <Cell fill={colors.green} />
-                  <Cell fill={colors.red} />
-                </>
-              ) : (
-                <Cell fill={colors.grid} />
-              )}
+              {data.map((entry) => (
+                <Cell key={entry.name} fill={entry.fill} />
+              ))}
             </Pie>
             {/* 중앙 텍스트 */}
             <text
